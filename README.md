@@ -26,9 +26,3 @@ ln -s ${icsFusion}/ROS .
 ## compile
 
 catkin_make
-
-## Reference
-
-```
-http://3dmatch.cs.princeton.edu/
-```
