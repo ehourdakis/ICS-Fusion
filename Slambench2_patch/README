@@ -1,0 +1,3 @@
+This patch allow slambench to pass ground trouth info to benchmark library. 
+Apply this patch on commit f51b0d1b799dd80b5add6c2869ef1f06cd7a2e3b
+
