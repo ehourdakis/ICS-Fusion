@@ -102,7 +102,6 @@ bool CloseLoop::addFrame(uint16_t *depth,uchar3 *rgb)
 
 sMatrix4 CloseLoop::fixPoses(sMatrix4 fixPose)
 {
-    std::cout<<"EDO"<<std::endl;
 
     _fusion->reset();
     //for(int i=0;i<_isam->poseSize();i++)
@@ -114,12 +113,9 @@ sMatrix4 CloseLoop::fixPoses(sMatrix4 fixPose)
         //sMatrix4 pose=isamPoses[i];
         _fusion->reIntegration(pose,depths[i],rgbs[i]);
     }
-    sMatrix4 finalPose=_isam->getPose( _isam->poseSize()-1 );
-
-    //_fusion->setPose(finalPose);
-
-    std::cout<<"EDO"<<std::endl;
-    return sMatrix4();
+    sMatrix4 finalPose=poses[poses.size()-1];
+    _fusion->setPose(finalPose);
+    return finalPose;
 }
 
 sMatrix4 CloseLoop::doLoopClosure(sMatrix4 gt)
@@ -138,8 +134,8 @@ sMatrix4 CloseLoop::doLoopClosure(sMatrix4 gt)
     else
     {
         sMatrix6 cov;
+        /*
         cov=cov*1e+2;
-
         //cov=icpCov;
         float f;
         if(tracked)
@@ -147,14 +143,11 @@ sMatrix4 CloseLoop::doLoopClosure(sMatrix4 gt)
         else
             f=10;
         cov=cov*powf(2,f);
-        
-        std::cout<<cov<<std::endl;
-
-        sMatrix6 cov2;
-        cov2=cov2*1e4;
+        */
+        cov=cov*1e4;
         
         sMatrix4 p=_fusion->getPose();
-        _isam->addFrame(p,cov2);        
+        _isam->addFrame(p,cov);
         prevPose=p;
     }
     
@@ -175,19 +168,10 @@ sMatrix4 CloseLoop::doLoopClosure(sMatrix4 gt)
     _featDet->detectFeatures(_frame,rawDepth,rawRgb,keypoints,descriptors);
 
     std::cout<<"Keypts size:"<<keypoints.size()<<std::endl;
-    if(keypoints.size()<3)
-    {
-//        rawDepth.release();
-//        rawRgb.release();
-        return gt;
-    }
-
     if(_keyMap->isEmpty() )
     {
         _keyMap->addKeypoints(keypoints,descriptors);
         std::cout<<"Keypts added"<<std::endl;
-//        rawDepth.release();
-//        rawRgb.release();
         return gt;
 
     }
@@ -203,12 +187,8 @@ sMatrix4 CloseLoop::doLoopClosure(sMatrix4 gt)
         {
             isamPoses.push_back(_isam->getPose(i));
         }
-        fixPoses(gt);
+        //fixPoses(gt);
     }
-
-    //rawDepth.release();
-    //rawRgb.release();
-
 
     char buf[32];
     sprintf(buf,"f_/f_%d_poses",_frame);
@@ -219,14 +199,13 @@ sMatrix4 CloseLoop::doLoopClosure(sMatrix4 gt)
 
     saveDescData(keypoints,descriptors);
 
-
-//    clear();
-
-//   _isam->init(_fusion->getPose());
-   //poses.push_back(_fusion->getPose());
-//   _keyMap->addKeypoints(keypoints,descriptors);
-
-    return gt;
+    /*
+    clear();
+    _isam->init(_fusion->getPose());
+    _keyMap->addKeypoints(keypoints,descriptors);
+    poses.push_back(_fusion->getPose());
+    */
+    return _fusion->getPose();
 }
 
 sMatrix4 CloseLoop::getPose() const
