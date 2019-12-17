@@ -6,13 +6,15 @@
 #include "kparams.h"
 #include <string>
 #include <string.h>
+
+
 struct out_data
 {
     char c[6];
 //    float value;
 //    char c;
 };
-
+/*
 void dumpVolume(const char *  filename,const Volume volume)
 {
     std::ofstream fDumpFile;
@@ -30,10 +32,10 @@ void dumpVolume(const char *  filename,const Volume volume)
     }
 
     // Retrieve the volumetric representation data from the GPU
-    short2 *hostData = (short2 *) malloc(volume.size.x * volume.size.y * volume.size.z * sizeof(short2));
+    short2 *hostData = (short2 *) malloc(volume.size().x * volume.size().y * volume.size().z * sizeof(short2));
 
     if (cudaMemcpy(hostData, volume.data,
-                   volume.size.x * volume.size.y * volume.size.z * sizeof(short2),
+                   volume.size().x * volume.size().y * volume.size().z * sizeof(short2),
                    cudaMemcpyDeviceToHost) != cudaSuccess)
     {
         std::cerr << "Error reading volumetric representation data from the GPU. "<< std::endl;
@@ -41,7 +43,7 @@ void dumpVolume(const char *  filename,const Volume volume)
     }
 
     // Dump on file without the y component of the short2 variable
-    for (int i = 0; i < volume.size.x * volume.size.y * volume.size.z; i++)
+    for (int i = 0; i < volume.size().x * volume.size().y * volume.size().z; i++)
     {
         fDumpFile.write((char *) (hostData + i), sizeof(short));
     }
@@ -57,11 +59,11 @@ void dumpVolume(const char *  filename,const Volume volume)
 
 void generateTriangles(std::vector<float3>& triangles,  const Volume volume, short2 *hostData)
 {
-    for(unsigned int z=0; z<volume.size.z-1; z++)
+    for(unsigned int z=0; z<volume.size().z-1; z++)
     {
-        for(unsigned int y=0; y<volume.size.y-1; y++)
+        for(unsigned int y=0; y<volume.size().y-1; y++)
         {
-            for (unsigned int x=0; x<volume.size.x-1; x++)
+            for (unsigned int x=0; x<volume.size().x-1; x++)
             {
                 //Loop over all cubes
                 const uint8_t cubeIndex = getCubeIndex(x,y,z,volume, hostData);
@@ -84,7 +86,7 @@ void generateTriangles(std::vector<float3>& triangles,  const Volume volume, sho
         }
     }
 }
-
+*/
 void saveVoxelsToFile(const Volume volume,const kparams_t &params, std::string fileName)
 {
     //TODO this function needs cleanup and speedup
@@ -127,10 +129,10 @@ void saveVoxelsToFile(const Volume volume,const kparams_t &params, std::string f
     outFile<<vol_size<<std::endl;
     outFile<<params.mu<<std::endl;
 
-    short2 *voxel_grid_cpu=new short2[volume.size.x*volume.size.y*volume.size.z];
+    short2 *voxel_grid_cpu=new short2[volume.size().x*volume.size().y*volume.size().z];
 
-    cudaMemcpy(voxel_grid_cpu, volume.data,
-                   volume.size.x*volume.size.y*volume.size.z* sizeof(short2),
+    cudaMemcpy(voxel_grid_cpu, volume.getDataPtr(),
+                   volume.size().x*volume.size().y*volume.size().z* sizeof(short2),
                    cudaMemcpyDeviceToHost);
 
     for(int i=0;i<params.volume_resolution.x*params.volume_resolution.y*params.volume_resolution.z;i++)

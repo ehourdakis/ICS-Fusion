@@ -16,6 +16,8 @@ typedef struct
     float3 volume_direction = make_float3(4,4,4);
     float3 volume_size = make_float3(8,8,8);
 
+    uint3 sliceSize=make_uint3(32,32,32);
+
     std::vector<int> pyramid = {10,5,4};
     float mu = 0.1;
     float icp_threshold = 1e-5;

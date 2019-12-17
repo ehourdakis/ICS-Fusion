@@ -132,7 +132,7 @@ __global__ void renderVolumeKernel2(Image<uchar3> render,
 __global__ void initVolumeKernel(Volume volume, const float2 val)
 {
     uint3 pos = make_uint3(thr2pos2());
-    for (pos.z = 0; pos.z < volume.size.z; ++pos.z)
+    for (pos.z = 0; pos.z < volume.size().z; ++pos.z)
         volume.set(pos, val);
 }
 
@@ -179,12 +179,12 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
     uint3 pix = make_uint3(thr2pos2());
     float3 pos = invTrack * vol.pos(pix);
     float3 cameraX = K * pos;
-    const float3 delta = rotate(invTrack,make_float3(0, 0, vol.dim.z / vol.size.z));
+    const float3 delta = rotate(invTrack,make_float3(0, 0, vol.getOrigin().z / vol.size().z));
     const float3 cameraDelta = rotate(K, delta);
 
 
 
-    for (pix.z = 0; pix.z < vol.size.z; ++pix.z, pos += delta, cameraX +=cameraDelta)
+    for (pix.z = 0; pix.z < vol.size().z; ++pix.z, pos += delta, cameraX +=cameraDelta)
     {
         if (pos.z < 0.0001f) // some near plane constraint
             continue;
@@ -241,12 +241,12 @@ __global__ void deIntegrateKernel(Volume vol,
     uint3 pix = make_uint3(thr2pos2());
     float3 pos = invTrack * vol.pos(pix);
     float3 cameraX = K * pos;
-    const float3 delta = rotate(invTrack,make_float3(0, 0, vol.dim.z / vol.size.z));
+    const float3 delta = rotate(invTrack,make_float3(0, 0, vol.getOrigin().z / vol.size().z));
     const float3 cameraDelta = rotate(K, delta);
 
 
 
-    for (pix.z=0; pix.z!=vol.size.z; pix.z++, pos += delta, cameraX +=cameraDelta)
+    for (pix.z=0; pix.z!=vol.size().z; pix.z++, pos += delta, cameraX +=cameraDelta)
     {
         if (pos.z < 0.0001f) // some near plane constraint
             continue;
