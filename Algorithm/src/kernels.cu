@@ -3,7 +3,7 @@
 #include"utils.h"
 #include<stdint.h>
 #include"constant_parameters.h"
-
+#include"rgb2Lab.h"
 
 __global__ void renderDepthKernel(Image<uchar3> out,
                                   const Image<float> depth,
@@ -201,11 +201,6 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
         if (depth[px] == 0)
             continue;
 
-        /*
-        if(data[px].result ==-4 )
-            continue;
-        */
-
         const float diff = (depth[px] - cameraX.z) *
                            sqrt(1 + sq(pos.x / pos.z) + sq(pos.y / pos.z));
 
@@ -216,18 +211,20 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
             float2 p_data = vol[pix];
             float3 p_color = vol.getColor(pix);
 
-//            float w=fminf(p_data.y, maxweight);
-            float w=p_data.y;
+            //float w=fminf(p_data.y+1, maxweight);
+            float w=p_data.y+1;
 
-            float3 frgb = make_float3(rgb[px].x,rgb[px].y,rgb[px].z);
-            p_data.x = clamp((p_data.y * p_data.x + sdf) / (p_data.y + 1), -1.f, 1.f);
-            p_data.y = fminf(p_data.y + 1, maxweight);
+            float3 frgb=rgb2lab(rgb[px]);
+            p_data.x = clamp((p_data.y * p_data.x + sdf) / w, -1.f, 1.f);
 
-            frgb.x = (p_color.x * w + frgb.x ) / (w + 1.0f);
-            frgb.y = (p_color.y * w + frgb.y ) / (w + 1.0f);
-            frgb.z = (p_color.z * w + frgb.z ) / (w + 1.0f);
+            frgb.x = (p_color.x * p_data.y + frgb.x ) / w;
+            frgb.y = (p_color.y * p_data.y + frgb.y ) / w;
+            frgb.z = (p_color.z * p_data.y + frgb.z ) / w;
 
-//            p_data.y = fminf(p_data.y + 1, maxweight);
+            frgb.x=clamp(frgb.x,MIN_L,MAX_L);
+            frgb.y=clamp(frgb.y,MIN_A,MAX_A);
+            frgb.z=clamp(frgb.z,MIN_B,MAX_B);
+            p_data.y=fmin(w,maxweight);
             vol.set(pix,p_data, frgb);
         }
     }
@@ -265,11 +262,6 @@ __global__ void deIntegrateKernel(Volume vol,
         if (depth[px] == 0)
             continue;
 
-        /*
-        if(data[px].result ==-4 )
-            continue;
-        */
-
         const float diff = (depth[px] - cameraX.z) *
                            sqrt(1 + sq(pos.x / pos.z) + sq(pos.y / pos.z));
 
@@ -278,25 +270,28 @@ __global__ void deIntegrateKernel(Volume vol,
             const float sdf = fminf(1.f, diff / mu);
             float2 p_data = vol[pix];
 
-            float w=p_data.y;
-            //w=fminf(p_data.y, maxweight);
-//            float3 frgb = make_float3(rgb[px].x,rgb[px].y,rgb[px].z);
-            float3 frgb = make_float3(0.0,0.0,0.0);;
-            //if previous w was 0 restore initial contitions
-            if(w==1)
+            float w=p_data.y-1;
+            float3 frgb;
+            //if w is 0 restore initial contitions
+            if(w==0)
             {
                 p_data.x = 1;
                 p_data.y = 0;
-//                frgb = make_float3(0.0,0.0,0.0);
+                frgb = make_float3(0.0,0.0,0.0);
             }
             else
             {
                 float3 p_color = vol.getColor(pix);
-                p_data.x = ( w * p_data.x - sdf) / (w - 1.0f);
-                p_data.y = p_data.y - 1;
-                frgb.x = (p_color.x * w - rgb[px].x ) / (w - 1.0f);
-                frgb.y = (p_color.y * w - rgb[px].y ) / (w - 1.0f);
-                frgb.z = (p_color.z * w - rgb[px].z ) / (w - 1.0f);
+                p_data.x = clamp( (p_data.y * p_data.x - sdf) / w,-1.f,1.f);
+                frgb.x = (p_color.x * p_data.y - rgb[px].x ) / w;
+                frgb.y = (p_color.y * p_data.y - rgb[px].y ) / w;
+                frgb.z = (p_color.z * p_data.y - rgb[px].z ) / w;
+
+                frgb.x=clamp(frgb.x,MIN_L,MAX_L);
+                frgb.y=clamp(frgb.y,MIN_A,MAX_A);
+                frgb.z=clamp(frgb.z,MIN_B,MAX_B);
+
+                p_data.y = w;
             }
 
             vol.set(pix,p_data, frgb);
@@ -418,7 +413,9 @@ __global__ void renderRgbKernel(Image<uchar3> render,
     {
         float3 vertex=vert[pos];
         const float3 frgb = volume.rgb_interp(vertex);
-        render.el()=make_uchar3(frgb.x ,frgb.y ,frgb.z);
+        uchar3 rgb;
+        rgb=lab2rgb(frgb);
+        render.el()=rgb;        
     }
     else
     {

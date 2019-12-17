@@ -367,7 +367,7 @@ void CloseLoop::clear()
 }
 
 bool CloseLoop::isKeyFrame() const
-{
+{    
     if(_frame==4)
         return true;
 
