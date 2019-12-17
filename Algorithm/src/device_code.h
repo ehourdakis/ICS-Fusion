@@ -22,7 +22,7 @@ __device__ __forceinline__ float4 raycast(const Volume volume,
     // compute intersection of ray with all six bbox planes
     const float3 invR = make_float3(1.0f) / direction;
     const float3 tbot = -1 * invR * origin;
-    const float3 ttop = invR * (volume.getOrigin() - origin);
+    const float3 ttop = invR * (volume.getDimensions() - origin);
 
     // re-order intersections to find smallest and largest on each axis
     const float3 tmin = fminf(ttop, tbot);

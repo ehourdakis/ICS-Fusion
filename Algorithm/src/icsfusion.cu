@@ -25,8 +25,8 @@ IcsFusion::IcsFusion(kparams_t par,Matrix4 initPose)
     float3 vd = make_float3(params.volume_size.x,
                             params.volume_size.y,
                             params.volume_size.z);
-    volume.init(vr, vd);
-    newDataVol.init(vr, vd);
+    volume.init(vr, vd,params.sliceSize);
+    newDataVol.init(vr, vd,params.sliceSize);
 
     pose = initPose;
     oldPose=pose;
@@ -67,7 +67,7 @@ IcsFusion::IcsFusion(kparams_t par,Matrix4 initPose)
     output.alloc(make_uint2(32, 8));
     //generate gaussian array
     generate_gaussian<<< 1,gaussian.size.x>>>(gaussian, delta, radius);
-    dim3 grid = divup(dim3(volume.size().x, volume.size().y), imageBlock);
+    dim3 grid = divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock);
     TICK("initVolume");
     initVolumeKernel<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f));
     TOCK();
@@ -122,7 +122,7 @@ IcsFusion::~IcsFusion()
 
 void IcsFusion::reset()
 {
-    dim3 grid = divup(dim3(volume.size().x, volume.size().y), imageBlock);
+    dim3 grid = divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock);
     initVolumeKernel<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f));
 }
 
@@ -244,7 +244,7 @@ bool IcsFusion::raycasting(uint frame)
 
 void IcsFusion::integrateNewData(sMatrix4 p)
 {
-    dim3 grid=divup(dim3(newDataVol.size().x, newDataVol.size().y), imageBlock);
+    dim3 grid=divup(dim3(newDataVol.getResolution().x, newDataVol.getResolution().y), imageBlock);
     initVolumeKernel<<<grid, imageBlock>>>(newDataVol, make_float2(1.0f, 0.0f));
 
 
@@ -259,7 +259,7 @@ bool IcsFusion::integration(uint frame)
     if (doIntegrate || frame <= 3)
     {
         TICK("integrate");
-        dim3 grid=divup(dim3(volume.size().x, volume.size().y), imageBlock);
+        dim3 grid=divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock);
         integrateKernel<<<grid, imageBlock>>>(volume,
                                               rawDepth,
                                               rawRgb,
@@ -284,7 +284,7 @@ bool IcsFusion::deIntegration(sMatrix4 p,const Host &depth,const Host &rgb)
     image_copy(rawRgb,rgb, rawRgb.size.x*rawRgb.size.y*sizeof(uchar3));
 
     TICK("deintegrate");
-    deIntegrateKernel<<<divup(dim3(volume.size().x, volume.size().y), imageBlock), imageBlock>>>(volume,
+    deIntegrateKernel<<<divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock), imageBlock>>>(volume,
                                                                                            rawDepth,
                                                                                            rawRgb,
                                                                                            inverse(Matrix4(&p)),
@@ -301,7 +301,7 @@ bool IcsFusion::reIntegration(sMatrix4 p,const Host &depth,const Host &rgb)
     image_copy(rawDepth,depth, s*sizeof(float));
     image_copy(rawRgb,rgb, s*sizeof(uchar3));
     TICK("reintegrate");
-    integrateKernel<<<divup(dim3(volume.size().x, volume.size().y), imageBlock), imageBlock>>>(volume,
+    integrateKernel<<<divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock), imageBlock>>>(volume,
                                                                                            rawDepth,
                                                                                            rawRgb,
                                                                                            inverse(Matrix4(&p)),
@@ -344,13 +344,13 @@ Image<TrackData, Host> IcsFusion::getTrackData()
 void IcsFusion::getVertices(std::vector<float3> &vertices)
 {
     vertices.clear();
-    short2 *hostData = (short2 *) malloc(volume.size().x * volume.size().y * volume.size().z * sizeof(short2));
+    short2 *hostData = (short2 *) malloc(volume.getResolution().x * volume.getResolution().y * volume.getResolution().z * sizeof(short2));
 
     if (cudaMemcpy(hostData,
                    volume.getDataPtr(),
-                   volume.size().x *
-                   volume.size().y *
-                   volume.size().z *
+                   volume.getResolution().x *
+                   volume.getResolution().y *
+                   volume.getResolution().z *
                    sizeof(short2),
                    cudaMemcpyDeviceToHost) != cudaSuccess)
     {

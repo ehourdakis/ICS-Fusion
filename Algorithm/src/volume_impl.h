@@ -1,19 +1,43 @@
 #ifndef VOLUME_IMPL_H
 #define VOLUME_IMPL_H
 
-__forceinline__ __device__ float3 Volume::grad(const float3 & pos) const
+__forceinline__ __device__
+float Volume::generic_interp(const float3 & pos,const Fptr fp) const
 {
-    const float3 scaled_pos = make_float3((pos.x * _size.x / dim.x) - 0.5f,
-                                          (pos.y * _size.y / dim.y) - 0.5f,
-                                          (pos.z * _size.z / dim.z) - 0.5f);
+    const float3 scaled_pos = make_float3((pos.x * _resolution.x / dim.x) - 0.5f,
+                                          (pos.y * _resolution.y / dim.y) - 0.5f,
+                                          (pos.z * _resolution.z / dim.z) - 0.5f);
+    const int3 base = make_int3(floorf(scaled_pos));
+    const float3 factor = fracf(scaled_pos);
+    const int3 lower = max(base, make_int3(0));
+    const int3 upper = min(base + make_int3(1),make_int3(_resolution) - make_int3(1));
+
+    float tmp0 =( (this->*fp) (make_uint3(lower.x, lower.y, lower.z)) * (1 - factor.x) +
+                (this->*fp) (make_uint3(upper.x, lower.y, lower.z)) * factor.x ) * (1 - factor.y);
+    float tmp1 =( (this->*fp) (make_uint3(lower.x, upper.y, lower.z)) * (1 - factor.x) +
+                (this->*fp) (make_uint3(upper.x, upper.y, lower.z)) * factor.x) * factor.y ;
+    float tmp2 =( (this->*fp) (make_uint3(lower.x, lower.y, upper.z)) * (1 - factor.x) +
+                (this->*fp) (make_uint3(upper.x, lower.y, upper.z)) * factor.x) * (1 - factor.y);
+    float tmp3 =( (this->*fp) (make_uint3(lower.x, upper.y, upper.z)) * (1 - factor.x) +
+                (this->*fp) (make_uint3(upper.x, upper.y, upper.z)) * factor.x) * factor.y;
+
+    return ( (tmp0+tmp1) * (1 - factor.z) + (tmp2+tmp3) * factor.z ) ;
+}
+
+__forceinline__ __device__
+float3 Volume::grad(const float3 & pos) const
+{
+    const float3 scaled_pos = make_float3((pos.x * _resolution.x / dim.x) - 0.5f,
+                                          (pos.y * _resolution.y / dim.y) - 0.5f,
+                                          (pos.z * _resolution.z / dim.z) - 0.5f);
     const int3 base = make_int3(floorf(scaled_pos));
     const float3 factor = fracf(scaled_pos);
     const int3 lower_lower = max(base - make_int3(1), make_int3(0));
     const int3 lower_upper = max(base, make_int3(0));
     const int3 upper_lower = min(base + make_int3(1),
-                                 make_int3(_size) - make_int3(1));
+                                 make_int3(_resolution) - make_int3(1));
     const int3 upper_upper = min(base + make_int3(2),
-                                 make_int3(_size) - make_int3(1));
+                                 make_int3(_resolution) - make_int3(1));
     const int3 & lower = lower_upper;
     const int3 & upper = upper_lower;
 
@@ -128,7 +152,7 @@ __forceinline__ __device__ float3 Volume::grad(const float3 & pos) const
                        * factor.x) * factor.y) * factor.z;
 
     return gradient
-            * make_float3(dim.x / _size.x, dim.y / _size.y, dim.z / _size.z)
+            * make_float3(dim.x / _resolution.x, dim.y / _resolution.y, dim.z / _resolution.z)
             * (0.5f * 0.00003051944088f);
 }
 

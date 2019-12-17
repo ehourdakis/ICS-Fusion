@@ -129,10 +129,10 @@ void saveVoxelsToFile(const Volume volume,const kparams_t &params, std::string f
     outFile<<vol_size<<std::endl;
     outFile<<params.mu<<std::endl;
 
-    short2 *voxel_grid_cpu=new short2[volume.size().x*volume.size().y*volume.size().z];
+    short2 *voxel_grid_cpu=new short2[volume.getResolution().x*volume.getResolution().y*volume.getResolution().z];
 
     cudaMemcpy(voxel_grid_cpu, volume.getDataPtr(),
-                   volume.size().x*volume.size().y*volume.size().z* sizeof(short2),
+                   volume.getResolution().x*volume.getResolution().y*volume.getResolution().z* sizeof(short2),
                    cudaMemcpyDeviceToHost);
 
     for(int i=0;i<params.volume_resolution.x*params.volume_resolution.y*params.volume_resolution.z;i++)
