@@ -9,7 +9,7 @@
 class Volume
 {
     private:
-        typedef float (Volume::*Fptr)(const uint3&) const;
+        typedef float (Volume::*Fptr)(const int3&) const;
 
     public:
         Volume()
@@ -25,6 +25,18 @@ class Volume
             return _resolution;
         }
 
+        __host__ __device__ int3 getOffset() const
+        {
+            return _offset;
+        }
+
+        __host__ __device__ void addOffset(int3 off)
+        {
+            _offset.x=off.x;
+            _offset.y+=off.y;
+            _offset.z+=off.z;
+        }
+
         __host__ __device__ short2*  getDataPtr() const
         {
             return data;
@@ -35,9 +47,9 @@ class Volume
             return dim;
         }
 
-        __device__ size_t getPos(const uint3 &p) const
+        __device__ size_t getPos(const int3 &p) const
         {
-            uint3 pos;
+            int3 pos;
             pos.x=p.x%_resolution.x;
             pos.y=p.y%_resolution.y;
             pos.z=p.z%_resolution.z;
@@ -46,45 +58,45 @@ class Volume
         }
 
         __device__
-        float2 operator[](const uint3 & pos) const
+        float2 operator[](const int3 & pos) const
         {
             const short2 d = data[getPos(pos)];
             return make_float2(d.x * 0.00003051944088f, d.y); //  / 32766.0f
         }
 
         __device__
-        float3 getColor(const uint3 & pos) const
+        float3 getColor(const int3 & pos) const
         {
             return color[getPos(pos)];
         }
 
         __device__
-        float vs(const uint3 & pos) const
+        float vs(const int3 & pos) const
         {
             return data[getPos(pos)].x;
         }
 
         __device__
-        float red(const uint3 & pos) const
+        float red(const int3 & pos) const
         {
             return color[getPos(pos)].x;
         }
 
         __device__
-        float green(const uint3 & pos) const
+        float green(const int3 & pos) const
         {
             return color[getPos(pos)].y;
         }
 
         __device__
-        float blue(const uint3 & pos) const
+        float blue(const int3 & pos) const
         {
             //return color[pos.x + pos.y * _size.x + pos.z * _size.x * _size.y].z;
             return color[getPos(pos)].z;
         }
 
         __device__
-        void set(const uint3 & pos, const float2 & d)
+        void set(const int3 & pos, const float2 & d)
         {
             size_t idx=getPos(pos);
             data[idx] = make_short2(d.x * 32766.0f, d.y);
@@ -92,7 +104,7 @@ class Volume
         }
 
         __device__
-        void set(const uint3 & pos, const float2 &d,const float3 &c)
+        void set(const int3 & pos, const float2 &d,const float3 &c)
         {
             size_t p=getPos(pos);
             data[p] = make_short2(d.x * 32766.0f, d.y);
@@ -100,7 +112,7 @@ class Volume
         }
 
         __device__
-        float3 pos(const uint3 & p) const
+        float3 pos(const int3 & p) const
         {
             return make_float3((p.x + 0.5f) * dim.x / _resolution.x,
                                (p.y + 0.5f) * dim.y / _resolution.y, (p.z + 0.5f) * dim.z / _resolution.z);
@@ -147,6 +159,8 @@ class Volume
             voxelSize.x=dim.x/_resolution.x;
             voxelSize.y=dim.y/_resolution.y;
             voxelSize.z=dim.z/_resolution.z;
+
+            _offset=make_int3(0,0,0);
         }
 
         void release()
@@ -167,6 +181,7 @@ class Volume
         float3 dim;
         uint3 _sliceSize;
         float3 voxelSize;
+        int3 _offset;
 
         short2 *data;
         float3 *color;

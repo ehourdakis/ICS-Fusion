@@ -124,6 +124,9 @@ inline __host__     __device__ int3 make_int3(int s) {
 inline __host__     __device__ int3 make_int3(int2 a) {
 	return make_int3(a.x, a.y, 0);
 }
+inline __host__     __device__ int3 make_int3(uint2 a) {
+        return make_int3( int(a.x), int(a.y), 0);
+}
 inline __host__     __device__ int3 make_int3(int2 a, int s) {
 	return make_int3(a.x, a.y, s);
 }
@@ -133,6 +136,10 @@ inline __host__     __device__ int3 make_int3(uint3 a) {
 inline __host__     __device__ int3 make_int3(float3 a) {
 	return make_int3(int(a.x), int(a.y), int(a.z));
 }
+
+//inline __host__     __device__ int3 make_int3(uint3 a) {
+//        return make_int3(int(a.x), int(a.y), int(a.z));
+//}
 
 inline __host__     __device__ uint3 make_uint3(uint s) {
 	return make_uint3(s, s, s);

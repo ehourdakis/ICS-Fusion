@@ -131,7 +131,7 @@ __global__ void renderVolumeKernel2(Image<uchar3> render,
 */
 __global__ void initVolumeKernel(Volume volume, const float2 val)
 {
-    uint3 pos = make_uint3(thr2pos2());
+    int3 pos = make_int3(thr2pos2());
     for (pos.z = 0; pos.z < volume.getResolution().z; ++pos.z)
         volume.set(pos, val);
 }
@@ -176,7 +176,7 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
                                 const float mu,
                                 const float maxweight)
 {
-    uint3 pix = make_uint3(thr2pos2());
+    int3 pix = make_int3(thr2pos2());
     float3 pos = invTrack * vol.pos(pix);
     float3 cameraX = K * pos;
     const float3 delta = rotate(invTrack,make_float3(0, 0, vol.getDimensions().z / vol.getResolution().z));
@@ -204,6 +204,7 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
         const float diff = (depth[px] - cameraX.z) *
                            sqrt(1 + sq(pos.x / pos.z) + sq(pos.y / pos.z));
 
+        pix=pix+vol.getOffset();
         if (diff > -mu)
         {
             const float sdf = fminf(1.f, diff / mu);
@@ -238,7 +239,7 @@ __global__ void deIntegrateKernel(Volume vol,
                                   const float mu,
                                   const float maxweight)
 {
-    uint3 pix = make_uint3(thr2pos2());
+    int3 pix = make_int3(thr2pos2());
     float3 pos = invTrack * vol.pos(pix);
     float3 cameraX = K * pos;
     const float3 delta = rotate(invTrack,make_float3(0, 0, vol.getDimensions().z / vol.getResolution().z));
@@ -268,6 +269,7 @@ __global__ void deIntegrateKernel(Volume vol,
         if (diff > -mu)
         {
             const float sdf = fminf(1.f, diff / mu);
+            pix=pix+vol.getOffset();
             float2 p_data = vol[pix];
 
             float w=p_data.y-1;
@@ -637,7 +639,7 @@ __global__ void wrongNormalsSizeKernel(Image<int> out,const Image<TrackData> dat
     }
     */
 }
-
+/*
 __global__ void copyVolumeData(uint3 *posArray,const Volume volume, float *dest)
 {
     int batch_pos = threadIdx.x;
@@ -652,40 +654,12 @@ __global__ void copyVolumeData(uint3 *posArray,const Volume volume, float *dest)
     uint3 pos=center+block-make_uint3(15,15,15);
     uint idx=pos.z*30*30+pos.y*30+ pos.x;
     dest[30*30*30*batch_pos+idx]=volume[pos].x;
-    /*
-    uint num=thr2pos();
-    uint3 pos=posArray[num];
 
-    for(int z = pos.z - 15; z < pos.z + 15; z++)
-    {
-        for(int y=pos.y-15; y<pos.y+15;y++)
-        {
-            for(int x=pos.x-15; x<pos.x+15;x++)
-            {
-                uint3 p=make_uint3(x,y,z);
-                uint idx=z*30*30+y*30+ x;
-                dest[30*30*30*num+idx]=volume[p].x;
-            }
-        }
-    }
-    */
 }
 
 __global__ void copyVolumeData2(uint3 *posArray,const Volume volume,
                                 float *dest,char *isEmpty)
 {
-//    int batch_pos = threadIdx.x;
-//    uint3 block=blockIdx;
-//    printf("%d %d %d %d\n",
-//           blockDim.x,
-//           blockDim.y,
-//           blockDim.z,
-//           batch_pos);
-
-//    uint3 center=posArray[batch_pos];
-//    uint3 pos=center+block-make_uint3(15,15,15);
-//    uint idx=pos.z*30*30+pos.y*30+ pos.x;
-//    dest[30*30*30*batch_pos+idx]=volume[pos].x;
 
     uint num=threadIdx.x;
     uint3 pos=posArray[num];
@@ -713,7 +687,7 @@ __global__ void copyVolumeData2(uint3 *posArray,const Volume volume,
         isEmpty[num]=0;
 
 }
-
+*/
 
 //=================ICP COVARIANCE======================
 

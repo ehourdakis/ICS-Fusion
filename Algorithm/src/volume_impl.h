@@ -12,14 +12,14 @@ float Volume::generic_interp(const float3 & pos,const Fptr fp) const
     const int3 lower = max(base, make_int3(0));
     const int3 upper = min(base + make_int3(1),make_int3(_resolution) - make_int3(1));
 
-    float tmp0 =( (this->*fp) (make_uint3(lower.x, lower.y, lower.z)) * (1 - factor.x) +
-                (this->*fp) (make_uint3(upper.x, lower.y, lower.z)) * factor.x ) * (1 - factor.y);
-    float tmp1 =( (this->*fp) (make_uint3(lower.x, upper.y, lower.z)) * (1 - factor.x) +
-                (this->*fp) (make_uint3(upper.x, upper.y, lower.z)) * factor.x) * factor.y ;
-    float tmp2 =( (this->*fp) (make_uint3(lower.x, lower.y, upper.z)) * (1 - factor.x) +
-                (this->*fp) (make_uint3(upper.x, lower.y, upper.z)) * factor.x) * (1 - factor.y);
-    float tmp3 =( (this->*fp) (make_uint3(lower.x, upper.y, upper.z)) * (1 - factor.x) +
-                (this->*fp) (make_uint3(upper.x, upper.y, upper.z)) * factor.x) * factor.y;
+    float tmp0 =( (this->*fp) (make_int3(lower.x, lower.y, lower.z)) * (1 - factor.x) +
+                (this->*fp) (make_int3(upper.x, lower.y, lower.z)) * factor.x ) * (1 - factor.y);
+    float tmp1 =( (this->*fp) (make_int3(lower.x, upper.y, lower.z)) * (1 - factor.x) +
+                (this->*fp) (make_int3(upper.x, upper.y, lower.z)) * factor.x) * factor.y ;
+    float tmp2 =( (this->*fp) (make_int3(lower.x, lower.y, upper.z)) * (1 - factor.x) +
+                (this->*fp) (make_int3(upper.x, lower.y, upper.z)) * factor.x) * (1 - factor.y);
+    float tmp3 =( (this->*fp) (make_int3(lower.x, upper.y, upper.z)) * (1 - factor.x) +
+                (this->*fp) (make_int3(upper.x, upper.y, upper.z)) * factor.x) * factor.y;
 
     return ( (tmp0+tmp1) * (1 - factor.z) + (tmp2+tmp3) * factor.z ) ;
 }
@@ -44,110 +44,110 @@ float3 Volume::grad(const float3 & pos) const
     float3 gradient;
 
     gradient.x = ((
-        ( vs(make_uint3(upper_lower.x, lower.y, lower.z))-vs(make_uint3(lower_lower.x, lower.y, lower.z))) * (1 - factor.x)
-        + ( vs(make_uint3(upper_upper.x, lower.y, lower.z))-vs(make_uint3(lower_upper.x, lower.y, lower.z))) * factor.x) * (1 - factor.y)
-        + ( (vs(make_uint3(upper_lower.x, upper.y, lower.z)) - vs(make_uint3(lower_lower.x, upper.y, lower.z)))* (1 - factor.x)
-            + (vs(make_uint3(upper_upper.x, upper.y, lower.z))- vs(make_uint3(lower_upper.x, upper.y,lower.z))) * factor.x) * factor.y) * (1 - factor.z)
-                 + (((vs(make_uint3(upper_lower.x, lower.y, upper.z))
-                      - vs(make_uint3(lower_lower.x, lower.y, upper.z)))
+        ( vs(make_int3(upper_lower.x, lower.y, lower.z))-vs(make_int3(lower_lower.x, lower.y, lower.z))) * (1 - factor.x)
+        + ( vs(make_int3(upper_upper.x, lower.y, lower.z))-vs(make_int3(lower_upper.x, lower.y, lower.z))) * factor.x) * (1 - factor.y)
+        + ( (vs(make_int3(upper_lower.x, upper.y, lower.z)) - vs(make_int3(lower_lower.x, upper.y, lower.z)))* (1 - factor.x)
+            + (vs(make_int3(upper_upper.x, upper.y, lower.z))- vs(make_int3(lower_upper.x, upper.y,lower.z))) * factor.x) * factor.y) * (1 - factor.z)
+                 + (((vs(make_int3(upper_lower.x, lower.y, upper.z))
+                      - vs(make_int3(lower_lower.x, lower.y, upper.z)))
                      * (1 - factor.x)
-                     + (vs(make_uint3(upper_upper.x, lower.y, upper.z))
+                     + (vs(make_int3(upper_upper.x, lower.y, upper.z))
                         - vs(
-                            make_uint3(lower_upper.x, lower.y,
+                            make_int3(lower_upper.x, lower.y,
                                        upper.z))) * factor.x)
                     * (1 - factor.y)
-                    + ((vs(make_uint3(upper_lower.x, upper.y, upper.z))
+                    + ((vs(make_int3(upper_lower.x, upper.y, upper.z))
                         - vs(
-                            make_uint3(lower_lower.x, upper.y,
+                            make_int3(lower_lower.x, upper.y,
                                        upper.z))) * (1 - factor.x)
                        + (vs(
-                              make_uint3(upper_upper.x, upper.y,
+                              make_int3(upper_upper.x, upper.y,
                                          upper.z))
                           - vs(
-                              make_uint3(lower_upper.x,
+                              make_int3(lower_upper.x,
                                          upper.y, upper.z)))
                        * factor.x) * factor.y) * factor.z;
 
     gradient.y =
-            (((vs(make_uint3(lower.x, upper_lower.y, lower.z))
-               - vs(make_uint3(lower.x, lower_lower.y, lower.z)))
+            (((vs(make_int3(lower.x, upper_lower.y, lower.z))
+               - vs(make_int3(lower.x, lower_lower.y, lower.z)))
               * (1 - factor.x)
-              + (vs(make_uint3(upper.x, upper_lower.y, lower.z))
+              + (vs(make_int3(upper.x, upper_lower.y, lower.z))
                  - vs(
-                     make_uint3(upper.x, lower_lower.y,
+                     make_int3(upper.x, lower_lower.y,
                                 lower.z))) * factor.x)
              * (1 - factor.y)
-             + ((vs(make_uint3(lower.x, upper_upper.y, lower.z))
+             + ((vs(make_int3(lower.x, upper_upper.y, lower.z))
                  - vs(
-                     make_uint3(lower.x, lower_upper.y,
+                     make_int3(lower.x, lower_upper.y,
                                 lower.z))) * (1 - factor.x)
                 + (vs(
-                       make_uint3(upper.x, upper_upper.y,
+                       make_int3(upper.x, upper_upper.y,
                                   lower.z))
                    - vs(
-                       make_uint3(upper.x,
+                       make_int3(upper.x,
                                   lower_upper.y, lower.z)))
                 * factor.x) * factor.y) * (1 - factor.z)
-            + (((vs(make_uint3(lower.x, upper_lower.y, upper.z))
+            + (((vs(make_int3(lower.x, upper_lower.y, upper.z))
                  - vs(
-                     make_uint3(lower.x, lower_lower.y,
+                     make_int3(lower.x, lower_lower.y,
                                 upper.z))) * (1 - factor.x)
                 + (vs(
-                       make_uint3(upper.x, upper_lower.y,
+                       make_int3(upper.x, upper_lower.y,
                                   upper.z))
                    - vs(
-                       make_uint3(upper.x,
+                       make_int3(upper.x,
                                   lower_lower.y, upper.z)))
                 * factor.x) * (1 - factor.y)
                + ((vs(
-                       make_uint3(lower.x, upper_upper.y,
+                       make_int3(lower.x, upper_upper.y,
                                   upper.z))
                    - vs(
-                       make_uint3(lower.x,
+                       make_int3(lower.x,
                                   lower_upper.y, upper.z)))
                   * (1 - factor.x)
                   + (vs(
-                         make_uint3(upper.x,
+                         make_int3(upper.x,
                                     upper_upper.y, upper.z))
                      - vs(
-                         make_uint3(upper.x,
+                         make_int3(upper.x,
                                     lower_upper.y,
                                     upper.z)))
                   * factor.x) * factor.y)
             * factor.z;
 
-    gradient.z = (((vs(make_uint3(lower.x, lower.y, upper_lower.z))
-                    - vs(make_uint3(lower.x, lower.y, lower_lower.z)))
+    gradient.z = (((vs(make_int3(lower.x, lower.y, upper_lower.z))
+                    - vs(make_int3(lower.x, lower.y, lower_lower.z)))
                    * (1 - factor.x)
-                   + (vs(make_uint3(upper.x, lower.y, upper_lower.z))
-                      - vs(make_uint3(upper.x, lower.y, lower_lower.z)))
+                   + (vs(make_int3(upper.x, lower.y, upper_lower.z))
+                      - vs(make_int3(upper.x, lower.y, lower_lower.z)))
                    * factor.x) * (1 - factor.y)
-                  + ((vs(make_uint3(lower.x, upper.y, upper_lower.z))
-                      - vs(make_uint3(lower.x, upper.y, lower_lower.z)))
+                  + ((vs(make_int3(lower.x, upper.y, upper_lower.z))
+                      - vs(make_int3(lower.x, upper.y, lower_lower.z)))
                      * (1 - factor.x)
-                     + (vs(make_uint3(upper.x, upper.y, upper_lower.z))
+                     + (vs(make_int3(upper.x, upper.y, upper_lower.z))
                         - vs(
-                            make_uint3(upper.x, upper.y,
+                            make_int3(upper.x, upper.y,
                                        lower_lower.z))) * factor.x)
                   * factor.y) * (1 - factor.z)
-                 + (((vs(make_uint3(lower.x, lower.y, upper_upper.z))
-                      - vs(make_uint3(lower.x, lower.y, lower_upper.z)))
+                 + (((vs(make_int3(lower.x, lower.y, upper_upper.z))
+                      - vs(make_int3(lower.x, lower.y, lower_upper.z)))
                      * (1 - factor.x)
-                     + (vs(make_uint3(upper.x, lower.y, upper_upper.z))
+                     + (vs(make_int3(upper.x, lower.y, upper_upper.z))
                         - vs(
-                            make_uint3(upper.x, lower.y,
+                            make_int3(upper.x, lower.y,
                                        lower_upper.z))) * factor.x)
                     * (1 - factor.y)
-                    + ((vs(make_uint3(lower.x, upper.y, upper_upper.z))
+                    + ((vs(make_int3(lower.x, upper.y, upper_upper.z))
                         - vs(
-                            make_uint3(lower.x, upper.y,
+                            make_int3(lower.x, upper.y,
                                        lower_upper.z)))
                        * (1 - factor.x)
                        + (vs(
-                              make_uint3(upper.x, upper.y,
+                              make_int3(upper.x, upper.y,
                                          upper_upper.z))
                           - vs(
-                              make_uint3(upper.x, upper.y,
+                              make_int3(upper.x, upper.y,
                                          lower_upper.z)))
                        * factor.x) * factor.y) * factor.z;
 
