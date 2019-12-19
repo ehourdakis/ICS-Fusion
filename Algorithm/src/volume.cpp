@@ -112,15 +112,12 @@ void saveVoxelsToFile(const Volume volume,const kparams_t &params, std::string f
     origin[1]=0.0;
     origin[2]=0.0;
 
-    /*
-    origin[0]=-2.5;
-    origin[1]=-2.5;
-    origin[2]=-2.5;
 
-    origin[0]=0;
-    origin[1]=0;
-    origin[2]=0;
-    */
+    origin[0]=volume.getOffset().x;
+    origin[1]=volume.getOffset().y;
+    origin[2]=volume.getOffset().z;
+
+
     outFile<<origin[0]<<std::endl;
     outFile<<origin[1]<<std::endl;
     outFile<<origin[2]<<std::endl;
@@ -135,12 +132,27 @@ void saveVoxelsToFile(const Volume volume,const kparams_t &params, std::string f
                    volume.getResolution().x*volume.getResolution().y*volume.getResolution().z* sizeof(short2),
                    cudaMemcpyDeviceToHost);
 
-    for(int i=0;i<params.volume_resolution.x*params.volume_resolution.y*params.volume_resolution.z;i++)
+    //for(int i=0;i<params.volume_resolution.x*params.volume_resolution.y*params.volume_resolution.z;i++)
+
+    for(int x=0;x<params.volume_resolution.x;x++)
     {
-            short2 data=voxel_grid_cpu[i];
-            float value=float(data.x)/32766.0f;
-            outFile<<value<<'\n';
+        for(int y=0;y<params.volume_resolution.y;y++)
+        {
+            for(int z=0;z<params.volume_resolution.z;z++)
+            {
+                int3 pix;
+                pix.x=volume.getOffset().x+x;
+                pix.y=volume.getOffset().y+y;
+                pix.z=volume.getOffset().z+z;
+
+                int pos=volume.getPos(pix);
+                short2 data=voxel_grid_cpu[pos];
+                float value=float(data.x)/32766.0f;
+                outFile<<value<<'\n';
+            }
+        }
     }
+
     outFile.close();
 
     std::cout<<"Saving done."<<std::endl;

@@ -30,9 +30,30 @@ class Volume
             return _offset;
         }
 
+        __host__ __device__ float3 getOffsetPos() const
+        {
+            return make_float3(_offset.x*voxelSize.x,
+                               _offset.y*voxelSize.y,
+                               _offset.z*voxelSize.z
+                        );
+        }
+
+        __host__ __device__ float3 getDimWithOffset() const
+        {
+            float3 ret=make_float3( dim.x+_offset.x*voxelSize.x,
+                                    dim.y+_offset.y*voxelSize.y,
+                                    dim.z+_offset.z*voxelSize.z);
+
+            int3 v=maxVoxel();
+            ret.x=(v.x-1)*voxelSize.x;
+            ret.y=(v.y-1)*voxelSize.y;
+            ret.z=(v.z-1)*voxelSize.z;
+            return ret;
+        }
+
         __host__ __device__ void addOffset(int3 off)
         {
-            _offset.x=off.x;
+            _offset.x+=off.x;
             _offset.y+=off.y;
             _offset.z+=off.z;
         }
@@ -50,9 +71,54 @@ class Volume
         __device__ size_t getPos(const int3 &p) const
         {
             int3 pos;
-            pos.x=p.x%_resolution.x;
-            pos.y=p.y%_resolution.y;
-            pos.z=p.z%_resolution.z;
+
+            if(p.x<minVoxel().x)
+            {
+                printf("minx %d %d\n",p.x,minVoxel().x);
+            }
+            if(p.y<minVoxel().y)
+            {
+                printf("miny %d %d\n",p.y,minVoxel().y);
+            }
+            if(p.z<minVoxel().z)
+            {
+                printf("minz %d %d\n",p.z,minVoxel().z);
+            }
+
+            if(p.x>=maxVoxel().x)
+            {
+                printf("maxx %d %d\n",p.x,maxVoxel().x);
+            }
+            if(p.y>=maxVoxel().y)
+            {
+                printf("maxy %d %d\n",p.y,maxVoxel().y);
+            }
+            if(p.z>=maxVoxel().z)
+            {
+                printf("maxz %d %d\n",p.z,maxVoxel().z);
+            }
+
+            pos.x=(p.x-_offset.x-1)%_resolution.x;
+            pos.y=(p.y-_offset.y-1)%_resolution.y;
+            pos.z=(p.z-_offset.z-1)%_resolution.z;
+
+//            pos.x=(p.x-_offset.x);
+//            pos.y=(p.y-_offset.y);
+//            pos.z=(p.z-_offset.z);
+
+            if(pos.x<0)
+            {
+                printf("zerox %d\n",pos.x);
+            }
+            if(pos.y<0)
+            {
+                printf("zeroy %d\n",pos.y);
+            }
+            if(pos.z<0)
+            {
+                printf("zeroz %d\n",pos.z);
+            }
+
             //pos.x + pos.y * _size.x + pos.z * _size.x * _size.y
             return pos.x + pos.y * _resolution.x + pos.z * _resolution.x * _resolution.y;
         }
@@ -114,8 +180,12 @@ class Volume
         __device__
         float3 pos(const int3 & p) const
         {
-            return make_float3((p.x + 0.5f) * dim.x / _resolution.x,
-                               (p.y + 0.5f) * dim.y / _resolution.y, (p.z + 0.5f) * dim.z / _resolution.z);
+//            return make_float3( ( (p.x + 0.5f) * dim.x / _resolution.x)+_offset.x ,
+//                                ( (p.y + 0.5f) * dim.y / _resolution.y)+_offset.y ,
+//                                ( (p.z + 0.5f) * dim.z / _resolution.z)+_offset.z);
+            return make_float3( ( (p.x + 0.5f) * voxelSize.x),
+                                ( (p.y + 0.5f) * voxelSize.y),
+                                ( (p.z + 0.5f) * voxelSize.z));
         }
 
         __device__
@@ -126,8 +196,12 @@ class Volume
         }
 
         __device__
-        float3 rgb_interp(const float3 & pos) const
+        float3 rgb_interp(const float3 &p) const
         {
+            float3 pos=p;/*
+            pos.x=pos.x+_offset.x*voxelSize.x;
+            pos.y=pos.x+_offset.y*voxelSize.y;
+            pos.z=pos.x+_offset.z*voxelSize.z;*/
 
             float3 rgb;
             const Fptr red_ptr = &Volume::red;
@@ -160,7 +234,28 @@ class Volume
             voxelSize.y=dim.y/_resolution.y;
             voxelSize.z=dim.z/_resolution.z;
 
-            _offset=make_int3(0,0,0);
+            float3 offsetF=make_float3( (-4.f/voxelSize.x)+0.5f,
+                                        (-4.f/voxelSize.y)+0.5f,
+                                        (-4.f/voxelSize.z)+0.5f);
+            _offset=make_int3(int(offsetF.x),int(offsetF.y),int(offsetF.z));
+
+            printf("%f %f %f\n",offsetF.x,offsetF.y,offsetF.z);
+            printf("%d %d %d\n",_offset.x,_offset.y,_offset.z);
+
+            printf("%d %d %d\n",_resolution.x+_offset.x,_resolution.y+_offset.y,_resolution.z+_offset.z);
+//            _offset=make_int3(0,0,0);
+        }
+
+        __host__ __device__ int3 minVoxel() const
+        {
+            return _offset;
+        }
+
+        __host__ __device__ int3 maxVoxel() const
+        {
+            return make_int3( int(_resolution.x)+_offset.x,
+                              int(_resolution.y)+_offset.y,
+                              int(_resolution.z)+_offset.z);
         }
 
         void release()

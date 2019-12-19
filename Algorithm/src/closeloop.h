@@ -79,7 +79,10 @@ class CloseLoop
         float minTrans;
         float maxTrans;
 
-//        static void eulerFromHomo(const sMatrix4 &mat, float &roll,float &pitch,float &yaw);
+        uint3 sliceSize;
+
+        //check if volume need sift
+        bool needSift() const;
 
 };
 

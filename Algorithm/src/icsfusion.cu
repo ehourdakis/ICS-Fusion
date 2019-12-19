@@ -25,8 +25,8 @@ IcsFusion::IcsFusion(kparams_t par,Matrix4 initPose)
     float3 vd = make_float3(params.volume_size.x,
                             params.volume_size.y,
                             params.volume_size.z);
-    volume.init(vr, vd,params.sliceSize);
-    newDataVol.init(vr, vd,params.sliceSize);
+    volume.init(vr, vd,params.voxelSliceSize);
+    newDataVol.init(vr, vd,params.voxelSliceSize);
 
     pose = initPose;
     oldPose=pose;
@@ -69,6 +69,7 @@ IcsFusion::IcsFusion(kparams_t par,Matrix4 initPose)
     generate_gaussian<<< 1,gaussian.size.x>>>(gaussian, delta, radius);
     dim3 grid = divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock);
     TICK("initVolume");
+    printf("initVolume\n");
     initVolumeKernel<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f));
     TOCK();
 
@@ -123,6 +124,7 @@ IcsFusion::~IcsFusion()
 void IcsFusion::reset()
 {
     dim3 grid = divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock);
+    printf("rest\n");
     initVolumeKernel<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f));
 }
 
@@ -235,7 +237,7 @@ bool IcsFusion::raycasting(uint frame)
                                               nearPlane,
                                               farPlane,
                                               step,
-                                              largestep);
+                                              largestep,frame);
         TOCK();
     }
 
@@ -258,6 +260,8 @@ bool IcsFusion::integration(uint frame)
     bool doIntegrate = checkPoseKernel(pose, oldPose, output.data(),params.computationSize, track_threshold);
     if (doIntegrate || frame <= 3)
     {
+        printCUDAError();
+        printf("integrateKernel\n");
         TICK("integrate");
         dim3 grid=divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock);
         integrateKernel<<<grid, imageBlock>>>(volume,
@@ -267,6 +271,8 @@ bool IcsFusion::integration(uint frame)
                                               camMatrix,
                                               params.mu,
                                               maxweight );
+
+        printCUDAError();
         TOCK();       
         doIntegrate = true;
     }
@@ -414,11 +420,14 @@ void IcsFusion::getImageProjection(sMatrix4 p, uchar3 *out)
 
     dim3 grid=divup(params.inputSize,raycastBlock );
     //raycast from given pose
+    printCUDAError();
+    printf("raycastKernel\n");
     raycastKernel<<<grid, raycastBlock>>>(vertexNew, normalNew, volume, p * inverseCam,
-                                         nearPlane,farPlane,step,largestep);
+                                         nearPlane,farPlane,step,largestep,1);
     
     cudaDeviceSynchronize();
-    
+    printCUDAError();
+
     grid=divup(params.inputSize,imageBlock );
     renderRgbKernel<<<grid, imageBlock>>>( renderModel,volume,vertexNew,normalNew);
 

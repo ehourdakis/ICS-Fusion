@@ -132,8 +132,13 @@ __global__ void renderVolumeKernel2(Image<uchar3> render,
 __global__ void initVolumeKernel(Volume volume, const float2 val)
 {
     int3 pos = make_int3(thr2pos2());
-    for (pos.z = 0; pos.z < volume.getResolution().z; ++pos.z)
+    pos=pos+volume.getOffset();
+//    pos.x=pos.x+volume.getOffset().x;
+//    pos.y=pos.y+volume.getOffset().y;
+    for (; pos.z < volume.maxVoxel().z; pos.z++)
+    {
         volume.set(pos, val);
+    }
 }
 
 __global__ void raycastKernel(Image<float3> pos3D,
@@ -143,10 +148,11 @@ __global__ void raycastKernel(Image<float3> pos3D,
                               const float nearPlane,
                               const float farPlane,
                               const float step,
-                              const float largestep)
+                              const float largestep,
+                              int frame)
 {
     const uint2 pos = thr2pos2();
-    const float4 hit = raycast(volume, pos, view, nearPlane, farPlane, step,largestep);
+    const float4 hit = raycast(volume, pos, view, nearPlane, farPlane, step,largestep,frame);
 
     if (hit.w > 0)
     {
@@ -154,7 +160,7 @@ __global__ void raycastKernel(Image<float3> pos3D,
         float3 surfNorm = volume.grad(make_float3(hit));
         if (length(surfNorm) == 0)
         {
-            normal[pos].x = INVALID;
+            normal[pos].x = INVALID;            
         }
         else
         {
@@ -177,17 +183,27 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
                                 const float maxweight)
 {
     int3 pix = make_int3(thr2pos2());
+    pix=pix+vol.getOffset();
+
     float3 pos = invTrack * vol.pos(pix);
     float3 cameraX = K * pos;
     const float3 delta = rotate(invTrack,make_float3(0, 0, vol.getDimensions().z / vol.getResolution().z));
     const float3 cameraDelta = rotate(K, delta);
 
 
-
-    for (pix.z = 0; pix.z < vol.getResolution().z; ++pix.z, pos += delta, cameraX +=cameraDelta)
+    //for (int z = 0; z < int(vol.getResolution().z); z++, pos += delta, cameraX +=cameraDelta)
+    for (pix.z = vol.minVoxel().x; pix.z < vol.maxVoxel().z; ++pix.z, pos += delta, cameraX +=cameraDelta)
     {
+
         if (pos.z < 0.0001f) // some near plane constraint
+        {
+//            float f=fabs(pos.z);
+//            printf("%f %f\n",f,pos.z);
             continue;
+        }
+
+//        if (pos.z < 0.0001f) // some near plane constraint
+//            continue;
 
         const float2 pixel = make_float2(cameraX.x / cameraX.z + 0.5f,
                                          cameraX.y / cameraX.z + 0.5f);
@@ -204,9 +220,12 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
         const float diff = (depth[px] - cameraX.z) *
                            sqrt(1 + sq(pos.x / pos.z) + sq(pos.y / pos.z));
 
-        pix=pix+vol.getOffset();
+        //pix.z=z+vol.getOffset().z;
         if (diff > -mu)
         {
+            //pix.z=vol.getOffset().z+z;
+//            pix.z=z;
+//            pix=pix+vol.getOffset();
             const float sdf = fminf(1.f, diff / mu);
 
             float2 p_data = vol[pix];

@@ -13,10 +13,11 @@ typedef struct
     int tracking_rate=1;
     uint3 volume_resolution = make_uint3(256,256,256);
 //     uint3 volume_resolution = make_uint3(512,512,512);
-    float3 volume_direction = make_float3(4,4,4);
+    float3 volume_direction = make_float3(0,0,0);
+//    float3 volume_direction = make_float3(4,4,4);
     float3 volume_size = make_float3(8,8,8);
 
-    uint3 sliceSize=make_uint3(32,32,32);
+    uint3 voxelSliceSize=make_uint3(32,32,32);
 
     std::vector<int> pyramid = {10,5,4};
     float mu = 0.1;

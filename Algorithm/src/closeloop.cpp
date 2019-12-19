@@ -17,6 +17,15 @@ CloseLoop::CloseLoop(kparams_t p,sMatrix4 initPose)
 {
     _fusion = new IcsFusion(params,initPose);
 
+    uint3 voxelSize;
+    voxelSize.x=params.volume_direction.x/params.volume_resolution.x;
+    voxelSize.y=params.volume_direction.y/params.volume_resolution.y;
+    voxelSize.z=params.volume_direction.z/params.volume_resolution.z;
+
+    sliceSize.x=voxelSize.x*params.voxelSliceSize.x;
+    sliceSize.y=voxelSize.y*params.voxelSliceSize.y;
+    sliceSize.z=voxelSize.z*params.voxelSliceSize.z;
+
 #ifdef USE_G2O
     _isam=new G2oGraph(params);
 #else
@@ -97,6 +106,18 @@ bool CloseLoop::addFrame(uint16_t *depth,uchar3 *rgb)
 
 
     _frame++;
+
+//    if(_frame==5)
+//        exit(0);
+
+    if(_frame>=300 &&false )
+    {
+        char buf[64];
+        sprintf(buf,"f_/f_%d_voxels",_frame);
+        Volume v=_fusion->getVolume();
+        saveVoxelsToFile(v,params,std::string(buf) );
+    }
+
     return true;
 }
 
@@ -207,6 +228,7 @@ sMatrix4 CloseLoop::doLoopClosure(sMatrix4 gt)
     */
     return _fusion->getPose();
 }
+
 
 sMatrix4 CloseLoop::getPose() const
 {
@@ -364,6 +386,14 @@ void CloseLoop::clear()
     //poses.clear();
     //isamPoses.clear();
     _isam->clear();
+}
+
+bool CloseLoop::needSift() const
+{
+    sMatrix4 pose=_fusion->getPose();
+    float3 trans=pose.get_translation();
+
+
 }
 
 bool CloseLoop::isKeyFrame() const

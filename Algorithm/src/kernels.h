@@ -99,7 +99,7 @@ __global__ void raycastKernel(Image<float3> pos3D,
                               const float nearPlane,
                               const float farPlane,
                               const float step,
-                              const float largestep);
+                              const float largestep, int frame);
 
 __global__ void integrateKernel(Volume vol, const Image<float> depth,
                                 const Image<uchar3> rgb,

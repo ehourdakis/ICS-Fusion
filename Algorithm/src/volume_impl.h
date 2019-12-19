@@ -7,10 +7,15 @@ float Volume::generic_interp(const float3 & pos,const Fptr fp) const
     const float3 scaled_pos = make_float3((pos.x * _resolution.x / dim.x) - 0.5f,
                                           (pos.y * _resolution.y / dim.y) - 0.5f,
                                           (pos.z * _resolution.z / dim.z) - 0.5f);
+//    const float3 scaled_pos = make_float3( (pos.x /voxelSize.x) - 0.5f ,
+//                                          (pos.y /voxelSize.y) - 0.5f ,
+//                                          (pos.z /voxelSize.z) - 0.5f );
+
     const int3 base = make_int3(floorf(scaled_pos));
     const float3 factor = fracf(scaled_pos);
-    const int3 lower = max(base, make_int3(0));
-    const int3 upper = min(base + make_int3(1),make_int3(_resolution) - make_int3(1));
+    const int3 lower = max(base, _offset);
+    //const int3 upper = min(base + make_int3(1),make_int3(_resolution) - make_int3(1)+_offset);
+    const int3 upper = min(base + make_int3(1),maxVoxel() - make_int3(1));
 
     float tmp0 =( (this->*fp) (make_int3(lower.x, lower.y, lower.z)) * (1 - factor.x) +
                 (this->*fp) (make_int3(upper.x, lower.y, lower.z)) * factor.x ) * (1 - factor.y);
@@ -32,12 +37,16 @@ float3 Volume::grad(const float3 & pos) const
                                           (pos.z * _resolution.z / dim.z) - 0.5f);
     const int3 base = make_int3(floorf(scaled_pos));
     const float3 factor = fracf(scaled_pos);
-    const int3 lower_lower = max(base - make_int3(1), make_int3(0));
-    const int3 lower_upper = max(base, make_int3(0));
+
+    const int3 lower_lower = max(base - make_int3(1), _offset);
+    const int3 lower_upper = max(base, _offset);
+
     const int3 upper_lower = min(base + make_int3(1),
-                                 make_int3(_resolution) - make_int3(1));
+                                 maxVoxel() - make_int3(1));
+
     const int3 upper_upper = min(base + make_int3(2),
-                                 make_int3(_resolution) - make_int3(1));
+                                 maxVoxel() - make_int3(1));
+
     const int3 & lower = lower_upper;
     const int3 & upper = upper_lower;
 
