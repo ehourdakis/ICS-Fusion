@@ -42,6 +42,14 @@ extern bool print_kernel_timing;
 extern struct timespec tick_clockData;
 extern struct timespec tock_clockData;
 
+__forceinline__ __host__ __device__ void  swapf(float &f1,float &f2)
+{
+    float tmp=f2;
+    f2=f1;
+    f1=tmp;
+}
+
+
 __forceinline__ __host__ __device__ float sq(const float x)
 {
     return x * x;

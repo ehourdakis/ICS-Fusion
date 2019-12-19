@@ -72,54 +72,9 @@ class Volume
         {
             int3 pos;
 
-            if(p.x<minVoxel().x)
-            {
-                printf("minx %d %d\n",p.x,minVoxel().x);
-            }
-            if(p.y<minVoxel().y)
-            {
-                printf("miny %d %d\n",p.y,minVoxel().y);
-            }
-            if(p.z<minVoxel().z)
-            {
-                printf("minz %d %d\n",p.z,minVoxel().z);
-            }
-
-            if(p.x>=maxVoxel().x)
-            {
-                printf("maxx %d %d\n",p.x,maxVoxel().x);
-            }
-            if(p.y>=maxVoxel().y)
-            {
-                printf("maxy %d %d\n",p.y,maxVoxel().y);
-            }
-            if(p.z>=maxVoxel().z)
-            {
-                printf("maxz %d %d\n",p.z,maxVoxel().z);
-            }
-
             pos.x=(p.x-_offset.x-1)%_resolution.x;
             pos.y=(p.y-_offset.y-1)%_resolution.y;
             pos.z=(p.z-_offset.z-1)%_resolution.z;
-
-//            pos.x=(p.x-_offset.x);
-//            pos.y=(p.y-_offset.y);
-//            pos.z=(p.z-_offset.z);
-
-            if(pos.x<0)
-            {
-                printf("zerox %d\n",pos.x);
-            }
-            if(pos.y<0)
-            {
-                printf("zeroy %d\n",pos.y);
-            }
-            if(pos.z<0)
-            {
-                printf("zeroz %d\n",pos.z);
-            }
-
-            //pos.x + pos.y * _size.x + pos.z * _size.x * _size.y
             return pos.x + pos.y * _resolution.x + pos.z * _resolution.x * _resolution.y;
         }
 

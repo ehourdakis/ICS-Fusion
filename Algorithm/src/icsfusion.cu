@@ -69,7 +69,6 @@ IcsFusion::IcsFusion(kparams_t par,Matrix4 initPose)
     generate_gaussian<<< 1,gaussian.size.x>>>(gaussian, delta, radius);
     dim3 grid = divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock);
     TICK("initVolume");
-    printf("initVolume\n");
     initVolumeKernel<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f));
     TOCK();
 
@@ -124,7 +123,6 @@ IcsFusion::~IcsFusion()
 void IcsFusion::reset()
 {
     dim3 grid = divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock);
-    printf("rest\n");
     initVolumeKernel<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f));
 }
 
@@ -261,7 +259,6 @@ bool IcsFusion::integration(uint frame)
     if (doIntegrate || frame <= 3)
     {
         printCUDAError();
-        printf("integrateKernel\n");
         TICK("integrate");
         dim3 grid=divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock);
         integrateKernel<<<grid, imageBlock>>>(volume,
@@ -421,7 +418,6 @@ void IcsFusion::getImageProjection(sMatrix4 p, uchar3 *out)
     dim3 grid=divup(params.inputSize,raycastBlock );
     //raycast from given pose
     printCUDAError();
-    printf("raycastKernel\n");
     raycastKernel<<<grid, raycastBlock>>>(vertexNew, normalNew, volume, p * inverseCam,
                                          nearPlane,farPlane,step,largestep,1);
     

@@ -190,20 +190,13 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
     const float3 delta = rotate(invTrack,make_float3(0, 0, vol.getDimensions().z / vol.getResolution().z));
     const float3 cameraDelta = rotate(K, delta);
 
-
-    //for (int z = 0; z < int(vol.getResolution().z); z++, pos += delta, cameraX +=cameraDelta)
     for (pix.z = vol.minVoxel().x; pix.z < vol.maxVoxel().z; ++pix.z, pos += delta, cameraX +=cameraDelta)
     {
 
         if (pos.z < 0.0001f) // some near plane constraint
         {
-//            float f=fabs(pos.z);
-//            printf("%f %f\n",f,pos.z);
             continue;
         }
-
-//        if (pos.z < 0.0001f) // some near plane constraint
-//            continue;
 
         const float2 pixel = make_float2(cameraX.x / cameraX.z + 0.5f,
                                          cameraX.y / cameraX.z + 0.5f);
@@ -220,18 +213,13 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
         const float diff = (depth[px] - cameraX.z) *
                            sqrt(1 + sq(pos.x / pos.z) + sq(pos.y / pos.z));
 
-        //pix.z=z+vol.getOffset().z;
         if (diff > -mu)
         {
-            //pix.z=vol.getOffset().z+z;
-//            pix.z=z;
-//            pix=pix+vol.getOffset();
             const float sdf = fminf(1.f, diff / mu);
 
             float2 p_data = vol[pix];
             float3 p_color = vol.getColor(pix);
 
-            //float w=fminf(p_data.y+1, maxweight);
             float w=p_data.y+1;
 
             float3 frgb=rgb2lab(rgb[px]);
@@ -250,6 +238,7 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
     }
 }
 
+//TODO fix me
 __global__ void deIntegrateKernel(Volume vol,
                                   const Image<float> depth,
                                   const Image<uchar3> rgb,
