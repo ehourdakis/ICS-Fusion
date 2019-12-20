@@ -113,17 +113,17 @@ void saveVoxelsToFile(const Volume volume,const kparams_t &params, std::string f
     origin[2]=0.0;
 
 
-    origin[0]=volume.getOffset().x;
-    origin[1]=volume.getOffset().y;
-    origin[2]=volume.getOffset().z;
+//    origin[0]=volume.getOffset().x;
+//    origin[1]=volume.getOffset().y;
+//    origin[2]=volume.getOffset().z;
 
 
     outFile<<origin[0]<<std::endl;
     outFile<<origin[1]<<std::endl;
     outFile<<origin[2]<<std::endl;
 
-    float vol_size=float(params.volume_size.x)/float(params.volume_resolution.x);
-    outFile<<vol_size<<std::endl;
+    float vox_size=float(params.volume_size.x)/float(params.volume_resolution.x);
+    outFile<<vox_size<<std::endl;
     outFile<<params.mu<<std::endl;
 
     short2 *voxel_grid_cpu=new short2[volume.getResolution().x*volume.getResolution().y*volume.getResolution().z];
@@ -134,19 +134,16 @@ void saveVoxelsToFile(const Volume volume,const kparams_t &params, std::string f
 
     //for(int i=0;i<params.volume_resolution.x*params.volume_resolution.y*params.volume_resolution.z;i++)
 
-    for(int x=0;x<params.volume_resolution.x;x++)
+    int3 pos=volume.minVoxel();
+    for(pos.x=volume.minVoxel().x;pos.x<volume.maxVoxel().x;pos.x++)
     {
-        for(int y=0;y<params.volume_resolution.y;y++)
+        for(pos.y=volume.minVoxel().y;pos.y<volume.maxVoxel().y;pos.y++)
         {
-            for(int z=0;z<params.volume_resolution.z;z++)
+            for(pos.z=volume.minVoxel().z;pos.z<volume.maxVoxel().z;pos.z++)
             {
-                int3 pix;
-                pix.x=volume.getOffset().x+x;
-                pix.y=volume.getOffset().y+y;
-                pix.z=volume.getOffset().z+z;
 
-                int pos=volume.getPos(pix);
-                short2 data=voxel_grid_cpu[pos];
+                int arrayPos=volume.getPos(pos);
+                short2 data=voxel_grid_cpu[arrayPos];
                 float value=float(data.x)/32766.0f;
                 outFile<<value<<'\n';
             }

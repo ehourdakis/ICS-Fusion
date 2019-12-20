@@ -61,6 +61,8 @@ class IcsFusion
 
         void getVertices(std::vector<float3> &vertices);
 
+        void siftVolume(const int3 &pos);
+
         sMatrix4 getPose() const
         {
             return pose;
@@ -86,7 +88,7 @@ class IcsFusion
 
         float calcNewMapInfo(uchar3 *out);
 
-        Volume getVolume()
+        Volume& getVolume()
         {
             return volume;
         }

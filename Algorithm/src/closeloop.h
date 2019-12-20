@@ -81,6 +81,8 @@ class CloseLoop
 
         uint3 sliceSize;
 
+
+
         //check if volume need sift
         bool needSift() const;
 

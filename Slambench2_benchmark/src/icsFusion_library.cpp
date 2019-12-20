@@ -308,7 +308,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
             gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
             std::cout<<"edo"<<std::endl;
             poses.push_back(gtPose);
-            loopCl->doLoopClosure(gtPose);
+//            loopCl->doLoopClosure(gtPose);
 
             char buf[32];
             sprintf(buf,"f_/f_%d_poses_gt",frame+1);

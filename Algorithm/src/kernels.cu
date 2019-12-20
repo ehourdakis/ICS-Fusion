@@ -129,17 +129,102 @@ __global__ void renderVolumeKernel2(Image<uchar3> render,
     }
 }
 */
-__global__ void initVolumeKernel(Volume volume, const float2 val)
+__global__ void initVolumeKernel(Volume volume,const float2 val,const int endz,int3 sign)
 {
     int3 pos = make_int3(thr2pos2());
+    pos=pos*sign;
     pos=pos+volume.getOffset();
-//    pos.x=pos.x+volume.getOffset().x;
-//    pos.y=pos.y+volume.getOffset().y;
-    for (; pos.z < volume.maxVoxel().z; pos.z++)
+    for (; pos.z < endz; pos.z++)
     {
         volume.set(pos, val);
     }
 }
+
+__global__ void clearVolumeZ(Volume volume,const float2 val,const int zz,int3 offeset)
+{
+    int3 pos = make_int3(thr2pos2());
+    pos.x+=offeset.x;
+    pos.y+=offeset.y;
+
+//    int min_z=min(offeset.z,offeset.z+zz);
+//    int max_z=max(offeset.z,offeset.z+zz);
+
+    int min_z,max_z;
+    if(zz>0)
+    {
+        min_z=volume.minVoxel().z;
+        max_z=volume.minVoxel().z+zz;
+    }
+    else
+    {
+        min_z=volume.maxVoxel().z+zz;
+        max_z=volume.maxVoxel().z;
+    }
+
+    for (pos.z=min_z; pos.z < max_z; pos.z++)
+    {
+        volume.set(pos, val);
+    }
+}
+
+__global__ void clearVolumeX(Volume volume,const float2 val,const int xx,int3 offeset)
+{
+    uint2 u=thr2pos2();
+    int3 pos = make_int3(0,
+                         u.x+offeset.y,
+                         u.y+offeset.z);
+
+//    int min_x=min(offeset.x,offeset.x+xx);
+//    int max_x=max(offeset.x,offeset.x+xx);
+
+    int min_x,max_x;
+    if(xx>0)
+    {
+        min_x=volume.minVoxel().x;
+        max_x=volume.minVoxel().x+xx;
+    }
+    else
+    {
+        min_x=volume.maxVoxel().x+xx;
+        max_x=volume.maxVoxel().x;
+    }
+
+    for (pos.x=min_x; pos.x < max_x; pos.x++)
+    {
+//        printf("%d %d %d\n",pos.x,pos.y,pos.z);
+        volume.set(pos, val);
+    }
+}
+
+__global__ void clearVolumeY(Volume volume,const float2 val,const int yy,int3 offeset)
+{
+    uint2 u=thr2pos2();
+    int3 pos = make_int3(u.x+offeset.x,
+                         0,
+                         u.y+offeset.z);
+
+//    int min_y=min(offeset.y,offeset.y+yy);
+//    int max_y=max(offeset.y,offeset.y+yy);
+
+
+    int min_y,max_y;
+    if(yy>0)
+    {
+        min_y=volume.minVoxel().y;
+        max_y=volume.minVoxel().y+yy;
+    }
+    else
+    {
+        min_y=volume.maxVoxel().y+yy;
+        max_y=volume.maxVoxel().y;
+    }
+
+    for (pos.y=min_y; pos.y < max_y; pos.y++)
+    {
+        volume.set(pos, val);
+    }
+}
+
 
 __global__ void raycastKernel(Image<float3> pos3D,
                               Image<float3> normal,
@@ -186,6 +271,7 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
     pix=pix+vol.getOffset();
 
     float3 pos = invTrack * vol.pos(pix);
+//    pos=pos+vol.getOffsetPos();
     float3 cameraX = K * pos;
     const float3 delta = rotate(invTrack,make_float3(0, 0, vol.getDimensions().z / vol.getResolution().z));
     const float3 cameraDelta = rotate(K, delta);
@@ -421,11 +507,22 @@ __global__ void renderRgbKernel(Image<uchar3> render,
 
     if(norm[pos].x != INVALID)
     {
+
         float3 vertex=vert[pos];
-        const float3 frgb = volume.rgb_interp(vertex);
-        uchar3 rgb;
-        rgb=lab2rgb(frgb);
-        render.el()=rgb;        
+        if( vertex.x>=volume.maxVoxel().x*volume.getVoxelSize().z || vertex.x<volume.minVoxel().x*volume.getVoxelSize().x ||
+            vertex.y>=volume.maxVoxel().y*volume.getVoxelSize().y || vertex.y<volume.minVoxel().y*volume.getVoxelSize().y ||
+            vertex.z>=volume.maxVoxel().z*volume.getVoxelSize().x || vertex.z<volume.minVoxel().z*volume.getVoxelSize().z)
+        {
+            render.el() = make_uchar3(0, 0, 0);
+        }
+        else
+        {
+            const float3 frgb = volume.rgb_interp(vertex);
+            uchar3 rgb;
+            rgb=lab2rgb(frgb);
+            render.el()=rgb;
+        }
+
     }
     else
     {

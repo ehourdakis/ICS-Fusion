@@ -22,6 +22,7 @@ __device__ __forceinline__ float4 raycast(const Volume volume,
 
 
     float3 tmin=(volume.getOffsetPos()-origin)*invR;
+    //float3 tmin=-1*origin*invR;
     float3 tmax=(volume.getDimWithOffset()-origin)*invR;
 
     if (invR.x < 0)

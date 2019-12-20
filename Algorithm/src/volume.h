@@ -25,6 +25,12 @@ class Volume
             return _resolution;
         }
 
+        __host__ __device__ float3 getVoxelSize() const
+        {
+            return voxelSize;
+        }
+
+
         __host__ __device__ int3 getOffset() const
         {
             return _offset;
@@ -34,8 +40,7 @@ class Volume
         {
             return make_float3(_offset.x*voxelSize.x,
                                _offset.y*voxelSize.y,
-                               _offset.z*voxelSize.z
-                        );
+                               _offset.z*voxelSize.z);
         }
 
         __host__ __device__ float3 getDimWithOffset() const
@@ -45,9 +50,9 @@ class Volume
                                     dim.z+_offset.z*voxelSize.z);
 
             int3 v=maxVoxel();
-            ret.x=(v.x-1)*voxelSize.x;
-            ret.y=(v.y-1)*voxelSize.y;
-            ret.z=(v.z-1)*voxelSize.z;
+            ret.x=(v.x)*voxelSize.x;
+            ret.y=(v.y)*voxelSize.y;
+            ret.z=(v.z)*voxelSize.z;
             return ret;
         }
 
@@ -72,9 +77,53 @@ class Volume
         {
             int3 pos;
 
-            pos.x=(p.x-_offset.x-1)%_resolution.x;
-            pos.y=(p.y-_offset.y-1)%_resolution.y;
-            pos.z=(p.z-_offset.z-1)%_resolution.z;
+            if(p.x<minVoxel().x)
+            {
+                printf("Min x error:%d, %d\n",p.x,minVoxel().x);
+            }
+            if(p.x>=maxVoxel().x)
+            {
+                printf("Max x error:%d, %d\n",p.x,maxVoxel().x);
+            }
+
+            if(p.y<minVoxel().y)
+            {
+                printf("Min y error:%d, %d\n",p.y,minVoxel().y);
+            }
+            if(p.y>=maxVoxel().y)
+            {
+                printf("Max y error:%d, %d\n",p.y,maxVoxel().y);
+            }
+
+            if(p.z<minVoxel().z)
+            {
+                printf("Min z error:%d, %d\n",p.z,minVoxel().z);
+            }
+            if(p.z>=maxVoxel().z)
+            {
+                printf("Max z error:%d, %d\n",p.z,maxVoxel().z);
+            }
+
+
+
+//            pos.x=(p.x-_offset.x-1)%_resolution.x;
+//            pos.y=(p.y-_offset.y-1)%_resolution.y;
+//            pos.z=(p.z-_offset.z-1)%_resolution.z;
+            if(p.x<0)
+                pos.x=_resolution.x+p.x%(_resolution.x-1);
+            else
+                pos.x=p.x%(_resolution.x-1);
+
+            if(p.y<0)
+                pos.y=_resolution.x+p.y%(_resolution.y-1);
+            else
+                pos.y=p.y%(_resolution.y-1);
+
+            if(p.z<0)
+                pos.z=_resolution.x+p.z%(_resolution.z-1);
+            else
+                pos.z=p.z%(_resolution.z-1);
+
             return pos.x + pos.y * _resolution.x + pos.z * _resolution.x * _resolution.y;
         }
 
@@ -175,7 +224,7 @@ class Volume
 
         __device__ float3 grad(const float3 & pos) const;
 
-        void init(uint3 s, float3 d, uint3 sliceSize)
+        void init(uint3 s, float3 d, int3 sliceSize)
         {
             _resolution = s;
             dim = d;
@@ -185,9 +234,13 @@ class Volume
             cudaMemset(data, 0, _resolution.x * _resolution.y * _resolution.z * sizeof(short2));
             cudaMemset(color, 0, _resolution.x * _resolution.y * _resolution.z * sizeof(float3));
 
+            voxelSize=dim/_resolution;
+            /*
             voxelSize.x=dim.x/_resolution.x;
             voxelSize.y=dim.y/_resolution.y;
             voxelSize.z=dim.z/_resolution.z;
+            */
+
 
             float3 offsetF=make_float3( (-4.f/voxelSize.x)+0.5f,
                                         (-4.f/voxelSize.y)+0.5f,
@@ -198,7 +251,7 @@ class Volume
             printf("%d %d %d\n",_offset.x,_offset.y,_offset.z);
 
             printf("%d %d %d\n",_resolution.x+_offset.x,_resolution.y+_offset.y,_resolution.z+_offset.z);
-//            _offset=make_int3(0,0,0);
+            _offset=make_int3(0,0,0);
         }
 
         __host__ __device__ int3 minVoxel() const
@@ -229,7 +282,7 @@ class Volume
 
         uint3 _resolution;
         float3 dim;
-        uint3 _sliceSize;
+        int3 _sliceSize;
         float3 voxelSize;
         int3 _offset;
 

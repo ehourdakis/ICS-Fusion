@@ -104,19 +104,28 @@ bool CloseLoop::addFrame(uint16_t *depth,uchar3 *rgb)
         std::cerr<<"[FRAME="<<_frame<<"] Integration faild!"<<std::endl;        
     } 
 
+    static bool nsp=false;
+    bool ns=false;
+    if(isKeyFrame())
+    {        
+        ns=needSift();
+    }
 
-    _frame++;
 
-//    if(_frame==5)
-//        exit(0);
-
-    if(_frame>=300 &&false )
+    if(nsp)
     {
         char buf[64];
-        sprintf(buf,"f_/f_%d_voxels",_frame);
+        sprintf(buf,"f_/f_%d_voxels3",_frame);
         Volume v=_fusion->getVolume();
-        saveVoxelsToFile(v,params,std::string(buf) );
+//        saveVoxelsToFile(v,params,std::string(buf) );
+        std::cout<<"Offset:"<<_fusion->getVolume().getOffset()<<std::endl;
+        std::cout<<"min:"<<_fusion->getVolume().minVoxel();
+        std::cout<<"max:"<<_fusion->getVolume().maxVoxel()<<std::endl;
     }
+    nsp=ns;
+
+
+    _frame++;
 
     return true;
 }
@@ -252,7 +261,7 @@ void CloseLoop::saveDescData(const std::vector<float3> &keypts, const std::vecto
    {
     sprintf(buf,"f_/f_%d_voxels",_frame);
     Volume v=_fusion->getVolume();
-    saveVoxelsToFile(v,params,std::string(buf) );
+//    saveVoxelsToFile(v,params,std::string(buf) );
    }
 #endif
 }
@@ -390,15 +399,64 @@ void CloseLoop::clear()
 
 bool CloseLoop::needSift() const
 {
-    sMatrix4 pose=_fusion->getPose();
-    float3 trans=pose.get_translation();
+    static float3 maxDelta= 1.5*params.voxelSliceSize*params.volume_size/params.volume_resolution;
+
+    //std::cout<<maxDelta<<std::endl;
+
+    float3 trans=_fusion->getPose().get_translation();
+    float3 delta=trans-(_fusion->getVolume().getDimWithOffset()*0.5);
+
+//    std::cout<<trans<<std::endl;
+//    std::cout<<delta<<std::endl;
+
+    bool doSift=false;
+    int3 siftPos=make_int3(0,0,0);
+    if( fabs(delta.x)>maxDelta.x )
+    {
+        siftPos.x=signf(delta.x)*params.voxelSliceSize.x;
+        doSift=true;
+    }
+    if( fabs(delta.y)>maxDelta.y )
+    {
+        siftPos.y=signf(delta.y)*params.voxelSliceSize.y;
+        doSift=true;
+    }
+    if( fabs(delta.z)>maxDelta.z )
+    {
+        siftPos.z=signf(delta.z)*params.voxelSliceSize.z;
+        doSift=true;
+    }
+
+    if(doSift)
+    {
+
+        char buf[32];
+        sprintf(buf,"f_/f_%d_voxels",_frame);
+        Volume v=_fusion->getVolume();
+//        saveVoxelsToFile(v,params,std::string(buf) );
 
 
+        std::cout<<"Offset:"<<_fusion->getVolume().getOffset()<<std::endl;
+        std::cout<<"doSift:"<<siftPos.x<<","
+                            <<siftPos.y<<","
+                            <<siftPos.z<<std::endl;
+        _fusion->siftVolume(siftPos);
+
+
+        v=_fusion->getVolume();
+        sprintf(buf,"f_/f_%d_voxels2",_frame);
+//        saveVoxelsToFile(v,params,std::string(buf) );
+        std::cout<<"Offset:"<<_fusion->getVolume().getOffset()<<std::endl;
+        std::cout<<"min:"<<_fusion->getVolume().minVoxel()<<
+        "max:"<<_fusion->getVolume().maxVoxel()<<std::endl;
+    }
+
+    return doSift;
 }
 
 bool CloseLoop::isKeyFrame() const
 {    
-    return false;
+//    return false;
     if(_frame==4)
         return true;
 
@@ -485,7 +543,7 @@ bool CloseLoop::checkKeyFrameDeltaPose() const
     float a = rotInfNorm - piDiv4
     a += (a>PI) ? -PI : (a<-PI) ? 2*PI : 0*/
 
-    std::cout<<"TR:"<<trL2<<" R:"<<rot[0]<<","<<rot[1]<<","<<rot[2]<<" "<<rotInfNorm<<std::endl;    
+    std::cout<<"TR:"<<trL2<<" R:"<<rot[0]<<","<<rot[1]<<","<<rot[2]<<" "<<rotInfNorm<<std::endl;
     if(rotInfNorm > piDiv4)
         return true;
     return false;

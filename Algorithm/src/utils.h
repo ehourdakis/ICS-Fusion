@@ -42,6 +42,17 @@ extern bool print_kernel_timing;
 extern struct timespec tick_clockData;
 extern struct timespec tock_clockData;
 
+__forceinline__ __host__ __device__ int  signf(const float a)
+{
+    return a>0?1:-1;
+}
+
+
+__forceinline__ __host__ __device__ int  sign(const int a)
+{
+    return a>0?1:-1;
+}
+
 __forceinline__ __host__ __device__ void  swapf(float &f1,float &f2)
 {
     float tmp=f2;
@@ -502,6 +513,12 @@ inline std::ostream & operator<<(std::ostream & out, const Matrix4 & m)
 }
 
 inline std::ostream & operator<<(std::ostream & out, const float3 f)
+{
+    out<<"("<<f.x<<","<<f.y<<","<<f.z<<")";
+    return out;
+}
+
+inline std::ostream & operator<<(std::ostream & out, const int3 f)
 {
     out<<"("<<f.x<<","<<f.y<<","<<f.z<<")";
     return out;
