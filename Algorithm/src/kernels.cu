@@ -129,10 +129,9 @@ __global__ void renderVolumeKernel2(Image<uchar3> render,
     }
 }
 */
-__global__ void initVolumeKernel(Volume volume,const float2 val,const int endz,int3 sign)
+__global__ void initVolumeKernel(Volume volume,const float2 val)
 {
     int3 pos = make_int3(thr2pos2());
-//    pos=pos*sign;
     pos=pos+volume.getOffset();
     for (; pos.z < volume.maxVoxel().z; pos.z++)
     {
@@ -145,9 +144,6 @@ __global__ void clearVolumeZ(Volume volume,const float2 val,const int zz,int3 of
     int3 pos = make_int3(thr2pos2());
     pos.x+=offeset.x;
     pos.y+=offeset.y;
-
-//    int min_z=min(offeset.z,offeset.z+zz);
-//    int max_z=max(offeset.z,offeset.z+zz);
 
     int min_z,max_z;
     if(zz>0)
@@ -170,12 +166,7 @@ __global__ void clearVolumeZ(Volume volume,const float2 val,const int zz,int3 of
 __global__ void clearVolumeX(Volume volume,const float2 val,const int xx,int3 offeset)
 {
     uint2 u=thr2pos2();
-    int3 pos = make_int3(0,
-                         u.x+offeset.y,
-                         u.y+offeset.z);
-
-//    int min_x=min(offeset.x,offeset.x+xx);
-//    int max_x=max(offeset.x,offeset.x+xx);
+    int3 pos = make_int3(0,u.x+offeset.y,u.y+offeset.z);
 
     int min_x,max_x;
     if(xx>0)
@@ -199,13 +190,7 @@ __global__ void clearVolumeX(Volume volume,const float2 val,const int xx,int3 of
 __global__ void clearVolumeY(Volume volume,const float2 val,const int yy,int3 offeset)
 {
     uint2 u=thr2pos2();
-    int3 pos = make_int3(u.x+offeset.x,
-                         0,
-                         u.y+offeset.z);
-
-//    int min_y=min(offeset.y,offeset.y+yy);
-//    int max_y=max(offeset.y,offeset.y+yy);
-
+    int3 pos = make_int3(u.x+offeset.x,0,u.y+offeset.z);
 
     int min_y,max_y;
     if(yy>0)

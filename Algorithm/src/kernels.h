@@ -66,7 +66,7 @@ __global__ void renderRgbKernel(Image<uchar3> render,
                                 Image<float3> norm);
 
 __global__ void generate_gaussian(Image<float> out, float delta, int radius);
-__global__ void initVolumeKernel(Volume volume, const float2 val, const int endz, int3 sign);
+__global__ void initVolumeKernel(Volume volume, const float2 val);
 __global__ void clearVolumeZ(Volume volume,const float2 val,const int zz,int3 offeset);
 __global__ void clearVolumeX(Volume volume, const float2 val, const int xx, int3 offeset);
 __global__ void clearVolumeY(Volume volume, const float2 val, const int yy, int3 offeset);

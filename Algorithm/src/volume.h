@@ -80,41 +80,40 @@ class Volume
             if(p.x<minVoxel().x)
             {
                 printf("Min x error:%d, %d\n",p.x,minVoxel().x);
+                assert(0);
             }
             if(p.x>=maxVoxel().x)
             {
                 printf("Max x error:%d, %d\n",p.x,maxVoxel().x);
+                assert(0);
             }
 
             if(p.y<minVoxel().y)
             {
                 printf("Min y error:%d, %d\n",p.y,minVoxel().y);
+                assert(0);
             }
             if(p.y>=maxVoxel().y)
             {
                 printf("Max y error:%d, %d\n",p.y,maxVoxel().y);
+                assert(0);
             }
 
             if(p.z<minVoxel().z)
             {
                 printf("Min z error:%d, %d\n",p.z,minVoxel().z);
+                assert(0);
             }
             if(p.z>=maxVoxel().z)
             {
                 printf("Max z error:%d, %d\n",p.z,maxVoxel().z);
+                assert(0);
             }
 
-
-//            printf("R %d,%d,%d\n",_resolution.x,_resolution.y,_resolution.z);
-//            pos.x=(p.x-_offset.x-1)%_resolution.x;
-//            pos.y=(p.y-_offset.y-1)%_resolution.y;
-//            pos.z=(p.z-_offset.z-1)%_resolution.z;
             if(p.x<0)
                 pos.x=_resolution.x-(-p.x%(_resolution.x-1) );
             else
                 pos.x=p.x%(_resolution.x-1);
-
-//            printf("I %d,%d\n",p.x,p.x%(_resolution.x-1));
 
             if(p.y<0)
                 pos.y=_resolution.x-(-p.y%(_resolution.y-1));
@@ -126,7 +125,6 @@ class Volume
             else
                 pos.z=p.z%(_resolution.z-1);
 
-//            printf("P :(%d,%d,%d) PO:(%d,%d,%d)\n",p.x,p.y,p.z,pos.x,pos.y,pos.z);
             return pos.x + pos.y * _resolution.x + pos.z * _resolution.x * _resolution.y;
         }
 
@@ -254,8 +252,6 @@ class Volume
         void init(uint3 s, float3 d, int3 sliceSize)
         {
             _resolution = s;
-            std::cout<<"VV "<<s.x<<" "<<s.y<<" "<<s.z<<std::endl;
-            std::cout<<"VV "<<_resolution.x<<" "<<_resolution.y<<" "<<_resolution.z<<std::endl;
             dim = d;
             _sliceSize=sliceSize;
             cudaMalloc((void**)&data,_resolution.x * _resolution.y * _resolution.z * sizeof(short2));
@@ -264,22 +260,13 @@ class Volume
             cudaMemset(color, 0, _resolution.x * _resolution.y * _resolution.z * sizeof(float3));
 
             voxelSize=dim/_resolution;
+
             /*
-            voxelSize.x=dim.x/_resolution.x;
-            voxelSize.y=dim.y/_resolution.y;
-            voxelSize.z=dim.z/_resolution.z;
-            */
-
-
             float3 offsetF=make_float3( (-4.f/voxelSize.x)+0.5f,
                                         (-4.f/voxelSize.y)+0.5f,
                                         (-4.f/voxelSize.z)+0.5f);
             _offset=make_int3(int(offsetF.x),int(offsetF.y),int(offsetF.z));
-
-            printf("%f %f %f\n",offsetF.x,offsetF.y,offsetF.z);
-            printf("%d %d %d\n",_offset.x,_offset.y,_offset.z);
-
-            printf("%d %d %d\n",_resolution.x+_offset.x,_resolution.y+_offset.y,_resolution.z+_offset.z);
+            */
             _offset=make_int3(0,0,0);
         }
 

@@ -73,7 +73,7 @@ IcsFusion::IcsFusion(kparams_t par,Matrix4 initPose)
 
     printCUDAError();
     TICK("initVolume");
-    initVolumeKernel<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f),volume.maxVoxel().z,make_int3(1,1,1));
+    initVolumeKernel<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f));
     TOCK();
     printCUDAError();
     
@@ -163,7 +163,7 @@ void IcsFusion::siftVolume(const int3 &pos)
 void IcsFusion::reset()
 {
     dim3 grid = divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock);
-    initVolumeKernel<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f),volume.maxVoxel().z,make_int3(1,1,1));
+    initVolumeKernel<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f));
 }
 
 bool IcsFusion::preprocessing2(const float *inputDepth,const uchar3 *inputRgb)
@@ -288,7 +288,7 @@ void IcsFusion::integrateNewData(sMatrix4 p)
     std::cout<<"integrateNewData"<<std::endl;
 
     dim3 grid=divup(dim3(newDataVol.getResolution().x, newDataVol.getResolution().y), imageBlock);
-    initVolumeKernel<<<grid, imageBlock>>>(newDataVol, make_float2(1.0f, 0.0f),volume.maxVoxel().z,make_int3(1,1,1));
+    initVolumeKernel<<<grid, imageBlock>>>(newDataVol, make_float2(1.0f, 0.0f));
 
 
     integrateKernel<<<grid,imageBlock>>>(newDataVol,rawDepth,rawRgb,
