@@ -193,6 +193,30 @@ class Volume
         }
 
         __device__
+        float3 pos2(const int3 & p) const
+        {
+            int3 pos;
+            if(p.x<0)
+                pos.x=_resolution.x+p.x%(_resolution.x-1);
+            else
+                pos.x=p.x%(_resolution.x-1);
+
+            if(p.y<0)
+                pos.y=_resolution.x+p.y%(_resolution.y-1);
+            else
+                pos.y=p.y%(_resolution.y-1);
+
+            if(p.z<0)
+                pos.z=_resolution.x+p.z%(_resolution.z-1);
+            else
+                pos.z=p.z%(_resolution.z-1);
+
+            return make_float3( ( (pos.x + 0.5f) * voxelSize.x),
+                                ( (pos.y + 0.5f) * voxelSize.y),
+                                ( (pos.z + 0.5f) * voxelSize.z));
+        }
+
+        __device__
         float interp(const float3 & pos) const
         {
             const Fptr fp = &Volume::vs;

@@ -271,12 +271,15 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
     pix=pix+vol.getOffset();
 
     float3 pos = invTrack * vol.pos(pix);
+//    float3 pos = invTrack * vol.pos2(pix);
+
 //    pos=pos+vol.getOffsetPos();
     float3 cameraX = K * pos;
+//    cameraX = cameraX + vol.getOffsetPos();
     const float3 delta = rotate(invTrack,make_float3(0, 0, vol.getDimensions().z / vol.getResolution().z));
     const float3 cameraDelta = rotate(K, delta);
 
-    for (pix.z = vol.minVoxel().x; pix.z < vol.maxVoxel().z; ++pix.z, pos += delta, cameraX +=cameraDelta)
+    for (pix.z = vol.minVoxel().z; pix.z < vol.maxVoxel().z; ++pix.z, pos += delta, cameraX +=cameraDelta)
     {
 
         if (pos.z < 0.0001f) // some near plane constraint
