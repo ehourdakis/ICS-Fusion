@@ -105,25 +105,28 @@ class Volume
             }
 
 
-
+//            printf("R %d,%d,%d\n",_resolution.x,_resolution.y,_resolution.z);
 //            pos.x=(p.x-_offset.x-1)%_resolution.x;
 //            pos.y=(p.y-_offset.y-1)%_resolution.y;
 //            pos.z=(p.z-_offset.z-1)%_resolution.z;
             if(p.x<0)
-                pos.x=_resolution.x+p.x%(_resolution.x-1);
+                pos.x=_resolution.x-(-p.x%(_resolution.x-1) );
             else
                 pos.x=p.x%(_resolution.x-1);
 
+//            printf("I %d,%d\n",p.x,p.x%(_resolution.x-1));
+
             if(p.y<0)
-                pos.y=_resolution.x+p.y%(_resolution.y-1);
+                pos.y=_resolution.x-(-p.y%(_resolution.y-1));
             else
                 pos.y=p.y%(_resolution.y-1);
 
             if(p.z<0)
-                pos.z=_resolution.x+p.z%(_resolution.z-1);
+                pos.z=_resolution.x-(-p.z%(_resolution.z-1));
             else
                 pos.z=p.z%(_resolution.z-1);
 
+//            printf("P :(%d,%d,%d) PO:(%d,%d,%d)\n",p.x,p.y,p.z,pos.x,pos.y,pos.z);
             return pos.x + pos.y * _resolution.x + pos.z * _resolution.x * _resolution.y;
         }
 
@@ -251,6 +254,8 @@ class Volume
         void init(uint3 s, float3 d, int3 sliceSize)
         {
             _resolution = s;
+            std::cout<<"VV "<<s.x<<" "<<s.y<<" "<<s.z<<std::endl;
+            std::cout<<"VV "<<_resolution.x<<" "<<_resolution.y<<" "<<_resolution.z<<std::endl;
             dim = d;
             _sliceSize=sliceSize;
             cudaMalloc((void**)&data,_resolution.x * _resolution.y * _resolution.z * sizeof(short2));

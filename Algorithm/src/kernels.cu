@@ -132,9 +132,9 @@ __global__ void renderVolumeKernel2(Image<uchar3> render,
 __global__ void initVolumeKernel(Volume volume,const float2 val,const int endz,int3 sign)
 {
     int3 pos = make_int3(thr2pos2());
-    pos=pos*sign;
+//    pos=pos*sign;
     pos=pos+volume.getOffset();
-    for (; pos.z < endz; pos.z++)
+    for (; pos.z < volume.maxVoxel().z; pos.z++)
     {
         volume.set(pos, val);
     }

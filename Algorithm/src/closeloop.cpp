@@ -106,7 +106,7 @@ bool CloseLoop::addFrame(uint16_t *depth,uchar3 *rgb)
 
     static bool nsp=false;
     bool ns=false;
-    if(isKeyFrame())
+    if(isKeyFrame() )
     {        
         ns=needSift();
     }

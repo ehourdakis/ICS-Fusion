@@ -25,6 +25,7 @@ IcsFusion::IcsFusion(kparams_t par,Matrix4 initPose)
     float3 vd = make_float3(params.volume_size.x,
                             params.volume_size.y,
                             params.volume_size.z);
+
     volume.init(vr, vd,params.voxelSliceSize);
     newDataVol.init(vr, vd,params.voxelSliceSize);
 
@@ -42,6 +43,7 @@ IcsFusion::IcsFusion(kparams_t par,Matrix4 initPose)
     viewPose = &pose;
 
     uint2 cs = make_uint2(params.computationSize.x, params.computationSize.y);
+    std::cout<<"CS:"<<cs.x<<" "<<cs.y<<std::endl;
     reduction.alloc(cs);
     vertex.alloc(cs);
     normal.alloc(cs);
@@ -68,10 +70,12 @@ IcsFusion::IcsFusion(kparams_t par,Matrix4 initPose)
     //generate gaussian array
     generate_gaussian<<< 1,gaussian.size.x>>>(gaussian, delta, radius);
     dim3 grid = divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock);
+
+    printCUDAError();
     TICK("initVolume");
     initVolumeKernel<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f),volume.maxVoxel().z,make_int3(1,1,1));
     TOCK();
-
+    printCUDAError();
     
     // render buffers
     renderModel.alloc(cs);
@@ -158,16 +162,12 @@ void IcsFusion::siftVolume(const int3 &pos)
 
 void IcsFusion::reset()
 {
-     std::cout<<"reset"<<std::endl;
     dim3 grid = divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock);
     initVolumeKernel<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f),volume.maxVoxel().z,make_int3(1,1,1));
 }
 
 bool IcsFusion::preprocessing2(const float *inputDepth,const uchar3 *inputRgb)
 {
-
-    std::cout<<"preprocessing2"<<std::endl;
-
     cudaMemcpy(rawDepth.data(), inputDepth, params.inputSize.x * params.inputSize.y * sizeof(float),cudaMemcpyHostToDevice);
     cudaMemcpy(rawRgb.data(), inputRgb, params.inputSize.x * params.inputSize.y * sizeof(uchar3),cudaMemcpyHostToDevice);
 
@@ -181,28 +181,23 @@ bool IcsFusion::preprocessing2(const float *inputDepth,const uchar3 *inputRgb)
 
 bool IcsFusion::preprocessing(const ushort * inputDepth,const uchar3 *inputRgb)
 {
-    std::cout<<"preprocessing"<<std::endl;
-
     cudaMemcpy(depthImage.data(), inputDepth, params.inputSize.x * params.inputSize.y * sizeof(ushort), cudaMemcpyHostToDevice);
-    
     TICK("mm2meters");
     mm2metersKernel<<<divup(rawDepth.size, imageBlock), imageBlock>>>(rawDepth, depthImage);
     TOCK();
-
     cudaMemcpy(rawRgb.data(), inputRgb, params.inputSize.x * params.inputSize.y * sizeof(uchar3),cudaMemcpyHostToDevice);
+
     // filter the input depth map
     dim3 grid = divup(make_uint2(params.computationSize.x, params.computationSize.y), imageBlock);
     TICK("bilateral_filter");
     bilateralFilterKernel<<<grid, imageBlock>>>(scaledDepth[0], rawDepth, gaussian, e_delta, radius);
-    TOCK();
+    TOCK();        
 
     return true;
 }
 
 bool IcsFusion::tracking(uint frame)
 {
-    std::cout<<"tracking"<<std::endl;
-
     (void)frame;
     forcePose=false;
     std::vector<dim3> grids;
@@ -261,12 +256,12 @@ bool IcsFusion::tracking(uint frame)
                 break;
         }
     }
+
     return checkPoseKernel(pose, oldPose, output.data(), params.computationSize,track_threshold);
 }
 
 bool IcsFusion::raycasting(uint frame)
 {
-    std::cout<<"raycasting"<<std::endl;
     (void)frame;
     bool doRaycast = false;
     if (frame > 2)
@@ -282,6 +277,8 @@ bool IcsFusion::raycasting(uint frame)
                                               largestep,frame);
         TOCK();
     }
+
+    printCUDAError();
 
     return doRaycast;
 }
@@ -301,14 +298,11 @@ void IcsFusion::integrateNewData(sMatrix4 p)
 
 bool IcsFusion::integration(uint frame)
 {
-    std::cout<<"integration"<<std::endl;
-
     bool doIntegrate = checkPoseKernel(pose, oldPose, output.data(),params.computationSize, track_threshold);
     if (doIntegrate || frame <= 3)
     {
         printCUDAError();
         TICK("integrate");
-        std::cout<<"integrate"<<std::endl;
         dim3 grid=divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock);
         integrateKernel<<<grid, imageBlock>>>(volume,
                                               rawDepth,
@@ -318,7 +312,6 @@ bool IcsFusion::integration(uint frame)
                                               params.mu,
                                               maxweight );
 
-        printCUDAError();
         TOCK();       
         doIntegrate = true;
     }
@@ -419,8 +412,6 @@ void IcsFusion::getVertices(std::vector<float3> &vertices)
 
 void IcsFusion::renderVolume(uchar3 * out)
 {
-    std::cout<<"renderVolume"<<std::endl;
-
     dim3 grid=divup(renderModel.size,imageBlock);
 
     TICK("renderVolume");
@@ -435,8 +426,6 @@ void IcsFusion::renderVolume(uchar3 * out)
 
 Image<float, Host> IcsFusion::vertex2Depth()
 {
-    std::cout<<"vertex2Depth"<<std::endl;
-
     Image<float, Host> ret(params.inputSize);
     Image<float, Device> model(params.inputSize);
     
@@ -451,8 +440,6 @@ Image<float, Host> IcsFusion::vertex2Depth()
 
 float IcsFusion::compareRgb( )
 {
-    std::cout<<"compareRgb"<<std::endl;
-
     Image<float, Device> diff( make_uint2(params.inputSize.x, params.inputSize.y) );
     compareRgbKernel<<<divup(renderModel.size, imageBlock), imageBlock>>>( renderModel,rawRgb,diff);
     
@@ -469,9 +456,6 @@ float IcsFusion::compareRgb( )
 
 void IcsFusion::getImageProjection(sMatrix4 p, uchar3 *out)
 {
-
-    std::cout<<"getImageProjection"<<std::endl;
-
     Image<float3, Device> vertexNew, normalNew;
     vertexNew.alloc(params.inputSize);
     normalNew.alloc(params.inputSize);
@@ -486,7 +470,6 @@ void IcsFusion::getImageProjection(sMatrix4 p, uchar3 *out)
     printCUDAError();
 
     grid=divup(params.inputSize,imageBlock );
-    std::cout<<"renderRgbKernel"<<std::endl;
     renderRgbKernel<<<grid, imageBlock>>>( renderModel,volume,vertexNew,normalNew);
 
     cudaMemcpy(out, renderModel.data(),
@@ -524,13 +507,9 @@ float IcsFusion::getWrongNormalsSize()
 
 void IcsFusion::renderImage(uchar3 * out)
 {
-    std::cout<<"renderImage"<<std::endl;
-
-
     TICK("renderVolume");
     cudaDeviceSynchronize();
     dim3 grid=divup(renderModel.size, imageBlock);
-    std::cout<<"renderRgbKernel"<<std::endl;
     renderRgbKernel<<<grid, imageBlock>>>(renderModel,volume,vertex,normal);
     TOCK();
 
@@ -542,19 +521,17 @@ void IcsFusion::renderImage(uchar3 * out)
 
 void IcsFusion::renderTrack(uchar3 * out)
 {
-    std::cout<<"renderTrack"<<std::endl;
-
     dim3 grid=divup(renderModel.size, imageBlock);
     TICK("renderTrack");
     renderTrackKernel<<<grid, imageBlock>>>( renderModel, reduction );
     TOCK();
     cudaMemcpy(out, renderModel.data(), params.inputSize.x * params.inputSize.y * sizeof(uchar3), cudaMemcpyDeviceToHost);
+
+    printCUDAError();
 }
 
 void IcsFusion::renderDepth(uchar3 * out)
 {
-    std::cout<<"renderDepth"<<std::endl;
-
     TICK("renderDepthKernel");
     dim3 grid=divup(renderModel.size, imageBlock);
     renderDepthKernel<<<grid, imageBlock>>>( renderModel, rawDepth, nearPlane, farPlane );
@@ -564,8 +541,6 @@ void IcsFusion::renderDepth(uchar3 * out)
 
 bool IcsFusion::updatePoseKernel(sMatrix4 & pose, const float * output,float icp_threshold,sMatrix4 &deltaPose)
 {
-    std::cout<<"updatePoseKernel"<<std::endl;
-
     // Update the pose regarding the tracking result
     TooN::Matrix<8, 32, const float, TooN::Reference::RowMajor> values(output);
     TooN::Vector<6> x = solve(values[0].slice<1, 27>());
@@ -605,8 +580,6 @@ bool IcsFusion::checkPoseKernel(sMatrix4 & pose,
                      uint2 imageSize,
                      float track_threshold)
 {
-    std::cout<<"checkPoseKernel"<<std::endl;
-
     if(forcePose)
       return true;
     
@@ -636,16 +609,9 @@ void IcsFusion::getImageRaw(Host &to) const
 
 void IcsFusion::getDepthRaw(Host &to) const
 {
-  uint s=(uint)rawDepth.size.x*rawDepth.size.y*sizeof(float);
-  to.alloc(s);
-   cudaMemcpy(
-     to.data, 
-     rawDepth.data(), 
-     s, 
-     cudaMemcpyDeviceToHost);
-//     image_copy( (Host)data,
-//     (Device)rawDepth,                
-//                  );
+    uint s=(uint)rawDepth.size.x*rawDepth.size.y*sizeof(float);
+    to.alloc(s);
+    cudaMemcpy(to.data, rawDepth.data(),s,cudaMemcpyDeviceToHost);
 }
 
 void IcsFusion::getIcpValues(Image<float3, Host> &depthVertex,
