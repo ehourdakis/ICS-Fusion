@@ -117,7 +117,7 @@ bool CloseLoop::addFrame(uint16_t *depth,uchar3 *rgb)
         char buf[64];
         sprintf(buf,"f_/f_%d_voxels3",_frame);
         Volume v=_fusion->getVolume();
-        saveVoxelsToFile(v,params,std::string(buf) );
+        //saveVoxelsToFile(v,params,std::string(buf) );
         std::cout<<"Offset:"<<_fusion->getVolume().getOffset()<<std::endl;
         std::cout<<"min:"<<_fusion->getVolume().minVoxel();
         std::cout<<"max:"<<_fusion->getVolume().maxVoxel()<<std::endl;

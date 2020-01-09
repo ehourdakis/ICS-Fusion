@@ -129,7 +129,7 @@ void IcsFusion::siftVolume(const int3 &pos)
     //int3 volSize=volume.getOffset()+pos;
 
     int3 offset=volume.getOffset();
-
+    std::cout<<"Sift volume:"<<pos<<std::endl;
     if(pos.x!=0 )
     {
         std::cout<<"Sift volume x:"<<volume.getOffset()<<std::endl;

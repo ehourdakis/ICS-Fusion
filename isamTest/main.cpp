@@ -9,8 +9,9 @@
 #define NL 15
 #define SKIP_CON 5
 
-#define ADD_NOISE
+// #define ADD_NOISE
 
+#define SMALL_COV 1e-6
 // #define fabs
 using namespace Eigen;
 
@@ -152,15 +153,15 @@ int main()
 
                 if(fabs(l.x<1) && l.x>-1)
                 {
-    #ifdef ADD_NOISE                         
+    #ifdef ADD_NOISE_
                     l.x+=landMarkDistr(generator);
                     l.y+=landMarkDistr(generator);
                     l.z+=landMarkDistr(generator);            
     #endif
                     
                     sMatrix3 cov;
-                    cov=cov*sl;
-                    
+                    //cov=cov*sl;
+                    cov=cov*SMALL_COV;
                     _isam->connectLandmark(l,lid,pid,cov);
                 }
             }

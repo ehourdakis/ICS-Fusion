@@ -76,7 +76,7 @@ class Volume
         __device__ size_t getPos(const int3 &p) const
         {
             int3 pos;
-
+            /*
             if(p.x<minVoxel().x)
             {
                 printf("Min x error:%d, %d\n",p.x,minVoxel().x);
@@ -124,7 +124,10 @@ class Volume
                 pos.z=_resolution.x-(-p.z%(_resolution.z-1));
             else
                 pos.z=p.z%(_resolution.z-1);
-
+            */
+            pos.x=p.x%(_resolution.x-1);
+            pos.y=p.y%(_resolution.y-1);
+            pos.z=p.z%(_resolution.z-1);
             return pos.x + pos.y * _resolution.x + pos.z * _resolution.x * _resolution.y;
         }
 
@@ -185,9 +188,6 @@ class Volume
         __device__
         float3 pos(const int3 & p) const
         {
-//            return make_float3( ( (p.x + 0.5f) * dim.x / _resolution.x)+_offset.x ,
-//                                ( (p.y + 0.5f) * dim.y / _resolution.y)+_offset.y ,
-//                                ( (p.z + 0.5f) * dim.z / _resolution.z)+_offset.z);
             return make_float3( ( (p.x + 0.5f) * voxelSize.x),
                                 ( (p.y + 0.5f) * voxelSize.y),
                                 ( (p.z + 0.5f) * voxelSize.z));
