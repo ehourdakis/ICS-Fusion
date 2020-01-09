@@ -112,12 +112,12 @@ bool CloseLoop::addFrame(uint16_t *depth,uchar3 *rgb)
     }
 
 
-    if( _frame==230 && false)
+    if( ns || nsp)
     {
         char buf[64];
-        sprintf(buf,"f_/f_%d_voxels3",_frame);
+        sprintf(buf,"f_/f_%d_voxels",_frame);
         Volume v=_fusion->getVolume();
-        //saveVoxelsToFile(v,params,std::string(buf) );
+        saveVoxelsToFile(v,params,std::string(buf) );
         std::cout<<"Offset:"<<_fusion->getVolume().getOffset()<<std::endl;
         std::cout<<"min:"<<_fusion->getVolume().minVoxel();
         std::cout<<"max:"<<_fusion->getVolume().maxVoxel()<<std::endl;
@@ -404,7 +404,8 @@ bool CloseLoop::needSift() const
     //std::cout<<maxDelta<<std::endl;
 
     float3 trans=_fusion->getPose().get_translation();
-    float3 delta=trans-(_fusion->getVolume().getDimWithOffset()*0.5);
+    //float3 delta=trans-(_fusion->getVolume().getDimWithOffset()*0.5);
+    float3 delta=trans-_fusion->getVolume().center();
 
 //    std::cout<<trans<<std::endl;
 //    std::cout<<delta<<std::endl;
@@ -430,25 +431,40 @@ bool CloseLoop::needSift() const
     if(doSift)
     {
 
-        char buf[32];
-        sprintf(buf,"f_/f_%d_voxels",_frame);
-        Volume v=_fusion->getVolume();
-//        saveVoxelsToFile(v,params,std::string(buf) );
-
+       
 
         std::cout<<"Offset:"<<_fusion->getVolume().getOffset()<<std::endl;
         std::cout<<"doSift:"<<siftPos.x<<","
                             <<siftPos.y<<","
                             <<siftPos.z<<std::endl;
-        _fusion->siftVolume(siftPos);
+        VolumeSlices slices=_fusion->siftVolume(siftPos);
 
+         char buf[32];
+        sprintf(buf,"f_/f_%d_voxels2",_frame);
+        Volume v=_fusion->getVolume();
+        saveVoxelsToFile(v,params,std::string(buf) );
+
+        
+        _fusion->getVolume().addOffset(siftPos);    
 
         v=_fusion->getVolume();
-        sprintf(buf,"f_/f_%d_voxels2",_frame);
-//        saveVoxelsToFile(v,params,std::string(buf) );
-        std::cout<<"Offset:"<<_fusion->getVolume().getOffset()<<std::endl;
-        std::cout<<"min:"<<_fusion->getVolume().minVoxel()<<
-        "max:"<<_fusion->getVolume().maxVoxel()<<std::endl;
+
+        if(!slices.sliceX.isNull())
+        {
+            sprintf(buf,"f_/f_%d_slicex",_frame);
+            saveVoxelsToFile(slices.sliceX,params,std::string(buf) );
+        }
+        if(!slices.sliceY.isNull())
+        {
+            sprintf(buf,"f_/f_%d_slicey",_frame);
+            saveVoxelsToFile(slices.sliceY,params,std::string(buf) );
+        }
+        if(!slices.sliceZ.isNull())
+        {
+            sprintf(buf,"f_/f_%d_slicez",_frame);
+            saveVoxelsToFile(slices.sliceZ,params,std::string(buf) );
+        }
+
     }
 
     return doSift;

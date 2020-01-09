@@ -139,11 +139,16 @@ __global__ void initVolumeKernel(Volume volume,const float2 val)
     }
 }
 
-__global__ void clearVolumeZ(Volume volume,const float2 val,const int zz,int3 offeset)
+__global__ void clearVolumeZ(Volume volume,const float2 val,const int zz,int3 offeset,Volume slice)
 {
-    int3 pos = make_int3(thr2pos2());
-    pos.x+=offeset.x;
-    pos.y+=offeset.y;
+    //int3 pos = make_int3(thr2pos2());
+    //pos.x+=offeset.x;
+    //pos.y+=offeset.y;
+
+    uint2 u=thr2pos2();
+    int3 pos = make_int3(u.x+offeset.x,u.y+offeset.y,0);
+    int3 slPos=make_int3(u.x,u.y,0);
+
 
     int min_z,max_z;
     if(zz>0)
@@ -159,14 +164,19 @@ __global__ void clearVolumeZ(Volume volume,const float2 val,const int zz,int3 of
 
     for (pos.z=min_z; pos.z < max_z; pos.z++)
     {
+        float2 data=volume[pos];
+        float3 col=volume.getColor(pos);
+        slice.set(slPos,data,col);
         volume.set(pos, val);
+        slPos.z++;
     }
 }
 
-__global__ void clearVolumeX(Volume volume,const float2 val,const int xx,int3 offeset)
+__global__ void clearVolumeX(Volume volume,const float2 val,const int xx,int3 offeset,Volume slice)
 {
     uint2 u=thr2pos2();
     int3 pos = make_int3(0,u.x+offeset.y,u.y+offeset.z);
+    int3 slPos=make_int3(0,u.x,u.y);
 
     int min_x,max_x;
     if(xx>0)
@@ -182,15 +192,29 @@ __global__ void clearVolumeX(Volume volume,const float2 val,const int xx,int3 of
 
     for (pos.x=min_x; pos.x < max_x; pos.x++)
     {
-//        printf("%d %d %d\n",pos.x,pos.y,pos.z);
+        float2 data=volume[pos];
+        float3 col=volume.getColor(pos);
+        slice.set(slPos,data,col);
         volume.set(pos, val);
+        slPos.x++;
+
+//        if(u.x==1 && u.y==1)
+//        {
+//            printf("%f %f\n",data.x,data.y);
+//        }
+
+//        if(col.y!=0)
+//        {
+//            printf("%f\n",data.x);
+//        }
     }
 }
 
-__global__ void clearVolumeY(Volume volume,const float2 val,const int yy,int3 offeset)
+__global__ void clearVolumeY(Volume volume,const float2 val,const int yy,int3 offeset,Volume slice)
 {
     uint2 u=thr2pos2();
     int3 pos = make_int3(u.x+offeset.x,0,u.y+offeset.z);
+    int3 slPos=make_int3(u.x,0,u.y);
 
     int min_y,max_y;
     if(yy>0)
@@ -206,7 +230,11 @@ __global__ void clearVolumeY(Volume volume,const float2 val,const int yy,int3 of
 
     for (pos.y=min_y; pos.y < max_y; pos.y++)
     {
+        float2 data=volume[pos];
+        float3 col=volume.getColor(pos);
+        slice.set(slPos,data,col);
         volume.set(pos, val);
+        slPos.y++;
     }
 }
 

@@ -94,9 +94,9 @@ void saveVoxelsToFile(const Volume volume,const kparams_t &params, std::string f
 
     std::ofstream outFile(fileName, std::ios::out);
     float dimensions[3];
-    dimensions[0]=float(params.volume_resolution.x);
-    dimensions[1]=float(params.volume_resolution.y);
-    dimensions[2]=float(params.volume_resolution.z);
+    dimensions[0]=float(volume.getResolution().x);
+    dimensions[1]=float(volume.getResolution().y);
+    dimensions[2]=float(volume.getResolution().z);
 
     outFile<<dimensions[0]<<std::endl;
     outFile<<dimensions[1]<<std::endl;

@@ -124,40 +124,84 @@ IcsFusion::~IcsFusion()
     printCUDAError();
 }
 
-void IcsFusion::siftVolume(const int3 &pos)
+VolumeSlices IcsFusion::siftVolume(const int3 &pos)
 {
     //int3 volSize=volume.getOffset()+pos;
 
     int3 offset=volume.getOffset();
+
+    std::cout<<"copy slice"<<std::endl;
+    VolumeSlices slices;
+
+
     std::cout<<"Sift volume:"<<pos<<std::endl;
     if(pos.x!=0 )
     {
-        std::cout<<"Sift volume x:"<<volume.getOffset()<<std::endl;
+        //copy slice x
+        uint3 dimX=make_uint3(params.voxelSliceSize.x,
+                                  params.volume_resolution.y,
+                                  params.volume_resolution.z);
+        float3 d=make_float3(float(dimX.x)*volume.getVoxelSize().x,
+                             float(dimX.y)*volume.getVoxelSize().y,
+                             float(dimX.z)*volume.getVoxelSize().z);
+        slices.sliceX.init(dimX,d,params.voxelSliceSize);
+
+
+        std::cout<<"Sift volume x:"<<pos.x<<std::endl;
         dim3 grid = divup(dim3(volume.getResolution().y,volume.getResolution().z), imageBlock);
-        clearVolumeX<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f),pos.x,offset);
+        clearVolumeX<<<grid, imageBlock>>>(volume,
+                                           make_float2(1.0f, 0.0f),
+                                           pos.x,offset,
+                                           slices.sliceX);
         cudaDeviceSynchronize();
     }
-    if(pos.y!=0  )
+    if(pos.y!=0 )
     {
-        std::cout<<"Sift volume y:"<<volume.getOffset()<<std::endl;
+        //copy slice y
+        uint3 dimY=make_uint3(params.volume_resolution.x,
+                              params.voxelSliceSize.y,
+                              params.volume_resolution.z);
+
+        float3 d=make_float3(float(dimY.x)*volume.getVoxelSize().x,
+                             float(dimY.y)*volume.getVoxelSize().y,
+                             float(dimY.z)*volume.getVoxelSize().z);
+        slices.sliceY.init(dimY,d,params.voxelSliceSize);
+
+        std::cout<<"Sift volume y:"<<pos.y<<std::endl;
         dim3 grid = divup(dim3(volume.getResolution().x,volume.getResolution().z), imageBlock);
-        clearVolumeY<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f),pos.y,offset);
+        clearVolumeY<<<grid, imageBlock>>>(volume,
+                                           make_float2(1.0f, 0.0f),
+                                           pos.y,offset,
+                                           slices.sliceY);
         cudaDeviceSynchronize();
     }
     if(pos.z!=0)
     {
-        std::cout<<"Sift volume z:"<<volume.getOffset()<<std::endl;
-        std::cout<<volume.minVoxel()<<" | "<<volume.maxVoxel()<<std::endl;
+        //copy slice z
+        uint3 dimZ=make_uint3(params.volume_resolution.x,
+                              params.volume_resolution.y,
+                              params.voxelSliceSize.z);
+
+        float3 d=make_float3(float(dimZ.x)*volume.getVoxelSize().x,
+                             float(dimZ.y)*volume.getVoxelSize().y,
+                             float(dimZ.z)*volume.getVoxelSize().z);
+        slices.sliceZ.init(dimZ,d,params.voxelSliceSize);
+
+        std::cout<<"Sift volume z:"<<pos.z<<std::endl;
         dim3 grid = divup(dim3(volume.getResolution().x,volume.getResolution().y), imageBlock);
-        clearVolumeZ<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f),pos.z,offset);
+        clearVolumeZ<<<grid, imageBlock>>>(volume,
+                                           make_float2(1.0f, 0.0f),
+                                           pos.z,offset,
+                                           slices.sliceZ);
         cudaDeviceSynchronize();
 
     }
 
 
     cudaDeviceSynchronize();
-    volume.addOffset(pos);
-    std::cout<<"//Sift volume:"<<std::endl;
+    //volume.addOffset(pos);    
+
+    return slices;
 }
 
 void IcsFusion::reset()

@@ -61,7 +61,7 @@ class IcsFusion
 
         void getVertices(std::vector<float3> &vertices);
 
-        void siftVolume(const int3 &pos);
+        VolumeSlices siftVolume(const int3 &pos);
 
         sMatrix4 getPose() const
         {

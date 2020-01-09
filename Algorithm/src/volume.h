@@ -6,6 +6,9 @@
 #include"kparams.h"
 
 //#define IDX(a,b,c) a + b * _size.x + c * _size.x * _size.y
+
+
+
 class Volume
 {
     private:
@@ -18,6 +21,11 @@ class Volume
             dim = make_float3(1);
             data = nullptr;
             color = nullptr;
+        }
+
+        bool isNull() const
+        {
+            return data == nullptr;
         }
 
         __host__ __device__ uint3 getResolution() const
@@ -45,15 +53,23 @@ class Volume
 
         __host__ __device__ float3 getDimWithOffset() const
         {
-            float3 ret=make_float3( dim.x+_offset.x*voxelSize.x,
-                                    dim.y+_offset.y*voxelSize.y,
-                                    dim.z+_offset.z*voxelSize.z);
+            //float3 ret=make_float3( dim.x+_offset.x*voxelSize.x,
+            //                        dim.y+_offset.y*voxelSize.y,
+            //                        dim.z+_offset.z*voxelSize.z);
 
             int3 v=maxVoxel();
+            float3 ret;
             ret.x=(v.x)*voxelSize.x;
             ret.y=(v.y)*voxelSize.y;
             ret.z=(v.z)*voxelSize.z;
             return ret;
+        }
+
+        __host__ __device__ float3 center() const
+        {
+            return make_float3(float(_resolution.x)*voxelSize.x*0.5+float(_offset.x)*voxelSize.x,
+                               float(_resolution.y)*voxelSize.x*0.5+float(_offset.y)*voxelSize.y,
+                               float(_resolution.z)*voxelSize.x*0.5+float(_offset.z)*voxelSize.z);
         }
 
         __host__ __device__ void addOffset(int3 off)
@@ -125,9 +141,9 @@ class Volume
             else
                 pos.z=p.z%(_resolution.z-1);
             */
-            pos.x=p.x%(_resolution.x-1);
-            pos.y=p.y%(_resolution.y-1);
-            pos.z=p.z%(_resolution.z-1);
+            pos.x=p.x%(_resolution.x);
+            pos.y=p.y%(_resolution.y);
+            pos.z=p.z%(_resolution.z);
             return pos.x + pos.y * _resolution.x + pos.z * _resolution.x * _resolution.y;
         }
 
@@ -313,6 +329,13 @@ class Volume
 void generateTriangles(std::vector<float3>& triangles,  const Volume volume, short2 *hostData);
 
 void saveVoxelsToFile(const Volume volume,const kparams_t &params, std::string prefix);
+
+struct VolumeSlices
+{
+    Volume sliceX;
+    Volume sliceY;
+    Volume sliceZ;
+};
 
 #include"volume_impl.h"
 
