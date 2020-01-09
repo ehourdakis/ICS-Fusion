@@ -1,15 +1,17 @@
-#include "Algorithm/src/Isam.h"
-#include <vector>
+#include"Isam.h"
+#include<vector>
 #include <random>
 
 #include <Eigen/StdVector>
 #include<fstream>
 
-#define NN 10
-#define NL 1000
+#define NN 21
+#define NL 15
+#define SKIP_CON 5
 
 #define ADD_NOISE
 
+// #define fabs
 using namespace Eigen;
 
 const int isam::Pose2d::dim;
@@ -81,7 +83,7 @@ int main()
     
     float s=0.01;
     float sr=0.01;
-    float sl=0.1;
+    float sl=0.001;
     
     std::normal_distribution<float> landMarkDistr (0.0,sl);
     std::normal_distribution<float> poseDistr (0.0,s);
@@ -130,31 +132,40 @@ int main()
     for(int i=0;i<NL;i++)
     {
         float3 l;
-        l.x=0.01*i;
+        l.y=0.5;
+        l.x=0.3*i;
         l.z=0.1;        
         _isam->addLandmark(l);
     }
     
-    for(int lid=0;lid<NL;lid++)
+    for(int pid=0;pid<NN;pid++)    
     {
-        
-        for(int pid=0;pid<NN;pid++)
-        {
-            float3 l;
-            l.z=0.1;
-            l.x=0.01*lid-0.2*pid;
 
-#ifdef ADD_NOISE                         
-            l.x+=landMarkDistr(generator);
-            l.y+=landMarkDistr(generator);
-            l.z+=landMarkDistr(generator);            
-#endif
-            
-            sMatrix3 cov;
-            cov=cov*sl;
-            
-            _isam->connectLandmark(l,lid,pid,cov);
+        if(pid%SKIP_CON==0)
+        {
+            for(int lid=0;lid<NL;lid++)
+            {
+                float3 l;
+                l.z=0.1;
+                l.y=0.5;
+                l.x=0.3*lid-0.2*pid;
+
+                if(fabs(l.x<1) && l.x>-1)
+                {
+    #ifdef ADD_NOISE                         
+                    l.x+=landMarkDistr(generator);
+                    l.y+=landMarkDistr(generator);
+                    l.z+=landMarkDistr(generator);            
+    #endif
+                    
+                    sMatrix3 cov;
+                    cov=cov*sl;
+                    
+                    _isam->connectLandmark(l,lid,pid,cov);
+                }
+            }
         }
+        
     }
     
     _isam->optimize(NN);

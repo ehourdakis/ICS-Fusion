@@ -33,7 +33,7 @@ set(cuda_srcs
     ${CMAKE_CURRENT_LIST_DIR}/src/Isam.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/featuredetector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/keyptsmap.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/g2oGraph.cpp
+    #${CMAKE_CURRENT_LIST_DIR}/src/g2oGraph.cpp
 )
 
 include_directories(
