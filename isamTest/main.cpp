@@ -188,7 +188,7 @@ int main()
     }
     
     char buf[32];
-    sprintf(buf,"f_%d_poses",NN);
+    sprintf(buf,"f_/f_%d_poses",NN);
     savePoses(buf,truePoses);
     
     return 0;
