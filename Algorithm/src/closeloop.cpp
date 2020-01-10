@@ -104,15 +104,34 @@ bool CloseLoop::addFrame(uint16_t *depth,uchar3 *rgb)
         std::cerr<<"[FRAME="<<_frame<<"] Integration faild!"<<std::endl;        
     } 
 
-    static bool nsp=false;
-    bool ns=false;
-    if(isKeyFrame() )
-    {        
-        ns=needSift();
+    if(_frame==4)
+    {
+        _isam->init(_fusion->getPose() );
+        prevPose=_fusion->getPose();
+        isamPoses.push_back(prevPose);
     }
 
+    static bool nsp=false;
+    bool sifted=false;
+    if(isKeyFrame() )
+    {
+        VolumeSlices slices;
+        sifted=siftVolume(slices);
 
-    if( ns || nsp)
+        if(sifted)
+        {
+            //add isam pose
+            addPoseToIsam(slices);
+            bool fm=featuresMatching();
+            if(fm)
+            {
+                optimize();
+            }
+        }
+    }
+
+    /*
+    if( sifted || nsp)
     {
         char buf[64];
         sprintf(buf,"f_/f_%d_voxels",_frame);
@@ -122,8 +141,8 @@ bool CloseLoop::addFrame(uint16_t *depth,uchar3 *rgb)
         std::cout<<"min:"<<_fusion->getVolume().minVoxel();
         std::cout<<"max:"<<_fusion->getVolume().maxVoxel()<<std::endl;
     }
-    nsp=ns;
-
+    nsp=sifted;
+    */
 
     _frame++;
 
@@ -148,6 +167,72 @@ sMatrix4 CloseLoop::fixPoses(sMatrix4 fixPose)
     return finalPose;
 }
 
+bool CloseLoop::addPoseToIsam(VolumeSlices &sl)
+{
+    sMatrix6 cov;
+    cov=cov*1e4;
+
+    sMatrix4 p=_fusion->getPose();
+    _isam->addFrame(p,cov);
+    prevPose=p;
+
+    DepthHost rawDepth;
+    _fusion->getDepthRaw(rawDepth);
+    depths.push_back(rawDepth);
+
+    RgbHost rawRgb;
+    _fusion->getImageRaw(rawRgb);
+    rgbs.push_back(rawRgb);
+
+    slices.push_back(sl);
+    poses.push_back(_fusion->getPose());
+
+    return true;
+}
+
+bool CloseLoop::featuresMatching()
+{
+    std::vector<float3> keypoints;
+    std::vector<FeatDescriptor> descriptors;
+
+    _featDet->detectFeatures(_frame,depths.back(),rgbs.back(),keypoints,descriptors);
+
+    std::cout<<"Keypts size:"<<keypoints.size()<<std::endl;
+    if(_keyMap->isEmpty() )
+    {
+        _keyMap->addKeypoints(keypoints,descriptors);
+        std::cout<<"Keypts added"<<std::endl;
+        saveDescData(keypoints,descriptors);
+        return false;
+    }
+
+    _keyMap->matching(keypoints,descriptors,_frame);
+    std::cout<<"Keypts matched"<<std::endl;
+    saveDescData(keypoints,descriptors);
+    return true;
+}
+
+bool CloseLoop::optimize()
+{
+    double err=_isam->optimize(_frame);
+
+    //add poses for logging
+    isamPoses.clear();
+    for(int i=0;i<_isam->poseSize();i++)
+    {
+        isamPoses.push_back(_isam->getPose(i));
+    }
+
+    //save log data
+    char buf[32];
+    sprintf(buf,"f_/f_%d_poses",_frame);
+    savePoses(buf,poses);
+
+    sprintf(buf,"f_/f_%d_poses2",_frame);
+    savePoses(buf,isamPoses);
+
+}
+
 sMatrix4 CloseLoop::doLoopClosure(sMatrix4 gt)
 {
     std::cout<<"Loop closure "<<_frame<<std::endl;
@@ -157,7 +242,7 @@ sMatrix4 CloseLoop::doLoopClosure(sMatrix4 gt)
 
     if(_frame==4)
     {
-        _isam->init(_fusion->getPose() );        
+        _isam->init(_fusion->getPose() );
         prevPose=_fusion->getPose();
         isamPoses.push_back(prevPose);
     }
@@ -257,12 +342,9 @@ void CloseLoop::saveDescData(const std::vector<float3> &keypts, const std::vecto
     savePose(buf,pose);
 
 #ifdef SAVE_VOXEL_GRID
-//   if(_frame%120==0)
-   {
     sprintf(buf,"f_/f_%d_voxels",_frame);
     Volume v=_fusion->getVolume();
-//    saveVoxelsToFile(v,params,std::string(buf) );
-   }
+    saveVoxelsToFile(v,params,std::string(buf) );
 #endif
 }
 
@@ -334,21 +416,6 @@ void CloseLoop::savePoses(char *fileName,std::vector<sMatrix4> &poses,sMatrix4 f
     
     file.close();
 }
-//void CloseLoop::eulerFromHomo(const sMatrix4 &pose, float &roll,float &pitch,float &yaw)
-//{
-//    Eigen::Matrix3f rot;
-//    for (int i=0;i<3;i++)
-//    {
-//        for(int j=0;j<3;j++)
-//        {
-//            rot(i,j)=pose(i,j);
-//        }
-//    }
-//    Eigen::Vector3f rotV = rot.eulerAngles(0, 1, 2);
-//    roll=rotV(0);
-//    pitch=rotV(0);
-//    yaw=rotV(0);
-//}
 
 void CloseLoop::savePoses(char *fileName,std::vector<sMatrix4> &poses)
 {
@@ -397,18 +464,16 @@ void CloseLoop::clear()
     _isam->clear();
 }
 
-bool CloseLoop::needSift() const
+bool CloseLoop::siftVolume(VolumeSlices &slices) const
 {
     static float3 maxDelta= 1.5*params.voxelSliceSize*params.volume_size/params.volume_resolution;
 
-    //std::cout<<maxDelta<<std::endl;
-
-    float3 trans=_fusion->getPose().get_translation();
-    //float3 delta=trans-(_fusion->getVolume().getDimWithOffset()*0.5);
+    std::cout<<"TR:"<<_fusion->getPose().get_translation()<<std::endl;
+    std::cout<<"maxDelta:"<<maxDelta<<std::endl;
+    float3 trans=_fusion->getPose().get_translation();    
     float3 delta=trans-_fusion->getVolume().center();
-
-//    std::cout<<trans<<std::endl;
-//    std::cout<<delta<<std::endl;
+    std::cout<<"center:"<<_fusion->getVolume().center()<<std::endl;
+    std::cout<<"delta:"<<delta<<std::endl;
 
     bool doSift=false;
     int3 siftPos=make_int3(0,0,0);
@@ -430,25 +495,25 @@ bool CloseLoop::needSift() const
 
     if(doSift)
     {
-
-       
-
         std::cout<<"Offset:"<<_fusion->getVolume().getOffset()<<std::endl;
         std::cout<<"doSift:"<<siftPos.x<<","
                             <<siftPos.y<<","
-                            <<siftPos.z<<std::endl;
-        VolumeSlices slices=_fusion->siftVolume(siftPos);
-
-         char buf[32];
-        sprintf(buf,"f_/f_%d_voxels2",_frame);
+                            <<siftPos.z<<std::endl;        
+#ifdef SAVE_VOXEL_GRID
+        char buf[32];
+        sprintf(buf,"f_/f_%d_voxels1",_frame);
         Volume v=_fusion->getVolume();
         saveVoxelsToFile(v,params,std::string(buf) );
+#endif
 
-        
+        slices=_fusion->siftVolume(siftPos);
         _fusion->getVolume().addOffset(siftPos);    
 
-        v=_fusion->getVolume();
-
+#ifdef SAVE_VOXEL_GRID
+        sprintf(buf,"f_/f_%d_voxels2",_frame);
+        saveVoxelsToFile(v,params,std::string(buf) );
+#endif
+        /*
         if(!slices.sliceX.isNull())
         {
             sprintf(buf,"f_/f_%d_slicex",_frame);
@@ -464,7 +529,7 @@ bool CloseLoop::needSift() const
             sprintf(buf,"f_/f_%d_slicez",_frame);
             saveVoxelsToFile(slices.sliceZ,params,std::string(buf) );
         }
-
+        */
     }
 
     return doSift;
@@ -499,8 +564,8 @@ bool CloseLoop::isKeyFrame() const
 
 
     
-    if(_frame==180)
-        return true;
+//    if(_frame==180)
+//        return true;
     return false;
     //return _frame > 4 && (_frame % 10 == 0);
 }

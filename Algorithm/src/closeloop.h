@@ -61,6 +61,8 @@ class CloseLoop
         std::vector<sMatrix4> poses;
         std::vector<sMatrix4> isamPoses;
         std::vector<sMatrix4> isamPoses2;
+        std::vector<VolumeSlices> slices;
+
         sMatrix6 icpCov;
 
         void clear();
@@ -84,7 +86,10 @@ class CloseLoop
 
 
         //check if volume need sift
-        bool needSift() const;
+        bool siftVolume(VolumeSlices &slices) const;
+        bool addPoseToIsam(VolumeSlices &sl);
+        bool optimize();
+        bool featuresMatching();
 
 };
 
