@@ -139,8 +139,8 @@ VolumeSlices IcsFusion::siftVolume(const int3 &pos)
     {
         //copy slice x
         uint3 dimX=make_uint3(params.voxelSliceSize.x,
-                                  params.volume_resolution.y,
-                                  params.volume_resolution.z);
+                              params.volume_resolution.y,
+                              params.volume_resolution.z);
         float3 d=make_float3(float(dimX.x)*volume.getVoxelSize().x,
                              float(dimX.y)*volume.getVoxelSize().y,
                              float(dimX.z)*volume.getVoxelSize().z);
@@ -151,7 +151,7 @@ VolumeSlices IcsFusion::siftVolume(const int3 &pos)
         dim3 grid = divup(dim3(volume.getResolution().y,volume.getResolution().z), imageBlock);
         clearVolumeX<<<grid, imageBlock>>>(volume,
                                            make_float2(1.0f, 0.0f),
-                                           pos.x,offset,
+                                           pos.x,
                                            slices.sliceX);
         cudaDeviceSynchronize();
     }
@@ -171,7 +171,7 @@ VolumeSlices IcsFusion::siftVolume(const int3 &pos)
         dim3 grid = divup(dim3(volume.getResolution().x,volume.getResolution().z), imageBlock);
         clearVolumeY<<<grid, imageBlock>>>(volume,
                                            make_float2(1.0f, 0.0f),
-                                           pos.y,offset,
+                                           pos.y,
                                            slices.sliceY);
         cudaDeviceSynchronize();
     }
@@ -191,7 +191,7 @@ VolumeSlices IcsFusion::siftVolume(const int3 &pos)
         dim3 grid = divup(dim3(volume.getResolution().x,volume.getResolution().y), imageBlock);
         clearVolumeZ<<<grid, imageBlock>>>(volume,
                                            make_float2(1.0f, 0.0f),
-                                           pos.z,offset,
+                                           pos.z,
                                            slices.sliceZ);
         cudaDeviceSynchronize();
 
@@ -342,8 +342,8 @@ void IcsFusion::integrateNewData(sMatrix4 p)
 
 bool IcsFusion::integration(uint frame)
 {
-    bool doIntegrate = checkPoseKernel(pose, oldPose, output.data(),params.computationSize, track_threshold);
-    if (doIntegrate || frame <= 3)
+    //bool doIntegrate = checkPoseKernel(pose, oldPose, output.data(),params.computationSize, track_threshold);
+    if (_tracked || frame <= 3)
     {
         printCUDAError();
         TICK("integrate");
@@ -357,14 +357,10 @@ bool IcsFusion::integration(uint frame)
                                               maxweight );
 
         TOCK();       
-        doIntegrate = true;
-    }
-    else
-    {
-        doIntegrate = false;
+        return true;
     }
 
-    return doIntegrate;
+    return false;
 }
 
 bool IcsFusion::deIntegration(sMatrix4 p,const Host &depth,const Host &rgb)
@@ -625,7 +621,10 @@ bool IcsFusion::checkPoseKernel(sMatrix4 & pose,
                      float track_threshold)
 {
     if(forcePose)
-      return true;
+    {
+        _tracked=true;
+        return true;
+    }
     
     // Check the tracking result, and go back to the previous camera position if necessary
     // return true;
@@ -640,6 +639,7 @@ bool IcsFusion::checkPoseKernel(sMatrix4 & pose,
     }
 
     _tracked=true;
+    poseInv=inverse(pose);
     return true;
 }
 

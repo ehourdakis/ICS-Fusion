@@ -470,9 +470,11 @@ bool CloseLoop::siftVolume(VolumeSlices &slices) const
 
     std::cout<<"TR:"<<_fusion->getPose().get_translation()<<std::endl;
     std::cout<<"maxDelta:"<<maxDelta<<std::endl;
+    float3 volumeCenter=_fusion->getVolume().center();
     float3 trans=_fusion->getPose().get_translation();    
-    float3 delta=trans-_fusion->getVolume().center();
-    std::cout<<"center:"<<_fusion->getVolume().center()<<std::endl;
+    float3 delta=trans-volumeCenter;
+
+//    std::cout<<"center:"<volumeCenter<<std::endl;
     std::cout<<"delta:"<<delta<<std::endl;
 
     bool doSift=false;
@@ -507,7 +509,15 @@ bool CloseLoop::siftVolume(VolumeSlices &slices) const
 #endif
 
         slices=_fusion->siftVolume(siftPos);
-        _fusion->getVolume().addOffset(siftPos);    
+        _fusion->getVolume().addOffset(siftPos);
+        slices.pos=siftPos;
+
+        sMatrix4 centerP;
+        centerP(0,3)=volumeCenter.x;
+        centerP(1,3)=volumeCenter.y;
+        centerP(2,3)=volumeCenter.z;
+
+        slices.center=_fusion->getPoseInv()*centerP;
 
 #ifdef SAVE_VOXEL_GRID
         sprintf(buf,"f_/f_%d_voxels2",_frame);

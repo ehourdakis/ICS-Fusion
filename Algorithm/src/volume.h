@@ -283,7 +283,11 @@ class Volume
                                         (-4.f/voxelSize.z)+0.5f);
             _offset=make_int3(int(offsetF.x),int(offsetF.y),int(offsetF.z));
             */
-            _offset=make_int3(0,0,0);
+            float3 offsetF=make_float3(-0.5-float(_resolution.x)/2,
+                                       -0.5-float(_resolution.y)/2,
+                                       -0.5-float(_resolution.z)/2);
+
+            _offset=make_int3(int(offsetF.x),int(offsetF.y),int(offsetF.z));
         }
 
         __host__ __device__ int3 minVoxel() const
@@ -331,7 +335,10 @@ void generateTriangles(std::vector<float3>& triangles,  const Volume volume, sho
 void saveVoxelsToFile(const Volume volume,const kparams_t &params, std::string prefix);
 
 struct VolumeSlices
-{
+{    
+    int3 pos;
+    sMatrix4 center;//position of the center relative to current camera pose
+
     Volume sliceX;
     Volume sliceY;
     Volume sliceZ;

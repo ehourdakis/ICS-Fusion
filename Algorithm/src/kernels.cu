@@ -139,13 +139,14 @@ __global__ void initVolumeKernel(Volume volume,const float2 val)
     }
 }
 
-__global__ void clearVolumeZ(Volume volume,const float2 val,const int zz,int3 offeset,Volume slice)
+__global__ void clearVolumeZ(Volume volume,const float2 val,const int zz,Volume slice)
 {
     //int3 pos = make_int3(thr2pos2());
     //pos.x+=offeset.x;
     //pos.y+=offeset.y;
 
     uint2 u=thr2pos2();
+    int3 offeset=volume.getOffset();
     int3 pos = make_int3(u.x+offeset.x,u.y+offeset.y,0);
     int3 slPos=make_int3(u.x,u.y,0);
 
@@ -172,9 +173,10 @@ __global__ void clearVolumeZ(Volume volume,const float2 val,const int zz,int3 of
     }
 }
 
-__global__ void clearVolumeX(Volume volume,const float2 val,const int xx,int3 offeset,Volume slice)
+__global__ void clearVolumeX(Volume volume,const float2 val,const int xx,Volume slice)
 {
     uint2 u=thr2pos2();
+    int3 offeset=volume.getOffset();
     int3 pos = make_int3(0,u.x+offeset.y,u.y+offeset.z);
     int3 slPos=make_int3(0,u.x,u.y);
 
@@ -210,9 +212,10 @@ __global__ void clearVolumeX(Volume volume,const float2 val,const int xx,int3 of
     }
 }
 
-__global__ void clearVolumeY(Volume volume,const float2 val,const int yy,int3 offeset,Volume slice)
+__global__ void clearVolumeY(Volume volume,const float2 val,const int yy,Volume slice)
 {
     uint2 u=thr2pos2();
+    int3 offeset=volume.getOffset();
     int3 pos = make_int3(u.x+offeset.x,0,u.y+offeset.z);
     int3 slPos=make_int3(u.x,0,u.y);
 

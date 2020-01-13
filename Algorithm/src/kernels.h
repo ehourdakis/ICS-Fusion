@@ -67,9 +67,9 @@ __global__ void renderRgbKernel(Image<uchar3> render,
 
 __global__ void generate_gaussian(Image<float> out, float delta, int radius);
 __global__ void initVolumeKernel(Volume volume, const float2 val);
-__global__ void clearVolumeZ(Volume volume, const float2 val, const int zz, int3 offeset,Volume slice);
-__global__ void clearVolumeX(Volume volume, const float2 val, const int xx, int3 offeset,Volume slice);
-__global__ void clearVolumeY(Volume volume, const float2 val, const int yy, int3 offeset,Volume slice);
+__global__ void clearVolumeZ(Volume volume, const float2 val, const int zz, Volume slice);
+__global__ void clearVolumeX(Volume volume, const float2 val, const int xx, Volume slice);
+__global__ void clearVolumeY(Volume volume, const float2 val, const int yy, Volume slice);
 
 __global__ void bilateralFilterKernel(Image<float> out,
                                       const Image<float> in,

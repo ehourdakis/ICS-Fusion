@@ -68,10 +68,16 @@ class IcsFusion
             return pose;
         }
 
+        sMatrix4 getPoseInv() const
+        {
+            return poseInv;
+        }
+
         void setPose(const sMatrix4 pose_)
         {
             pose=pose_;
             forcePose=true;
+            _tracked=true;
         }
         void setViewPose(sMatrix4 *value = NULL)
         {
@@ -124,6 +130,7 @@ class IcsFusion
         bool forcePose;
         float step;
         sMatrix4 pose;
+        sMatrix4 poseInv;
         sMatrix4 oldPose;
         sMatrix4 deltaPose;
         sMatrix4 trackPose;
