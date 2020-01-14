@@ -56,14 +56,16 @@ void dumpVolume(const char *  filename,const Volume volume)
         hostData = NULL;
     }
 }
-
+*/
 void generateTriangles(std::vector<float3>& triangles,  const Volume volume, short2 *hostData)
 {
-    for(unsigned int z=0; z<volume.size().z-1; z++)
+    int3 min=volume.minVoxel();
+    int3 max=volume.maxVoxel();
+    for(int z=min.z; z<max.z-1; z++)
     {
-        for(unsigned int y=0; y<volume.size().y-1; y++)
+        for(int y=min.y; y<max.y-1; y++)
         {
-            for (unsigned int x=0; x<volume.size().x-1; x++)
+            for(int x=min.x;x<max.x-1;x++)
             {
                 //Loop over all cubes
                 const uint8_t cubeIndex = getCubeIndex(x,y,z,volume, hostData);
@@ -86,7 +88,7 @@ void generateTriangles(std::vector<float3>& triangles,  const Volume volume, sho
         }
     }
 }
-*/
+
 void saveVoxelsToFile(const Volume volume,const kparams_t &params, std::string fileName)
 {
     //TODO this function needs cleanup and speedup

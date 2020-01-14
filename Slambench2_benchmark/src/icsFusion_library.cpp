@@ -285,7 +285,8 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
     gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
     tracked=loopCl->addFrameWithPose(inputDepth,inputRGB,gtPose);
 #else
-    tracked=loopCl->addFrame(inputDepth,inputRGB);
+    loopCl->preprocess(inputDepth,inputRGB);
+    tracked=loopCl->processFrame();
 #endif
 
     IcsFusion *icsFusion=loopCl->fusion();

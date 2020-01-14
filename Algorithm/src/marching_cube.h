@@ -2,7 +2,7 @@
 
 //using namespace std;
 
-#if 0
+#if 1
 int triTable[256][16] =
   {{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
    {0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -264,39 +264,39 @@ int triTable[256][16] =
 unsigned char getCubeIndex(int x, int y, int z, const Volume &vol, short2* hostdata)
 {
 
-	if ( hostdata[(x    ) + (y    ) * vol.size.x + (z    ) * vol.size.x * vol.size.y].y  < 1) return 0;
-	if ( hostdata[(x + 1) + (y    ) * vol.size.x + (z    ) * vol.size.x * vol.size.y].y  < 1) return 0;
-	if ( hostdata[(x + 1) + (y    ) * vol.size.x + (z + 1) * vol.size.x * vol.size.y].y  < 1) return 0;
-	if ( hostdata[(x    ) + (y    ) * vol.size.x + (z + 1) * vol.size.x * vol.size.y].y  < 1) return 0;
-	if ( hostdata[(x    ) + (y + 1) * vol.size.x + (z    ) * vol.size.x * vol.size.y].y  < 1) return 0;
-	if ( hostdata[(x + 1) + (y + 1) * vol.size.x + (z    ) * vol.size.x * vol.size.y].y  < 1) return 0;
-	if ( hostdata[(x + 1) + (y + 1) * vol.size.x + (z + 1) * vol.size.x * vol.size.y].y  < 1) return 0;
-	if ( hostdata[(x    ) + (y + 1) * vol.size.x + (z + 1) * vol.size.x * vol.size.y].y  < 1) return 0;
+        if ( hostdata[(x    ) + (y    ) * vol.getResolution().x + (z    ) * vol.getResolution().x * vol.getResolution().y].y  < 1) return 0;
+        if ( hostdata[(x + 1) + (y    ) * vol.getResolution().x + (z    ) * vol.getResolution().x * vol.getResolution().y].y  < 1) return 0;
+        if ( hostdata[(x + 1) + (y    ) * vol.getResolution().x + (z + 1) * vol.getResolution().x * vol.getResolution().y].y  < 1) return 0;
+        if ( hostdata[(x    ) + (y    ) * vol.getResolution().x + (z + 1) * vol.getResolution().x * vol.getResolution().y].y  < 1) return 0;
+        if ( hostdata[(x    ) + (y + 1) * vol.getResolution().x + (z    ) * vol.getResolution().x * vol.getResolution().y].y  < 1) return 0;
+        if ( hostdata[(x + 1) + (y + 1) * vol.getResolution().x + (z    ) * vol.getResolution().x * vol.getResolution().y].y  < 1) return 0;
+        if ( hostdata[(x + 1) + (y + 1) * vol.getResolution().x + (z + 1) * vol.getResolution().x * vol.getResolution().y].y  < 1) return 0;
+        if ( hostdata[(x    ) + (y + 1) * vol.getResolution().x + (z + 1) * vol.getResolution().x * vol.getResolution().y].y  < 1) return 0;
 
 
   unsigned char cubeIndex = 0;
 
-  if ( hostdata[(x    ) + (y    ) * vol.size.x + (z    ) * vol.size.x * vol.size.y].x  < 0)  cubeIndex |=  1;
-  if ( hostdata[(x + 1) + (y    ) * vol.size.x + (z    ) * vol.size.x * vol.size.y].x  < 0)  cubeIndex |=  2;
-  if ( hostdata[(x + 1) + (y    ) * vol.size.x + (z + 1) * vol.size.x * vol.size.y].x  < 0)  cubeIndex |=  4;
-  if ( hostdata[(x    ) + (y    ) * vol.size.x + (z + 1) * vol.size.x * vol.size.y].x  < 0)  cubeIndex |=  8;
-  if ( hostdata[(x    ) + (y + 1) * vol.size.x + (z    ) * vol.size.x * vol.size.y].x  < 0)  cubeIndex |=  16;
-  if ( hostdata[(x + 1) + (y + 1) * vol.size.x + (z    ) * vol.size.x * vol.size.y].x  < 0)  cubeIndex |=  32;
-  if ( hostdata[(x + 1) + (y + 1) * vol.size.x + (z + 1) * vol.size.x * vol.size.y].x  < 0)  cubeIndex |=  64;
-  if ( hostdata[(x    ) + (y + 1) * vol.size.x + (z + 1) * vol.size.x * vol.size.y].x  < 0)  cubeIndex |=  128;
+  if ( hostdata[(x    ) + (y    ) * vol.getResolution().x + (z    ) * vol.getResolution().x * vol.getResolution().y].x  < 0)  cubeIndex |=  1;
+  if ( hostdata[(x + 1) + (y    ) * vol.getResolution().x + (z    ) * vol.getResolution().x * vol.getResolution().y].x  < 0)  cubeIndex |=  2;
+  if ( hostdata[(x + 1) + (y    ) * vol.getResolution().x + (z + 1) * vol.getResolution().x * vol.getResolution().y].x  < 0)  cubeIndex |=  4;
+  if ( hostdata[(x    ) + (y    ) * vol.getResolution().x + (z + 1) * vol.getResolution().x * vol.getResolution().y].x  < 0)  cubeIndex |=  8;
+  if ( hostdata[(x    ) + (y + 1) * vol.getResolution().x + (z    ) * vol.getResolution().x * vol.getResolution().y].x  < 0)  cubeIndex |=  16;
+  if ( hostdata[(x + 1) + (y + 1) * vol.getResolution().x + (z    ) * vol.getResolution().x * vol.getResolution().y].x  < 0)  cubeIndex |=  32;
+  if ( hostdata[(x + 1) + (y + 1) * vol.getResolution().x + (z + 1) * vol.getResolution().x * vol.getResolution().y].x  < 0)  cubeIndex |=  64;
+  if ( hostdata[(x    ) + (y + 1) * vol.getResolution().x + (z + 1) * vol.getResolution().x * vol.getResolution().y].x  < 0)  cubeIndex |=  128;
 
   return cubeIndex;
 }
 
 float3 LinearInterpolate(uint3 a, uint3 b, const Volume &vol, short2* hostdata)
 {
-  const float va = hostdata[a.x + a.y * vol.size.x + a.z * vol.size.x * vol.size.y].x * 0.00003051944088f;
-  const float vb = hostdata[b.x + b.y * vol.size.x + b.z * vol.size.x * vol.size.y].x * 0.00003051944088f;
+  const float va = hostdata[a.x + a.y * vol.getResolution().x + a.z * vol.getResolution().x * vol.getResolution().y].x * 0.00003051944088f;
+  const float vb = hostdata[b.x + b.y * vol.getResolution().x + b.z * vol.getResolution().x * vol.getResolution().y].x * 0.00003051944088f;
 
   const float wa = va/(va-vb);
 
-  float3 volposa = make_float3((a.x + 0.5f) * vol.dim.x / vol.size.x, (a.y + 0.5f) * vol.dim.y / vol.size.y, (a.z + 0.5f) * vol.dim.z / vol.size.z);
-  float3 volposb = make_float3((b.x + 0.5f) * vol.dim.x / vol.size.x, (b.y + 0.5f) * vol.dim.y / vol.size.y, (b.z + 0.5f) * vol.dim.z / vol.size.z);
+  float3 volposa = make_float3((a.x + 0.5f) * vol.getDimensions().x / vol.getResolution().x, (a.y + 0.5f) * vol.getDimensions().y / vol.getResolution().y, (a.z + 0.5f) * vol.getDimensions().z / vol.getResolution().z);
+  float3 volposb = make_float3((b.x + 0.5f) * vol.getDimensions().x / vol.getResolution().x, (b.y + 0.5f) * vol.getDimensions().y / vol.getResolution().y, (b.z + 0.5f) * vol.getDimensions().z / vol.getResolution().z);
 
   return (1.f-wa)*volposa + wa*volposb;
 
@@ -306,18 +306,18 @@ float3 LinearInterpolate(uint3 a, uint3 b, const Volume &vol, short2* hostdata)
 
 float3 calcPt(int edge, int x, int y, int z, const Volume &vol) {
   switch (edge) {
-  case  0: return  0.5f * make_float3(((x + 0) + 0.5f) * vol.dim.x / vol.size.x, ((y + 0)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 0)  + 0.5f) * vol.dim.z / vol.size.z) + 0.5f * make_float3(((x + 1)  + 0.5f) * vol.dim.x / vol.size.x, ((y + 0)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 0)  + 0.5f) * vol.dim.z / vol.size.z) ;
-  case  1: return  0.5f * make_float3(((x + 1) + 0.5f) * vol.dim.x / vol.size.x, ((y + 0)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 0)  + 0.5f) * vol.dim.z / vol.size.z) + 0.5f * make_float3(((x + 1)  + 0.5f) * vol.dim.x / vol.size.x, ((y + 0)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 1)  + 0.5f) * vol.dim.z / vol.size.z) ;
-  case  2: return  0.5f * make_float3(((x + 1) + 0.5f) * vol.dim.x / vol.size.x, ((y + 0)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 1)  + 0.5f) * vol.dim.z / vol.size.z) + 0.5f * make_float3(((x + 0)  + 0.5f) * vol.dim.x / vol.size.x, ((y + 0)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 1)  + 0.5f) * vol.dim.z / vol.size.z) ;
-  case  3: return  0.5f * make_float3(((x + 0) + 0.5f) * vol.dim.x / vol.size.x, ((y + 0)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 1)  + 0.5f) * vol.dim.z / vol.size.z) + 0.5f * make_float3(((x + 0)  + 0.5f) * vol.dim.x / vol.size.x, ((y + 0)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 0)  + 0.5f) * vol.dim.z / vol.size.z) ;
-  case  4: return  0.5f * make_float3(((x + 0) + 0.5f) * vol.dim.x / vol.size.x, ((y + 1)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 0)  + 0.5f) * vol.dim.z / vol.size.z) + 0.5f * make_float3(((x + 1)  + 0.5f) * vol.dim.x / vol.size.x, ((y + 1)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 0)  + 0.5f) * vol.dim.z / vol.size.z) ;
-  case  5: return  0.5f * make_float3(((x + 1) + 0.5f) * vol.dim.x / vol.size.x, ((y + 1)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 0)  + 0.5f) * vol.dim.z / vol.size.z) + 0.5f * make_float3(((x + 1)  + 0.5f) * vol.dim.x / vol.size.x, ((y + 1)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 1)  + 0.5f) * vol.dim.z / vol.size.z) ;
-  case  6: return  0.5f * make_float3(((x + 1) + 0.5f) * vol.dim.x / vol.size.x, ((y + 1)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 1)  + 0.5f) * vol.dim.z / vol.size.z) + 0.5f * make_float3(((x + 0)  + 0.5f) * vol.dim.x / vol.size.x, ((y + 1)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 1)  + 0.5f) * vol.dim.z / vol.size.z) ;
-  case  7: return  0.5f * make_float3(((x + 0) + 0.5f) * vol.dim.x / vol.size.x, ((y + 1)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 1)  + 0.5f) * vol.dim.z / vol.size.z) + 0.5f * make_float3(((x + 0)  + 0.5f) * vol.dim.x / vol.size.x, ((y + 1)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 0)  + 0.5f) * vol.dim.z / vol.size.z) ;
-  case  8: return  0.5f * make_float3(((x + 0) + 0.5f) * vol.dim.x / vol.size.x, ((y + 0)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 0)  + 0.5f) * vol.dim.z / vol.size.z) + 0.5f * make_float3(((x + 0)  + 0.5f) * vol.dim.x / vol.size.x, ((y + 1)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 0)  + 0.5f) * vol.dim.z / vol.size.z) ;
-  case  9: return  0.5f * make_float3(((x + 1) + 0.5f) * vol.dim.x / vol.size.x, ((y + 0)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 0)  + 0.5f) * vol.dim.z / vol.size.z) + 0.5f * make_float3(((x + 1)  + 0.5f) * vol.dim.x / vol.size.x, ((y + 1)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 1)  + 0.5f) * vol.dim.z / vol.size.z) ;
-  case 10: return  0.5f * make_float3(((x + 1) + 0.5f) * vol.dim.x / vol.size.x, ((y + 0)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 1)  + 0.5f) * vol.dim.z / vol.size.z) + 0.5f * make_float3(((x + 1)  + 0.5f) * vol.dim.x / vol.size.x, ((y + 1)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 1)  + 0.5f) * vol.dim.z / vol.size.z) ;
-  case 11: return  0.5f * make_float3(((x + 0) + 0.5f) * vol.dim.x / vol.size.x, ((y + 0)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 1)  + 0.5f) * vol.dim.z / vol.size.z) + 0.5f * make_float3(((x + 0)  + 0.5f) * vol.dim.x / vol.size.x, ((y + 1)  + 0.5f) * vol.dim.y / vol.size.y, ((z + 1)  + 0.5f) * vol.dim.z / vol.size.z) ;
+  case  0: return  0.5f * make_float3(((x + 0) + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 0)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 0)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) + 0.5f * make_float3(((x + 1)  + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 0)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 0)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) ;
+  case  1: return  0.5f * make_float3(((x + 1) + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 0)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 0)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) + 0.5f * make_float3(((x + 1)  + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 0)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 1)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) ;
+  case  2: return  0.5f * make_float3(((x + 1) + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 0)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 1)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) + 0.5f * make_float3(((x + 0)  + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 0)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 1)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) ;
+  case  3: return  0.5f * make_float3(((x + 0) + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 0)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 1)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) + 0.5f * make_float3(((x + 0)  + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 0)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 0)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) ;
+  case  4: return  0.5f * make_float3(((x + 0) + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 1)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 0)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) + 0.5f * make_float3(((x + 1)  + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 1)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 0)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) ;
+  case  5: return  0.5f * make_float3(((x + 1) + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 1)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 0)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) + 0.5f * make_float3(((x + 1)  + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 1)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 1)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) ;
+  case  6: return  0.5f * make_float3(((x + 1) + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 1)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 1)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) + 0.5f * make_float3(((x + 0)  + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 1)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 1)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) ;
+  case  7: return  0.5f * make_float3(((x + 0) + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 1)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 1)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) + 0.5f * make_float3(((x + 0)  + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 1)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 0)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) ;
+  case  8: return  0.5f * make_float3(((x + 0) + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 0)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 0)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) + 0.5f * make_float3(((x + 0)  + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 1)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 0)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) ;
+  case  9: return  0.5f * make_float3(((x + 1) + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 0)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 0)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) + 0.5f * make_float3(((x + 1)  + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 1)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 1)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) ;
+  case 10: return  0.5f * make_float3(((x + 1) + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 0)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 1)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) + 0.5f * make_float3(((x + 1)  + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 1)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 1)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) ;
+  case 11: return  0.5f * make_float3(((x + 0) + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 0)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 1)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) + 0.5f * make_float3(((x + 0)  + 0.5f) * vol.getDimensions().x / vol.getResolution().x, ((y + 1)  + 0.5f) * vol.getDimensions().y / vol.getResolution().y, ((z + 1)  + 0.5f) * vol.getDimensions().z / vol.getResolution().z) ;
 
 
   default: //added default statement

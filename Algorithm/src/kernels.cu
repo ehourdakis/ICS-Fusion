@@ -139,6 +139,72 @@ __global__ void initVolumeKernel(Volume volume,const float2 val)
     }
 }
 
+__global__ void integrateSlice(Volume volume,Volume slice,int3 pos,sMatrix4 sliceOffset)
+{
+//    int3 pix = make_int3(thr2pos2());
+//    pix=pix+volume.getOffset();
+//    for(pix.z = vol.minVoxel().z; pix.z < vol.maxVoxel().z; ++pix.z)
+//    {
+        
+//    }
+}
+
+
+__global__ void integrateSliceX(Volume volume,Volume slice,int3 pos,sMatrix4 sliceOffset)
+{
+    uint2 u=thr2pos2();
+    int3 idx = make_int3(0,u.x,u.y);
+    sMatrix4 globalPos=sliceOffset;
+
+    for (; idx.x < slice.getResolution().x; idx.x++)
+    {
+
+        globalPos(0,3)+=idx.x*slice.getVoxelSize().x;
+        globalPos(1,3)+=idx.y*slice.getVoxelSize().y;
+        globalPos(2,3)+=idx.z*slice.getVoxelSize().z;
+
+        if(pos.x<0)
+        {
+            globalPos(0,3)+=volume.getResolution().x*volume.getVoxelSize().x;
+        }
+    }
+}
+
+__global__ void integrateSliceY(Volume volume,Volume slice,int3 pos,sMatrix4 sliceOffset)
+{
+    uint2 u=thr2pos2();
+    int3 idx = make_int3(u.x,0,u.y);
+
+    sMatrix4 globalPos=sliceOffset;
+    for (; idx.y < slice.getResolution().y; idx.y++)
+    {
+        globalPos(0,3)+=idx.x*slice.getVoxelSize().x;
+        globalPos(1,3)+=idx.y*slice.getVoxelSize().y;
+        globalPos(2,3)+=idx.z*slice.getVoxelSize().z;
+
+        if(pos.y<0)
+            globalPos(2,3)+volume.getResolution().y*volume.getVoxelSize().y;
+    }
+}
+
+
+__global__ void integrateSliceZ(Volume volume,Volume slice,int3 pos,sMatrix4 sliceOffset)
+{
+    uint2 u=thr2pos2();
+    int3 idx = make_int3(u.x,u.y,0);
+
+    sMatrix4 globalPos=sliceOffset;
+    for (; idx.z < slice.getResolution().z; idx.z++)
+    {
+        globalPos(0,3)+=idx.x*slice.getVoxelSize().x;
+        globalPos(1,3)+=idx.y*slice.getVoxelSize().y;
+        globalPos(2,3)+=idx.z*slice.getVoxelSize().z;
+
+        if(pos.z<0)
+            globalPos(2,3)+volume.getResolution().z*volume.getVoxelSize().z;
+    }
+}
+
 __global__ void clearVolumeZ(Volume volume,const float2 val,const int zz,Volume slice)
 {
     //int3 pos = make_int3(thr2pos2());

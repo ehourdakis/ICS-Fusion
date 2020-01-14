@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>ite_fusion</name>
+  <name>ics_fusion</name>
   <version>0.0.1</version>
-  <description>The ite_fusion package</description>
+  <description>The ics_fusion package</description>
   <maintainer email="tavu@todo.todo">tavu</maintainer>
   <license>TODO</license>
 

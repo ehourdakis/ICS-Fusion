@@ -76,6 +76,9 @@ IcsFusion::IcsFusion(kparams_t par,Matrix4 initPose)
     initVolumeKernel<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f));
     TOCK();
     printCUDAError();
+
+    //init new data volume
+    initVolumeKernel<<<grid, imageBlock>>>(newDataVol, make_float2(1.0f, 0.0f));
     
     // render buffers
     renderModel.alloc(cs);
@@ -210,6 +213,12 @@ void IcsFusion::reset()
     initVolumeKernel<<<grid, imageBlock>>>(volume, make_float2(1.0f, 0.0f));
 }
 
+void IcsFusion::updateVolume()
+{
+    volume.updateData(newDataVol);
+}
+
+
 bool IcsFusion::preprocessing2(const float *inputDepth,const uchar3 *inputRgb)
 {
     cudaMemcpy(rawDepth.data(), inputDepth, params.inputSize.x * params.inputSize.y * sizeof(float),cudaMemcpyHostToDevice);
@@ -329,16 +338,21 @@ bool IcsFusion::raycasting(uint frame)
 
 void IcsFusion::integrateNewData(sMatrix4 p)
 {
-    std::cout<<"integrateNewData"<<std::endl;
-
     dim3 grid=divup(dim3(newDataVol.getResolution().x, newDataVol.getResolution().y), imageBlock);
-    initVolumeKernel<<<grid, imageBlock>>>(newDataVol, make_float2(1.0f, 0.0f));
+    //initVolumeKernel<<<grid, imageBlock>>>(newDataVol, make_float2(1.0f, 0.0f));
 
 
     integrateKernel<<<grid,imageBlock>>>(newDataVol,rawDepth,rawRgb,
                                          inverse(p),camMatrix,params.mu,maxweight );
 
 }
+
+void IcsFusion::integrateSlices(VolumeSlices &slices)
+{
+
+}
+
+
 
 bool IcsFusion::integration(uint frame)
 {

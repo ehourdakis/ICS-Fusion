@@ -71,6 +71,11 @@ __global__ void clearVolumeZ(Volume volume, const float2 val, const int zz, Volu
 __global__ void clearVolumeX(Volume volume, const float2 val, const int xx, Volume slice);
 __global__ void clearVolumeY(Volume volume, const float2 val, const int yy, Volume slice);
 
+__global__ void integrateSliceX(Volume volume,Volume slice,int3 pos,sMatrix4 sliceOffset);
+__global__ void integrateSliceY(Volume volume,Volume slice,int3 pos,sMatrix4 sliceOffset);
+__global__ void integrateSliceZ(Volume volume,Volume slice,int3 pos,sMatrix4 sliceOffset);
+
+
 __global__ void bilateralFilterKernel(Image<float> out,
                                       const Image<float> in,
                                       const Image<float> gaussian,

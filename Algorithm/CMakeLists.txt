@@ -15,6 +15,7 @@ set(SUITESPARSE_INCLUDE_DIR "/usr/include/suitesparse")
 # find_package(Eigen3   REQUIRED)
 #find_package(Thrust REQUIRED)
 find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
 # find_package(g2o REQUIRED REQUIRED )
 
 set(TOON_INCLUDE_PATHS "$ENV{HOME}/src/TooN")

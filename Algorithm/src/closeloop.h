@@ -21,7 +21,7 @@ class CloseLoop
         CloseLoop(kparams_t p, sMatrix4 initPose);
         ~CloseLoop();
 
-        bool addFrame(uint16_t *depth,uchar3 *rgb);
+        bool processFrame();
         bool addFrameWithPose(uint16_t *depth,uchar3 *rgb,sMatrix4 gt);
 
         bool isKeyFrame() const;
@@ -30,6 +30,7 @@ class CloseLoop
         {
             return _fusion;
         }
+
         sMatrix4 doLoopClosure(sMatrix4 pose);
         sMatrix4 fixPoses(sMatrix4 fixPose);
         void findFrameDescr();
@@ -42,6 +43,9 @@ class CloseLoop
         sMatrix4 getPose() const;
 
         bool checkKeyFrameDeltaPose() const;
+        
+        bool preprocess(uint16_t *depth,uchar3 *rgb);
+        bool preprocess(float *depth,uchar3 *rgb);
 
         static float2 checkDeltaPoseErr(sMatrix4 p1,sMatrix4 p2);
     private:
@@ -90,6 +94,7 @@ class CloseLoop
         bool addPoseToIsam(VolumeSlices &sl);
         bool optimize();
         bool featuresMatching();
+        bool fixMap();
 
 };
 

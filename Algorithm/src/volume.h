@@ -265,6 +265,13 @@ class Volume
 
         __device__ float3 grad(const float3 & pos) const;
 
+        void updateData(const Volume &other)
+        {
+            size_t s=_resolution.x * _resolution.y * _resolution.z;
+            cudaMemcpy(data,other.data, s*sizeof(short2),cudaMemcpyDeviceToDevice);
+            cudaMemcpy(color,other.color,s*sizeof(float3),cudaMemcpyDeviceToDevice);
+        }
+
         void init(uint3 s, float3 d, int3 sliceSize)
         {
             _resolution = s;

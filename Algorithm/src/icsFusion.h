@@ -125,6 +125,10 @@ class IcsFusion
         float getWrongNormalsSize();
         
         Image<float, Host> vertex2Depth();
+        void updateVolume();
+        void integrateSlices(VolumeSlices &slices);
+
+
     private:
         bool _tracked;
         bool forcePose;

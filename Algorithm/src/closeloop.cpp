@@ -79,16 +79,34 @@ bool CloseLoop::addFrameWithPose(uint16_t *depth,uchar3 *rgb,sMatrix4 gt)
   return true;
 }
 
-bool CloseLoop::addFrame(uint16_t *depth,uchar3 *rgb)
+bool CloseLoop::preprocess(uint16_t *depth,uchar3 *rgb)
+{
+    _fusion->preprocessing(depth,rgb);
+    return true;
+}
+
+bool CloseLoop::preprocess(float *depth,uchar3 *rgb)
+{
+    _fusion->preprocessing2(depth,rgb);
+    return true;
+}
+
+
+bool CloseLoop::processFrame()
 {
     if(_frame==0)
         sleep(1);
 
     std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
 
-    _fusion->preprocessing(depth,rgb);
+    //_fusion->preprocessing(depth,rgb);
     tracked=_fusion->tracking(_frame);
     bool integrated=_fusion->integration(_frame);
+    if(integrated)
+    {
+        sMatrix4 p=_fusion->getPose();
+        _fusion->integrateNewData(p);
+    }
 
     //calculate covariance before raycast
     //icpCov =_fusion->calculate_ICP_COV();
@@ -109,6 +127,14 @@ bool CloseLoop::addFrame(uint16_t *depth,uchar3 *rgb)
         _isam->init(_fusion->getPose() );
         prevPose=_fusion->getPose();
         isamPoses.push_back(prevPose);
+
+        /*
+        _fusion->integrateNewData(prevPose);
+        char buf[64];
+        sprintf(buf,"f_/f_%d_single",_frame);
+        Volume v=_fusion->getNewDataVolume();
+        saveVoxelsToFile(v,params,std::string(buf) );
+        */
     }
 
     static bool nsp=false;
@@ -126,6 +152,7 @@ bool CloseLoop::addFrame(uint16_t *depth,uchar3 *rgb)
             if(fm)
             {
                 optimize();
+                fixMap();
             }
         }
     }
@@ -147,6 +174,11 @@ bool CloseLoop::addFrame(uint16_t *depth,uchar3 *rgb)
     _frame++;
 
     return true;
+}
+
+bool CloseLoop::fixMap()
+{
+//    _fusion->updateVolume();
 }
 
 sMatrix4 CloseLoop::fixPoses(sMatrix4 fixPose)
