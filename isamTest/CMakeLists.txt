@@ -14,7 +14,9 @@ include_directories(
 )
 
 add_executable(isamTest main.cpp)
+add_executable(isamTestSimple main_simple.cpp)
 
+target_link_libraries(isamTestSimple /usr/local/lib/libisam.a ics_fusion_cuda ${CUDA_LIBRARIES} )
 target_link_libraries(isamTest /usr/local/lib/libisam.a ics_fusion_cuda ${CUDA_LIBRARIES} )
 
 
