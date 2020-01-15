@@ -9,9 +9,9 @@
 #define NL 15
 #define SKIP_CON 5
 
-// #define ADD_NOISE
+#define ADD_NOISE
 
-#define SMALL_COV 1e-6
+#define SMALL_COV 1e-15
 // #define fabs
 using namespace Eigen;
 
@@ -83,13 +83,14 @@ int main()
     std::default_random_engine generator (seed);    
     
     float s=0.01;
-    float sr=0.01;
-    float sl=0.001;
+    //float sr=0.01;
+    float sl=0.00001;
     
     std::normal_distribution<float> landMarkDistr (0.0,sl);
     std::normal_distribution<float> poseDistr (0.0,s);
-    std::normal_distribution<float> rotDistr (0.0,sr);
+    std::normal_distribution<float> rotDistr (0.0,s);
     
+    /*
     for(int i=0;i<NN;i++)
     {
         float3 trans=make_float3(0.2*i,0,0);
@@ -116,18 +117,46 @@ int main()
         
         std::cout<<pose<<std::endl;
     }
+    */
+    sMatrix4 truePose;
+    truePoses.push_back(truePose);
     
-    _isam->init(poses[0]);
+    _isam->init(truePoses[0]);
     for(int i=1;i<NN;i++)
     {
         //float s=0.0001;
         sMatrix6 cov;
         cov=cov*s;
-        cov(3,3)=sr;
-        cov(4,4)=sr;
-        cov(5,5)=sr;
-        sMatrix4 p=poses[i];
-        _isam->addFrame(p,cov);
+//         cov(3,3)=sr;
+//         cov(4,4)=sr;
+//         cov(5,5)=sr;
+        float3 trans=make_float3(0.2*i,0,0);
+        float3 rot=make_float3(0,0,0);
+        
+#ifdef ADD_NOISE        
+        trans.x+=poseDistr(generator);
+        trans.y+=poseDistr(generator);
+        trans.z+=poseDistr(generator);
+        
+        rot.x+=rotDistr(generator);
+        rot.y+=rotDistr(generator);
+        rot.z+=rotDistr(generator);
+#endif        
+        sMatrix4 pose=homo(trans,rot);
+        
+        poses.push_back(pose);
+        
+        sMatrix4 truePose;
+        
+        truePose(0,3)=0.2*i;
+        
+        truePoses.push_back(truePose);
+        
+        //std::cout<<pose<<std::endl;
+        
+        
+        
+        _isam->addFrame(pose,cov);
     }    
     
     for(int i=0;i<NL;i++)
@@ -151,17 +180,17 @@ int main()
                 l.y=0.5;
                 l.x=0.3*lid-0.2*pid;
 
-                if(fabs(l.x<1) && l.x>-1)
+                if( fabs(l.x)<1.1 )
                 {
-    #ifdef ADD_NOISE_
+#ifdef ADD_NOISE
                     l.x+=landMarkDistr(generator);
                     l.y+=landMarkDistr(generator);
                     l.z+=landMarkDistr(generator);            
-    #endif
+#endif
                     
                     sMatrix3 cov;
-                    //cov=cov*sl;
-                    cov=cov*SMALL_COV;
+                    cov=cov*sl;
+                    //cov=cov*SMALL_COV;
                     _isam->connectLandmark(l,lid,pid,cov);
                 }
             }
@@ -189,7 +218,7 @@ int main()
     }
     
     char buf[32];
-    sprintf(buf,"f_%d_poses",NN);
+    sprintf(buf,"f_/f_%d_poses",NN);
     savePoses(buf,truePoses);
     
     return 0;

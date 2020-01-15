@@ -15,12 +15,11 @@
 #define NL 15
 #define SKIP_CON 5
 
-// #define ADD_NOISE
+#define ADD_NOISE
 
-#define SMALL_COV 1e-6
-// #define SMALL_COV 1e-15
+// #define SMALL_COV 1e-6
+#define SMALL_COV 1e-15
 
-// #define fabs
 using namespace Eigen;
 
 struct PoseType
@@ -58,20 +57,19 @@ void savePoses(char *fileName,std::vector<PoseType> &poses)
 
 int main()
 {
-    //init isam
-    isam::Slam *slam=new isam::Slam();
-    
-    
     unsigned seed=0;
     std::default_random_engine generator (seed);    
     
     float s=0.01;
     //float sr=0.01;
-    float sl=0.001;
+    float sl=0.00001;
     
     std::normal_distribution<float> landMarkDistr (0.0,sl);
     std::normal_distribution<float> poseDistr (0.0,s);
     std::normal_distribution<float> rotDistr (0.0,s);
+        
+    //init isam
+    isam::Slam *slam=new isam::Slam();
     
     //add prior
     isam::Pose3d_Node *prev_pose_node=new isam::Pose3d_Node();
@@ -81,6 +79,16 @@ int main()
     isam::Pose3d origin(0,0,0,0,0,0);
     isam::Pose3d_Factor* prior = new isam::Pose3d_Factor(prev_pose_node, origin, noise);
     slam->add_factor(prior);
+    
+    PoseType originGt;
+    originGt.x=0;
+    originGt.y=0;
+    originGt.z=0;
+    originGt.yaw=0;
+    originGt.pitch=0;
+    originGt.roll=0;
+    truePoses.push_back(originGt);
+    
     
     //add landmarks
     for(int i=0;i<NL;i++)
@@ -109,7 +117,7 @@ int main()
         poseDelta.roll=0;
         
         gt=poseDelta;
-        gt.x=poseDelta.x+0.2*i;
+        gt.x=0.2*i;
                 
         
 #ifdef ADD_NOISE        
@@ -130,8 +138,12 @@ int main()
         
         isam::Pose3d vo(poseDelta.x,poseDelta.y,poseDelta.z,
                         poseDelta.yaw,poseDelta.pitch,poseDelta.roll);
-        
+#ifdef ADD_NOISE  
         Eigen::MatrixXd cov=Eigen::MatrixXd::Identity(6, 6)*s;
+#else
+        Eigen::MatrixXd cov=Eigen::MatrixXd::Identity(6, 6)*SMALL_COV;
+#endif
+        
         isam::Noise noise=isam::Covariance(cov);
         isam::Pose3d_Pose3d_Factor* factor = new isam::Pose3d_Pose3d_Factor(prev_pose_node,new_pose_node, vo, noise);
         slam->add_factor(factor);
@@ -143,19 +155,22 @@ int main()
         {
             for(int lid=0;lid<NL;lid++)
             {
-                double z=0.1;
-                double y=0.5;
                 double x=0.3*lid-0.2*i;
+                double y=0.5;
+                double z=0.1;                                
 
-                if(fabs(x<1) && x>-1)
+                if( fabs(x)<1.1 )
                 {
-#ifdef ADD_NOISE_
+#ifdef ADD_NOISE
                     x+=landMarkDistr(generator);
                     y+=landMarkDistr(generator);
-                    z+=landMarkDistr(generator);            
+                    z+=landMarkDistr(generator);
+                    Eigen::MatrixXd cov=Eigen::MatrixXd::Identity(3, 3)*sl;
+#else
+                    Eigen::MatrixXd cov=Eigen::MatrixXd::Identity(3, 3)*SMALL_COV;
 #endif
                     isam::Point3d point(x,y,z);
-                    Eigen::MatrixXd cov=Eigen::MatrixXd::Identity(6, 6)*sl;
+
                     isam::Noise noise = isam::Covariance(cov);
                     isam::Pose3d_Point3d_Factor* f=new isam::Pose3d_Point3d_Factor(new_pose_node,landmarks[lid],point,noise);
                     slam->add_factor(f);
@@ -173,7 +188,7 @@ int main()
     slam->batch_optimization();
 
 
-    sprintf(buf,"f_/f_%d_graph_new",NN);
+    sprintf(buf,"f_%d_graph_new",NN);
     slam->save(buf);
 
     //slam->print_stats();
