@@ -84,7 +84,7 @@ int main()
     
     float s=0.01;
     //float sr=0.01;
-    float sl=0.00001;
+    float sl=0.001;
     
     std::normal_distribution<float> landMarkDistr (0.0,sl);
     std::normal_distribution<float> poseDistr (0.0,s);
@@ -118,8 +118,9 @@ int main()
         std::cout<<pose<<std::endl;
     }
     */
-    sMatrix4 truePose;
-    truePoses.push_back(truePose);
+    sMatrix4 origin;
+    truePoses.push_back(origin);
+    poses.push_back(origin);
     
     _isam->init(truePoses[0]);
     for(int i=1;i<NN;i++)
@@ -130,7 +131,7 @@ int main()
 //         cov(3,3)=sr;
 //         cov(4,4)=sr;
 //         cov(5,5)=sr;
-        float3 trans=make_float3(0.2*i,0,0);
+        float3 trans=make_float3(0.2,0,0);
         float3 rot=make_float3(0,0,0);
         
 #ifdef ADD_NOISE        
@@ -142,8 +143,8 @@ int main()
         rot.y+=rotDistr(generator);
         rot.z+=rotDistr(generator);
 #endif        
-        sMatrix4 pose=homo(trans,rot);
-        
+        sMatrix4 delta=homo(trans,rot);
+        sMatrix4 pose=poses[i-1]*delta;
         poses.push_back(pose);
         
         sMatrix4 truePose;
@@ -202,20 +203,20 @@ int main()
     
     std::cout<<"=============================="<<std::endl;
     
-    for(int i=0;i<_isam->poseSize();i++)
-    {
-        sMatrix4 isamPose=_isam->getPose(i);
-        sMatrix4 truePose=truePoses[i];
-        sMatrix4 voPose=poses[i];
-        
-        float2 isamErr=checkPoseErr(isamPose,truePose);
-        float2 voErr=checkPoseErr(voPose,truePose);
-        
-        std::cout<<isamErr.x<<","<<isamErr.y<<std::endl;
-        std::cout<<voErr.x<<","<<voErr.y<<std::endl;
-        std::cout<<std::endl;        
-        
-    }
+//     for(int i=0;i<_isam->poseSize();i++)
+//     {
+//         sMatrix4 isamPose=_isam->getPose(i);
+//         sMatrix4 truePose=truePoses[i];
+//         sMatrix4 voPose=poses[i];
+//         
+//         float2 isamErr=checkPoseErr(isamPose,truePose);
+//         float2 voErr=checkPoseErr(voPose,truePose);
+//         
+//         std::cout<<isamErr.x<<","<<isamErr.y<<std::endl;
+//         std::cout<<voErr.x<<","<<voErr.y<<std::endl;
+//         std::cout<<std::endl;        
+//         
+//     }
     
     char buf[32];
     sprintf(buf,"f_/f_%d_poses",NN);
