@@ -14,7 +14,7 @@
 #include"keyptsmap.h"
 
 #include"PoseGraph.h"
-
+#include"smoothnet.h"
 class CloseLoop
 {
     public:
@@ -95,6 +95,8 @@ class CloseLoop
         bool optimize();
         bool featuresMatching();
         bool fixMap();
+
+        SmoothNet *smoothNet;
 
 };
 

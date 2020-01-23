@@ -65,6 +65,9 @@ CloseLoop::CloseLoop(kparams_t p,sMatrix4 initPose)
 
     minTrans=0.3;
     maxTrans=0.3;
+
+
+    smoothNet=new SmoothNet(_fusion);
 }
 
 //For testing purposes only.
@@ -137,40 +140,10 @@ bool CloseLoop::processFrame()
         */
     }
 
-    static bool nsp=false;
-    bool sifted=false;
-    if(isKeyFrame() )
+    if(_frame==20 )
     {
-        VolumeSlices slices;
-        sifted=siftVolume(slices);
-
-        if(sifted)
-        {
-            //add isam pose
-            addPoseToIsam(slices);
-            bool fm=featuresMatching();
-            if(fm)
-            {
-                optimize();
-                fixMap();
-            }
-        }
+        smoothNet->calculateLRF();
     }
-
-    /*
-    if( sifted || nsp)
-    {
-        char buf[64];
-        sprintf(buf,"f_/f_%d_voxels",_frame);
-        Volume v=_fusion->getVolume();
-        saveVoxelsToFile(v,params,std::string(buf) );
-        std::cout<<"Offset:"<<_fusion->getVolume().getOffset()<<std::endl;
-        std::cout<<"min:"<<_fusion->getVolume().minVoxel();
-        std::cout<<"max:"<<_fusion->getVolume().maxVoxel()<<std::endl;
-    }
-    nsp=sifted;
-    */
-
     _frame++;
 
     return true;

@@ -8,29 +8,26 @@ set(G2O_USAGE, "USE_G2O")
 #add_definitions(-DUSE_G2O)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reorder")
-
 set(SUITESPARSE_INCLUDE_DIR "/usr/include/suitesparse")
 
+# find_package(g2o REQUIRED REQUIRED )
 # find_package(TooN   REQUIRED)
 # find_package(Eigen3   REQUIRED)
-#find_package(Thrust REQUIRED)
+# find_package(Thrust REQUIRED)
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
-# find_package(g2o REQUIRED REQUIRED )
-
 set(TOON_INCLUDE_PATHS "$ENV{HOME}/src/TooN")
+
+find_package(CUDA)
+find_package(OpenCV)
+
+
+# find_package(mrpt)
+# set(MRPT_BASE "/usr/include/mrpt/base/include")
+# set(MRPT_CFG "/usr/include/mrpt/mrpt-config")
 # set(EIGEN3_INCLUDE_DIR "$ENV{HOME}/src/eigen")
 # set(OPENCV_INCLUDE_DIR "/home/tavu/workspace/slambench2/deps/opencv/include/opencv2/")
 
-# message(WARNING ${EIGEN3_INCLUDE_DIR} )
-
-# set(MRPT_BASE "/usr/include/mrpt/base/include")
-# set(MRPT_CFG "/usr/include/mrpt/mrpt-config")
-
-# find_package(PCL 1.3 REQUIRED)
-# find_package(mrpt)
-find_package(CUDA)
-find_package(OpenCV)
 
 LIST(APPEND G2O_LIBS
   cxsparse
@@ -44,17 +41,22 @@ LIST(APPEND G2O_LIBS
   g2o_types_data g2o_types_sim3
 )
 
-SET( CUDA_PROPAGATE_HOST_FLAGS OFF ) 
-set(cuda_srcs 
+SET( CUDA_PROPAGATE_HOST_FLAGS OFF )
+set(cuda_srcs
     ${CMAKE_CURRENT_LIST_DIR}/src/kernels.cu
     ${CMAKE_CURRENT_LIST_DIR}/src/icsfusion.cu
     ${CMAKE_CURRENT_LIST_DIR}/src/utils.cpp
+)
+
+set(cpp_srcs
     ${CMAKE_CURRENT_LIST_DIR}/src/volume.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/closeloop.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/Isam.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/featuredetector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/keyptsmap.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/g2oGraph.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/smoothnet.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/smoothnetcore.cpp
 )
 
 include_directories(
@@ -64,12 +66,12 @@ include_directories(
  ${MRPT_BASE}
  ${CSPARSE_INCLUDE_DIR}
  ${SUITESPARSE_INCLUDE_DIR}
-#  ${MRPT_CFG} 
+#  ${MRPT_CFG}
 )
-# include_directories
-cuda_add_library(ics_fusion_cuda   STATIC  ${cuda_srcs}  OPTIONS -std=c++11 -Xcompiler -fPIC -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES 
-    -I${CMAKE_CURRENT_LIST_DIR}/src/cuda_headers 
-    -I${CMAKE_CURRENT_LIST_DIR}/src/ 
+
+cuda_add_library(ics_fusion_cuda_library   STATIC  ${cuda_srcs}  OPTIONS -std=c++11 -Xcompiler -fPIC -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES
+    -I${CMAKE_CURRENT_LIST_DIR}/src/cuda_headers
+    -I${CMAKE_CURRENT_LIST_DIR}/src/
     -I${TOON_INCLUDE_PATHS}
     -I${EIGEN3_INCLUDE_DIR}
     -I${CSPARSE_INCLUDE_DIR}
@@ -79,12 +81,22 @@ cuda_add_library(ics_fusion_cuda   STATIC  ${cuda_srcs}  OPTIONS -std=c++11 -Xco
 #     -I${OPENCV_INCLUDE_DIR}
 )
 
-# target_include_directories(ics_fusion_cuda PRIVATE ${OPENCV_INCLUDE_DIR})
-# include_directories(BEFORE SYSTEM ${OPENCV_INCLUDE_DIR})
-#message(WARNING "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
+
+
+find_package( PCL 1.8 REQUIRED )
+
+SET_TARGET_PROPERTIES(ics_fusion_cuda_library PROPERTIES COMPILE_FLAGS "-fPIC" )
+add_library(ics_fusion_cuda ${cpp_srcs})
+
+if( PCL_FOUND )
+    include_directories( ${PCL_INCLUDE_DIRS} )
+    target_compile_definitions(ics_fusion_cuda PRIVATE ${PCL_DEFINITIONS})
+    target_link_libraries(ics_fusion_cuda ${PCL_LIBRARIES})
+endif()
+
 
 SET_TARGET_PROPERTIES(ics_fusion_cuda PROPERTIES COMPILE_FLAGS "-fPIC" )
-target_link_libraries(ics_fusion_cuda ${CUDA_LIBRARIES} isam cholmod  ${OpenCV_LIBS} ${G2O_LIBS} )
+target_link_libraries(ics_fusion_cuda ics_fusion_cuda_library ${CUDA_LIBRARIES} isam cholmod  ${OpenCV_LIBS} ${G2O_LIBS} ${PCL_LIBRARIES})
 
 
 
