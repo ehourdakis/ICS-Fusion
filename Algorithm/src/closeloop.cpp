@@ -142,7 +142,9 @@ bool CloseLoop::processFrame()
 
     if(_frame==20 )
     {
-        smoothNet->calculateLRF();
+        //smoothNet->calculateLRF();
+//        smoothNet->callCnn();
+        smoothNet->readDescriptorCsv();
     }
     _frame++;
 

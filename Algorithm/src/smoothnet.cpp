@@ -14,8 +14,10 @@
 #include <pcl/common/centroid.h>
 #include"smoothnetcore.h"
 
+#define SDV_DIR "./data/sdv/"
+#define CSV_DIR "./data/csv/"
 #define OUT_FILE_NAME "./data/sdv/smoothnet.csv"
-
+#define CSV_FILE "./data/csv/smoothnet.csv_3DSmoothNet.txt"
 SmoothNet::SmoothNet(IcsFusion *f)
 {
     _fusion=f;
@@ -90,8 +92,25 @@ void SmoothNet::calculateLRF()
                              num_voxels,
                              smoothing_factor,
                              OUT_FILE_NAME);
+}
 
+bool SmoothNet::callCnn()
+{
+    char cmd[512];
 
+//    sprintf(cmd,"python main_cnn.py --run_mode=test --evaluate_input_folder=%s --evaluate_output_folder=%s",
+//            SDV_DIR,
+//            CSV_DIR);
+    sprintf(cmd,"./run_3dsmoothnet.sh %s %s",
+            SDV_DIR,
+            CSV_DIR);
+    int status=system(cmd);
+
+    if(status==0)
+    {
+        std::cout<<"Success"<<std::endl;
+    }
+    return status==0;
 }
 
 void SmoothNet::readKeyPts(const Image<float3, Host> &vert)
@@ -117,6 +136,47 @@ void SmoothNet::readKeyPts(const Image<float3, Host> &vert)
     inFile.close();
 }
 
+bool SmoothNet::readDescriptorCsv()
+{
+    std::ifstream inFile(CSV_FILE,std::ios::in);
+    while(true)
+    {
+        std::string line;
+        getline(inFile,line);
+        if(inFile.eof())
+        {
+            break;
+        }
+        else if(!inFile.good())
+        {
+            inFile.close();
+            return false;
+        }        
+
+        descr_t descr;
+        std::istringstream lineStream(line);
+        int i;
+        //for descriptor of size 32
+        for(i=0;i<32 && lineStream.good() ;i++)
+        {
+            std::string valueStr;
+            getline(lineStream,valueStr,',');
+
+            float value=std::stof(valueStr);
+            descr.data[i]=value;            
+        }
+        if(i!=32 || !lineStream.eof() )
+        {
+            inFile.close();        
+            return false;
+        }
+        descriptors.push_back(descr);
+    }
+
+    inFile.close();    
+    std::cout<<"Red:"<<descriptors.size()<<" reatures."<<std::endl;
+    return true;
+}
 
 void SmoothNet::calculateLRFPtr(uint2 pt)
 {

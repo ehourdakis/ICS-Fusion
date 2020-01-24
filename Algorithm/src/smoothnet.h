@@ -6,6 +6,12 @@
 class SmoothNet
 {
     public:
+
+        struct descr_t
+        {
+            float data[32];
+        };
+
         SmoothNet(IcsFusion *f);
         
         void calculateLRF();
@@ -13,6 +19,8 @@ class SmoothNet
 
         void calculatePointLRF(const uint2 pt);
         void calculateLRFPtr(uint2 pt);
+        bool callCnn();
+        bool readDescriptorCsv();
     private:
 
         bool calculateLRFHost(uint2 pt, sMatrix3 &covar);
@@ -21,6 +29,7 @@ class SmoothNet
         IcsFusion *_fusion;
 
         std::vector<int> evaluation_points;
+        std::vector<descr_t> descriptors;
 
 
         float radius;
