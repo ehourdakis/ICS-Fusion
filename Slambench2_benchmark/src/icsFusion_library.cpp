@@ -294,15 +294,15 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
     //use ground truth pose for loop closure.
     //This is usefull for loop closure testing
 #ifdef SLAMBENCH_CH
-    if(frame==3)
+    if(frame==19)
     {
         initialGt=getGt(frameTimeStamp,slam_settings->getGt()); 
         std::cout<<"inital gt"<<std::endl;
         std::cout<<initialGt<<std::endl;
     }
-    if(frame>=3 )
+    if(frame>=3 && false)
     {
-        
+
         //poses.push_back(gtPose);
         if(loopCl->isKeyFrame()  )
         {
@@ -315,6 +315,17 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
             sprintf(buf,"f_/f_%d_poses_gt",frame+1);
             savePoses(buf);
         }
+    }
+
+    if(frame==59)
+    {
+        poses.clear();
+        gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
+        poses.push_back(gtPose);
+
+        char buf[32];
+        sprintf(buf,"f_/f_%d_poses_gt",frame+1);
+        savePoses(buf);
     }
 #endif
 
@@ -427,7 +438,7 @@ sMatrix4 getGt(/*SLAMBenchLibraryHelper *lib*/ const slambench::TimeStamp &ts_p,
     */
    
 //enable this for room dataset
-#if 0
+#if 1
      float tmp=ret.data[0].y;
      ret.data[0].y=-ret.data[1].x;
      ret.data[1].x=-tmp;
@@ -500,7 +511,8 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
 
     if(gt_frame_output->IsActive() )
     {
-        icsFusion->getImageProjection(gtPose,outputGtRGB);
+        //icsFusion->getImageProjection(gtPose,outputGtRGB);
+        icsFusion->renderDepthFromVertex(outputGtRGB);
         std::lock_guard<FastLock> lock (lib->GetOutputManager().GetLock());
         gt_frame_output->AddPoint(ts, new slambench::values::FrameValue( params.inputSize.x,
                                                                          params.inputSize.y,

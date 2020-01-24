@@ -5,7 +5,7 @@
 #include"utils.h"
 #include"volume.h"
 #include<vector>
-
+#include<iostream>
 class IcsFusion
 {
     public:
@@ -24,6 +24,10 @@ class IcsFusion
             largestep=0.75*params.mu;
             inverseCam=getInverseCameraMatrix(params.camera);
             camMatrix=getCameraMatrix(params.camera);
+
+            std::cout<<"KAM"<<std::endl;
+            std::cout<<camMatrix<<std::endl;
+
             step = min(params.volume_size) / max(params.volume_resolution);
             viewPose = &pose;
             this->languageSpecificConstructor();
@@ -58,6 +62,7 @@ class IcsFusion
 
         void renderTrack(uchar3 * out);
         void renderDepth(uchar3 * out);
+        void renderDepthFromVertex(uchar3 * out);
 
         void getVertices(std::vector<float3> &vertices);
 

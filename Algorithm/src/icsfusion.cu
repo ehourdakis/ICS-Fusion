@@ -44,6 +44,10 @@ IcsFusion::IcsFusion(kparams_t par,Matrix4 initPose)
 
     uint2 cs = make_uint2(params.computationSize.x, params.computationSize.y);
     std::cout<<"CS:"<<cs.x<<" "<<cs.y<<std::endl;
+
+    std::cout<<"KAM"<<std::endl;
+    std::cout<<camMatrix<<std::endl;
+
     reduction.alloc(cs);
     vertex.alloc(cs);
     normal.alloc(cs);
@@ -481,14 +485,14 @@ void IcsFusion::renderVolume(uchar3 * out)
 Image<float, Host> IcsFusion::vertex2Depth()
 {
     Image<float, Host> ret(params.inputSize);
-    Image<float, Device> model(params.inputSize);
+//    Image<float, Device> model(params.inputSize);
     
-     dim3 grid=divup(model.size,imageBlock);
-    vertex2depth<<<grid,imageBlock>>>( model,vertex,normal,nearPlane,farPlane);
+//     dim3 grid=divup(model.size,imageBlock);
+//    vertex2depthKernel<<<grid,imageBlock>>>( model,vertex,normal,nearPlane,farPlane,K);
     
-    cudaMemcpy(ret.data(), model.data(),
-            params.inputSize.x * params.inputSize.y * sizeof(float),
-            cudaMemcpyDeviceToHost);
+//    cudaMemcpy(ret.data(), model.data(),
+//            params.inputSize.x * params.inputSize.y * sizeof(float),
+//            cudaMemcpyDeviceToHost);
     return ret;
 }
 
@@ -582,6 +586,17 @@ void IcsFusion::renderTrack(uchar3 * out)
     cudaMemcpy(out, renderModel.data(), params.inputSize.x * params.inputSize.y * sizeof(uchar3), cudaMemcpyDeviceToHost);
 
     printCUDAError();
+}
+
+void IcsFusion::renderDepthFromVertex(uchar3 * out)
+{
+    Image<float, Device> depth;
+    depth.alloc(rawDepth.size);
+    dim3 grid=divup(renderModel.size, imageBlock);
+
+    vertex2depthKernel<<<grid, imageBlock>>>( depth, inputVertex[0], camMatrix);
+    renderDepthKernel<<<grid, imageBlock>>>( renderModel, depth, nearPlane, farPlane );
+    cudaMemcpy(out,renderModel.data(), params.inputSize.x * params.inputSize.y * sizeof(uchar3), cudaMemcpyDeviceToHost);
 }
 
 void IcsFusion::renderDepth(uchar3 * out)

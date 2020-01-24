@@ -38,8 +38,6 @@ void SmoothNet::calculateLRF()
     Image<float3, Host> v=_fusion->getAllVertex();
 
     std::cout<<"Reading key pts..."<<std::endl;
-    readKeyPts(v);
-
 
     uint2 p;
     //create pcl point cloud
@@ -113,7 +111,7 @@ bool SmoothNet::callCnn()
     return status==0;
 }
 
-void SmoothNet::readKeyPts(const Image<float3, Host> &vert)
+void SmoothNet::readKeyPts()
 {
     int i=0;
     std::ifstream inFile(KEYPTS_F,std::ios::in);
@@ -124,11 +122,12 @@ void SmoothNet::readKeyPts(const Image<float3, Host> &vert)
 
         if(inFile.good())
         {
+            /*
             uint2 pix;
             pix.x=idx/vert.size.y;
-            pix.y=idx%vert.size.y;
-
+            pix.y=idx%vert.size.y;            
             keypts[i]=pix;
+            */
             i++;
             evaluation_points.push_back(idx);
         }

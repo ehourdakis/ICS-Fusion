@@ -15,7 +15,7 @@ class SmoothNet
         SmoothNet(IcsFusion *f);
         
         void calculateLRF();
-        void readKeyPts(const Image<float3, Host> &vert);
+        void readKeyPts();
 
         void calculatePointLRF(const uint2 pt);
         void calculateLRFPtr(uint2 pt);

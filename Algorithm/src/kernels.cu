@@ -78,30 +78,27 @@ __global__ void renderVolumeKernel2(Image<uchar3> render,
     }
 }
 
-__global__ void vertex2depth(Image<float> render,
+__global__ void vertex2depthKernel(Image<float> render,
                                    Image<float3> vertex,
-                                   Image<float3> normal,
-                                   const float nearPlane,
-                                   const float farPlane)
+                                   const Matrix4 K)
 
 {
-    const uint2 pos = thr2pos2();
-    if(normal[pos].x != INVALID)
+    const uint2 pixel = thr2pos2();
+
+    if (pixel.x >= vertex.size.x || pixel.y >= vertex.size.y)
+        return;
+
+    float3 v= vertex[pixel];
+    float3 tmp=rotate(K,v);
+
+    if(tmp.z<=0.0)
     {
-        const float3 surfNorm = normal[pos];
-//        const float3 diff =  normalize(vertex[pos]);
-        const float3 diff =  vertex[pos];
-        const float dir = fmaxf( dot(normalize(surfNorm), diff), 0.f);
-
-        const float d = (clamp(dir, nearPlane, farPlane) - nearPlane) ;
-//         render.el() = make_uchar3(d * 255, d * 255, d * 255);
-
-//        const float3 col = clamp(make_float3(dir) + ambient, 0.f, 1.f)* 255;
-//        render.el() = make_uchar3(col.x, col.y, col.z);
+        render.el() = 0.0;
     }
     else
     {
-         render.el() = 0.0;
+        float depth=tmp.z;
+        render.el() = depth;
     }
 }
 

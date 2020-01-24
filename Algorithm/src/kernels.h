@@ -20,11 +20,9 @@ __global__ void depth2vertex(Image<float3> vertex,
 __global__ void vertex2normal(Image<float3> normal,
                               const Image<float3> vertex);
 
-__global__ void vertex2depth(Image<float> render,
+__global__ void vertex2depthKernel(Image<float> render,
                                    Image<float3> vertex,
-                                   Image<float3> normal,
-                                   const float nearPlane,
-                                   const float farPlane);
+                                   const Matrix4 K);
 
 __global__ void bilateral_filter(Image<float> out,
                                  const Image<float> in,
