@@ -15,23 +15,17 @@ __device__ __forceinline__ float4 raycast(const Volume volume,
                                           const float farPlane,
                                           const float step,
                                           const float largestep,int frame)
-{   
+{
     const float3 origin = view.get_translation();
     const float3 direction = rotate(view, make_float3(pos.x, pos.y, 1.f));
+
     const float3 invR = make_float3(1.0f) / direction;
+    const float3 tbot = -1 * invR * origin;
+    const float3 ttop = invR * (volume.getDimensions() - origin);
 
-
-    float3 tmin=(volume.getOffsetPos()-origin)*invR;
-    //float3 tmin=-1*origin*invR;
-    float3 tmax=(volume.getDimWithOffset()-origin)*invR;
-
-    if (invR.x < 0)
-        swapf(tmin.x,tmax.x);
-    if (invR.y < 0)
-        swapf(tmin.y,tmax.y);
-    if (invR.z < 0)
-        swapf(tmin.z,tmax.z);
-
+    // re-order intersections to find smallest and largest on each axis
+    const float3 tmin = fminf(ttop, tbot);
+    const float3 tmax = fmaxf(ttop, tbot);
 
     // find the largest tmin and the smallest tmax
     const float largest_tmin = fmaxf(fmaxf(tmin.x, tmin.y),
@@ -39,10 +33,9 @@ __device__ __forceinline__ float4 raycast(const Volume volume,
     const float smallest_tmax = fminf(fminf(tmax.x, tmax.y),
                                       fminf(tmax.x, tmax.z));
 
-
+    // check against near and far plane
     const float tnear = fmaxf(largest_tmin, nearPlane);
     const float tfar = fminf(smallest_tmax, farPlane);
-
 
     if (tnear < tfar)
     {
