@@ -62,15 +62,11 @@ __global__ void renderVolumeKernel2(Image<uchar3> render,
     if(normal[pos].x != INVALID)
     {
         const float3 surfNorm = normal[pos];
-//        const float3 diff =  normalize(vertex[pos]);
         const float3 diff =  vertex[pos];
         const float dir = fmaxf( dot(normalize(surfNorm), diff), 0.f);
 
         const float d = (clamp(dir, nearPlane, farPlane) - nearPlane) / (farPlane - nearPlane);
         render.el() = make_uchar3(d * 255, d * 255, d * 255);
-
-//        const float3 col = clamp(make_float3(dir) + ambient, 0.f, 1.f)* 255;
-//        render.el() = make_uchar3(col.x, col.y, col.z);
     }
     else
     {
@@ -102,208 +98,14 @@ __global__ void vertex2depthKernel(Image<float> render,
     }
 }
 
-/*
-__global__ void renderVolumeKernel2(Image<uchar3> render,
-                                    const Image<float3> vertex,
-                                    const Matrix4 K,
-                                    const float nearPlane,
-                                    const float farPlane)
-{
-    const uint2 pixel = thr2pos2();
-    if (pixel.x >= vertex.size.x || pixel.y >= vertex.size.y)
-        return;
-
-    if (vertex[pixel].x > 0)
-    {
-//        float3 depth = vertex[pixel]*rotate(K, make_float3(pixel.x, pixel.y, 1.f));
-        float depth = rotate(K, make_float3(pixel.x, pixel.y, 1.f))*vertex[pixel];
-        float d =(clamp(depth, nearPlane, farPlane) - nearPlane) / (farPlane - nearPlane);
-        render[pixel] = make_uchar3(d * 255, d * 255, d * 255);
-    }
-    else
-    {
-        render[pixel] = make_uchar3(0,0,0);
-    }
-}
-*/
 __global__ void initVolumeKernel(Volume volume,const float2 val)
 {
-    int3 pos = make_int3(thr2pos2());
-    pos=pos+volume.getOffset();
-    for (; pos.z < volume.maxVoxel().z; pos.z++)
+    uint3 pos = make_uint3(thr2pos2());
+    for (pos.z=0; pos.z < volume.getResolution().z; pos.z++)
     {
         volume.set(pos, val);
     }
 }
-
-__global__ void integrateSlice(Volume volume,Volume slice,int3 pos,sMatrix4 sliceOffset)
-{
-//    int3 pix = make_int3(thr2pos2());
-//    pix=pix+volume.getOffset();
-//    for(pix.z = vol.minVoxel().z; pix.z < vol.maxVoxel().z; ++pix.z)
-//    {
-        
-//    }
-}
-
-
-__global__ void integrateSliceX(Volume volume,Volume slice,int3 pos,sMatrix4 sliceOffset)
-{
-    uint2 u=thr2pos2();
-    int3 idx = make_int3(0,u.x,u.y);
-    sMatrix4 globalPos=sliceOffset;
-
-    for (; idx.x < slice.getResolution().x; idx.x++)
-    {
-
-        globalPos(0,3)+=idx.x*slice.getVoxelSize().x;
-        globalPos(1,3)+=idx.y*slice.getVoxelSize().y;
-        globalPos(2,3)+=idx.z*slice.getVoxelSize().z;
-
-        if(pos.x<0)
-        {
-            globalPos(0,3)+=volume.getResolution().x*volume.getVoxelSize().x;
-        }
-    }
-}
-
-__global__ void integrateSliceY(Volume volume,Volume slice,int3 pos,sMatrix4 sliceOffset)
-{
-    uint2 u=thr2pos2();
-    int3 idx = make_int3(u.x,0,u.y);
-
-    sMatrix4 globalPos=sliceOffset;
-    for (; idx.y < slice.getResolution().y; idx.y++)
-    {
-        globalPos(0,3)+=idx.x*slice.getVoxelSize().x;
-        globalPos(1,3)+=idx.y*slice.getVoxelSize().y;
-        globalPos(2,3)+=idx.z*slice.getVoxelSize().z;
-
-        if(pos.y<0)
-            globalPos(2,3)+volume.getResolution().y*volume.getVoxelSize().y;
-    }
-}
-
-
-__global__ void integrateSliceZ(Volume volume,Volume slice,int3 pos,sMatrix4 sliceOffset)
-{
-    uint2 u=thr2pos2();
-    int3 idx = make_int3(u.x,u.y,0);
-
-    sMatrix4 globalPos=sliceOffset;
-    for (; idx.z < slice.getResolution().z; idx.z++)
-    {
-        globalPos(0,3)+=idx.x*slice.getVoxelSize().x;
-        globalPos(1,3)+=idx.y*slice.getVoxelSize().y;
-        globalPos(2,3)+=idx.z*slice.getVoxelSize().z;
-
-        if(pos.z<0)
-            globalPos(2,3)+volume.getResolution().z*volume.getVoxelSize().z;
-    }
-}
-
-__global__ void clearVolumeZ(Volume volume,const float2 val,const int zz,Volume slice)
-{
-    //int3 pos = make_int3(thr2pos2());
-    //pos.x+=offeset.x;
-    //pos.y+=offeset.y;
-
-    uint2 u=thr2pos2();
-    int3 offeset=volume.getOffset();
-    int3 pos = make_int3(u.x+offeset.x,u.y+offeset.y,0);
-    int3 slPos=make_int3(u.x,u.y,0);
-
-
-    int min_z,max_z;
-    if(zz>0)
-    {
-        min_z=volume.minVoxel().z;
-        max_z=volume.minVoxel().z+zz;
-    }
-    else
-    {
-        min_z=volume.maxVoxel().z+zz;
-        max_z=volume.maxVoxel().z;
-    }
-
-    for (pos.z=min_z; pos.z < max_z; pos.z++)
-    {
-        float2 data=volume[pos];
-        float3 col=volume.getColor(pos);
-        slice.set(slPos,data,col);
-        volume.set(pos, val);
-        slPos.z++;
-    }
-}
-
-__global__ void clearVolumeX(Volume volume,const float2 val,const int xx,Volume slice)
-{
-    uint2 u=thr2pos2();
-    int3 offeset=volume.getOffset();
-    int3 pos = make_int3(0,u.x+offeset.y,u.y+offeset.z);
-    int3 slPos=make_int3(0,u.x,u.y);
-
-    int min_x,max_x;
-    if(xx>0)
-    {
-        min_x=volume.minVoxel().x;
-        max_x=volume.minVoxel().x+xx;
-    }
-    else
-    {
-        min_x=volume.maxVoxel().x+xx;
-        max_x=volume.maxVoxel().x;
-    }
-
-    for (pos.x=min_x; pos.x < max_x; pos.x++)
-    {
-        float2 data=volume[pos];
-        float3 col=volume.getColor(pos);
-        slice.set(slPos,data,col);
-        volume.set(pos, val);
-        slPos.x++;
-
-//        if(u.x==1 && u.y==1)
-//        {
-//            printf("%f %f\n",data.x,data.y);
-//        }
-
-//        if(col.y!=0)
-//        {
-//            printf("%f\n",data.x);
-//        }
-    }
-}
-
-__global__ void clearVolumeY(Volume volume,const float2 val,const int yy,Volume slice)
-{
-    uint2 u=thr2pos2();
-    int3 offeset=volume.getOffset();
-    int3 pos = make_int3(u.x+offeset.x,0,u.y+offeset.z);
-    int3 slPos=make_int3(u.x,0,u.y);
-
-    int min_y,max_y;
-    if(yy>0)
-    {
-        min_y=volume.minVoxel().y;
-        max_y=volume.minVoxel().y+yy;
-    }
-    else
-    {
-        min_y=volume.maxVoxel().y+yy;
-        max_y=volume.maxVoxel().y;
-    }
-
-    for (pos.y=min_y; pos.y < max_y; pos.y++)
-    {
-        float2 data=volume[pos];
-        float3 col=volume.getColor(pos);
-        slice.set(slPos,data,col);
-        volume.set(pos, val);
-        slPos.y++;
-    }
-}
-
 
 __global__ void raycastKernel(Image<float3> pos3D,
                               Image<float3> normal,
@@ -397,70 +199,6 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
         }
     }
 }
-
-
-#if 0
-{
-    int3 pix = make_int3(thr2pos2());
-    pix=pix+vol.getOffset();
-
-    float3 pos = invTrack * vol.pos(pix);
-//    float3 pos = invTrack * vol.pos2(pix);
-
-//    pos=pos+vol.getOffsetPos();
-    float3 cameraX = K * pos;
-//    cameraX = cameraX + vol.getOffsetPos();
-    const float3 delta = rotate(invTrack,make_float3(0, 0, vol.getDimensions().z / vol.getResolution().z));
-    const float3 cameraDelta = rotate(K, delta);
-
-    for (pix.z = vol.minVoxel().z; pix.z < vol.maxVoxel().z; ++pix.z, pos += delta, cameraX +=cameraDelta)
-    {
-
-        if (pos.z < 0.0001f) // some near plane constraint
-        {
-            continue;
-        }
-
-        const float2 pixel = make_float2(cameraX.x / cameraX.z + 0.5f,
-                                         cameraX.y / cameraX.z + 0.5f);
-
-        if (pixel.x < 0 || pixel.x > depth.size.x - 1 ||
-                pixel.y < 0|| pixel.y > depth.size.y - 1)
-            continue;
-
-        const uint2 px = make_uint2(pixel.x, pixel.y);
-
-        if (depth[px] == 0)
-            continue;
-
-        const float diff = (depth[px] - cameraX.z) *
-                           sqrt(1 + sq(pos.x / pos.z) + sq(pos.y / pos.z));
-
-        if (diff > -mu)
-        {
-            const float sdf = fminf(1.f, diff / mu);
-
-            float2 p_data = vol[pix];
-            float3 p_color = vol.getColor(pix);
-
-            float w=p_data.y+1;
-
-            float3 frgb=rgb2lab(rgb[px]);
-            p_data.x = clamp((p_data.y * p_data.x + sdf) / w, -1.f, 1.f);
-
-            frgb.x = (p_color.x * p_data.y + frgb.x ) / w;
-            frgb.y = (p_color.y * p_data.y + frgb.y ) / w;
-            frgb.z = (p_color.z * p_data.y + frgb.z ) / w;
-
-            frgb.x=clamp(frgb.x,MIN_L,MAX_L);
-            frgb.y=clamp(frgb.y,MIN_A,MAX_A);
-            frgb.z=clamp(frgb.z,MIN_B,MAX_B);
-            p_data.y=fmin(w,maxweight);
-            vol.set(pix,p_data, frgb);
-        }
-    }
-}
-#endif
 
 //TODO fix me
 __global__ void deIntegrateKernel(Volume vol,
@@ -882,55 +620,6 @@ __global__ void wrongNormalsSizeKernel(Image<int> out,const Image<TrackData> dat
     }
     */
 }
-/*
-__global__ void copyVolumeData(uint3 *posArray,const Volume volume, float *dest)
-{
-    int batch_pos = threadIdx.x;
-    uint3 block=blockIdx;
-    printf("%d %d %d %d\n",
-           blockDim.x,
-           blockDim.y,
-           blockDim.z,
-           batch_pos);
-
-    uint3 center=posArray[batch_pos];
-    uint3 pos=center+block-make_uint3(15,15,15);
-    uint idx=pos.z*30*30+pos.y*30+ pos.x;
-    dest[30*30*30*batch_pos+idx]=volume[pos].x;
-
-}
-
-__global__ void copyVolumeData2(uint3 *posArray,const Volume volume,
-                                float *dest,char *isEmpty)
-{
-
-    uint num=threadIdx.x;
-    uint3 pos=posArray[num];
-
-    float sum=0;
-    for(int z = pos.z - 15; z < pos.z + 15; z++)
-    {
-        for(int y=pos.y-15; y<pos.y+15;y++)
-        {
-            for(int x=pos.x-15; x<pos.x+15;x++)
-            {
-                uint3 p=make_uint3(x,y,z);
-                uint idx=z*30*30+y*30+ x;
-                dest[30*30*30*num+idx]=volume[p].x;
-                sum+=volume[p].x;
-            }
-        }
-    }
-
-    if(sum==30*30*30)
-        isEmpty[num]=1;
-    else if(sum==-30*30*30)
-        isEmpty[num]=1;
-    else
-        isEmpty[num]=0;
-
-}
-*/
 
 //=================ICP COVARIANCE======================
 

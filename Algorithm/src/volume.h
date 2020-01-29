@@ -209,6 +209,14 @@ class Volume
         }
 
         __device__
+        void set(const uint3 & pos, const float2 & d)
+        {
+            uint p=pos.x + pos.y * _resolution.x + pos.z * _resolution.x * _resolution.y;
+            data[p] = make_short2(d.x * 32766.0f, d.y);
+            color[p] = make_float3(0.0,0.0,0.0);
+        }
+
+        __device__
         void set(const int3 & pos, const float2 &d,const float3 &c)
         {
             size_t p=getPos(pos);
