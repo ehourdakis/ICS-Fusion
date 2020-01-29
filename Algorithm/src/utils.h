@@ -180,6 +180,14 @@ struct sMatrix6
         }
     }
 
+    static __host__ __device__ sMatrix6 zeros()
+    {
+        sMatrix6 ret;
+        for(int i=0;i<6*6;i++)
+            ret.data[i]=0.0;
+        return ret;
+    }
+
     inline __host__  __device__ float& operator () (int i,int j)
     {
         int idx=6*i+j;

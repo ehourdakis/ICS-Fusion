@@ -144,25 +144,23 @@ __global__ void renderVolumeKernel2(Image<uchar3> render,
 //=================ICP COVARIANCE======================
 
 
-__global__ void icpCovarianceFirstTerm(const Image<float3, Device> dataVertex,
-                                        const Image<float3, Device> modelVertex,
-                                        const Image<float3, Device> modelNormals,
-                                        const Image<TrackData, Device> trackData,
-                                        Image<sMatrix6, Device> outData,
-                                        const Matrix4 pose,
+__global__ void icpCovarianceFirstTerm(const Image<float3> inVertex,
+                                        const Image<float3> refVertex,
+                                        const Image<float3> refNormal,
+                                        const Image<TrackData> trackData,
+                                        Image<sMatrix6> outData,
+                                        const Matrix4 Ttrack,
                                         const Matrix4 view,
-                                        const Matrix4 delta,
-                                        const Matrix4 invPrevPose);
+                                        const Matrix4 delta);
 
 
-__global__ void icpCovarianceSecondTerm(const Image<float3, Device>  dataVertex,
-                                         const Image<float3, Device> modelVertex,
-                                         const Image<float3, Device> modelNormals,
-                                         const Image<TrackData, Device>  trackData,
-                                         Image<sMatrix6, Device> outData,
+__global__ void icpCovarianceSecondTerm(const Image<float3>  dataVertex,
+                                         const Image<float3> modelVertex,
+                                         const Image<float3> modelNormals,
+                                         const Image<TrackData>  trackData,
+                                         Image<sMatrix6> outData,
                                          const Matrix4 Ttrack,
                                          const Matrix4 view,
                                          const Matrix4 delta,
-                                         const Matrix4 invPrevPose,
                                          float cov_z);
 #endif // KERNEL_GLOBALS_H

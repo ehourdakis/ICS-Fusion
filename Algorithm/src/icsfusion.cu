@@ -628,22 +628,12 @@ void IcsFusion::getIcpValues(Image<float3, Host> &depthVertex,
 
 sMatrix6 IcsFusion::calculate_ICP_COV()
 {
-    sMatrix6 ret;
-    if(!_tracked)
-    {
-        for(int i=0;i<6;i++)
-            for(int j=0;j<6;j++)
-                ret(i,j)=cov_big;
-
-        return ret;
-    }
-
-
     sMatrix4 currPose=pose;
     sMatrix4 invPrevPose=inverse(oldPose);
     sMatrix4 delta=invPrevPose*currPose;
 
     Matrix4 projectedReference = camMatrix*inverse(Matrix4(&raycastPose));
+    //delta=fromVisionCord(delta);
 
 //     sMatrix4 delta=inverse(this->getPose())*this->getDeltaPose()*this->getPose();
 //     sMatrix4 delta=this->getDeltaPose();
@@ -661,11 +651,12 @@ sMatrix6 IcsFusion::calculate_ICP_COV()
 //     delta=T_B_P*delta;
 //     
     dim3 grid=divup(make_uint2(params.inputSize.x,params.inputSize.y),imageBlock );
+
     sMatrix6 initMat;
     for(int i=0;i<36;i++)
         initMat.data[i]=0.0;
     
-    delta=fromVisionCord(delta);
+
     icpCovarianceFirstTerm<<<grid, imageBlock>>>(inputVertex[0],
                                                 vertex,
                                                 normal,
@@ -673,45 +664,12 @@ sMatrix6 IcsFusion::calculate_ICP_COV()
                                                 covData,
                                                 trackPose,
                                                 projectedReference,
-                                                invPrevPose,
                                                 delta);
     
     cudaDeviceSynchronize();    
-    
     size_t size=covData.size.x*covData.size.y;
     thrust::device_ptr<sMatrix6> cov_ptr(covData.data());
-
-    Image<sMatrix6, Host> covDataHost(covData.size);
-    covDataHost.alloc(covData.size);
-
-    cudaMemcpy(covDataHost.data(), covData.data(),size*sizeof(sMatrix6),cudaMemcpyDeviceToHost);
-    sMatrix6 sum;
-    for(int i=0;i<36;i++)
-        sum.data[i]=0.0;
-    uint2 idx;
-    for(idx.x=0;idx.x<covData.size.x;idx.x++)
-    {
-        for(idx.y=0;idx.y<covData.size.y;idx.y++)
-        {
-            sum=sum+covDataHost[idx];
-        }
-    }
-
-//    covDataHost.release();
-
-    thrust::device_vector<sMatrix6> d_vec(cov_ptr,cov_ptr+size);
-
-    
-    sMatrix6 d2J_dX2 = thrust::reduce(d_vec.begin(), d_vec.end(), initMat, thrust::plus<sMatrix6>());
-    cudaDeviceSynchronize();
-
-    /*
-    std::cout<<"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"<<std::endl;
-    std::cout<<sum<<std::endl;
-    std::cout<<d2J_dX2<<std::endl;
-    std::cout<<"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"<<std::endl;
-    */
-    d2J_dX2=sum;
+    sMatrix6 d2J_dX2 = thrust::reduce(cov_ptr, cov_ptr+size, initMat, thrust::plus<sMatrix6>());
 
     icpCovarianceSecondTerm<<<grid, imageBlock>>>(inputVertex[0],
                                                   vertex,
@@ -720,84 +678,39 @@ sMatrix6 IcsFusion::calculate_ICP_COV()
                                                   covData,
                                                   trackPose,
                                                   projectedReference,
-                                                  delta,
-                                                  invPrevPose,
+                                                  delta,                                                  
                                                   1.0);
     cudaDeviceSynchronize();
-
-    thrust::device_ptr<sMatrix6> cov_ptr2(covData.data());
-    thrust::device_vector<sMatrix6> d_vec2(cov_ptr2,cov_ptr2+size);
-
-    sMatrix6 mat = thrust::reduce(d_vec2.begin(), d_vec2.end(), initMat, thrust::plus<sMatrix6>());
-    //ICP_COV =  d2J_dX2.inverse() * d2J_dZdX * cov_z * d2J_dZdX.transpose() * d2J_dX2.inverse();
-
-
-    cudaMemcpy(covDataHost.data(), covData.data(),size*sizeof(sMatrix6),cudaMemcpyDeviceToHost);
-    for(int i=0;i<36;i++)
-        sum.data[i]=0.0;
-
-    for(idx.x=0;idx.x<covData.size.x;idx.x++)
-    {
-        for(idx.y=0;idx.y<covData.size.y;idx.y++)
-        {
-            sum=sum+covDataHost[idx];
-        }
-    }
-
-    covDataHost.release();
-
-    cudaDeviceSynchronize();
-
-    /*
-    std::cout<<"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"<<std::endl;
-    std::cout<<sum<<std::endl;
-    std::cout<<mat<<std::endl;
-    std::cout<<"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"<<std::endl;
-    */
-    mat=sum;
+    sMatrix6 covSecondTerm = thrust::reduce(cov_ptr, cov_ptr+size, initMat, thrust::plus<sMatrix6>());
 
 
     sMatrix6 d2J_dX2inv=inverse(d2J_dX2);
-    sMatrix6 tmp=d2J_dX2inv * mat;
-    sMatrix6 ICP_COV= tmp * d2J_dX2inv;
+    sMatrix6 tmp=d2J_dX2inv * covSecondTerm;
+    sMatrix6 icpCov= tmp * d2J_dX2inv;
 
+    //make sure that covariance matrix is symetric.
+    //small asymetries may occur due to numerical stability
+    sMatrix6 ret;
     for(int i=0;i<6;i++)
     {
         for(int j=0;j<6;j++)
         {
-            float val;
             //eliminate NaN values
-            if(ICP_COV(i,j)!=ICP_COV(i,j) || ICP_COV(j,i)!=ICP_COV(j,i))
+            if(icpCov(i,j)!=icpCov(i,j))
             {
-                val=cov_big;
+                icpCov(i,j)=cov_big;
             }
-            else
+            if(icpCov(j,i)!=icpCov(j,i))
             {
-                val=( ICP_COV(i,j) + ICP_COV(j,i) ) / 2;
-                if( val!=val || std::isinf(val) || val > cov_big )
-                {
-//                    val=COV_BIG;
-                }
+                icpCov(j,i)=cov_big;
             }
+            float val=( icpCov(i,j) + icpCov(j,i))/2;
             ret(i,j)=val;
             ret(j,i)=val;
+
         }
     }
 
-//    std::cout<<"======================="<<std::endl;
-//    std::cout<<d2J_dX2<<std::endl;
-//    std::cout<<d2J_dX2inv<<std::endl;
-//    std::cout<<mat<<std::endl;
-//    std::cout<<tmp<<std::endl;
-//    std::cout<<ICP_COV<<std::endl;
-//    std::cout<<ret<<std::endl;
-//    std::cout<<"F:"<<FLT_MAX<<std::endl;
-//    std::cout<<"======================="<<std::endl;
-
-
-//    std<<cout<<"======================="<<std::endl;
-
-    //ICP_COV=ICP_COV;
     return ret;
 }
 

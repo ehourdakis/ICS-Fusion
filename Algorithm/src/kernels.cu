@@ -624,15 +624,14 @@ __global__ void wrongNormalsSizeKernel(Image<int> out,const Image<TrackData> dat
 //=================ICP COVARIANCE======================
 
 
-__global__ void icpCovarianceFirstTerm( const Image<float3, Device> dataVertex,
-                                        const Image<float3, Device> modelVertex,
-                                        const Image<float3, Device> modelNormals,
-                                        const Image<TrackData, Device> trackData,
-                                        Image<sMatrix6, Device> outData,
-                                        const Matrix4 pose,
+__global__ void icpCovarianceFirstTerm( const Image<float3> inVertex,
+                                        const Image<float3> refVertex,
+                                        const Image<float3> refNormal,
+                                        const Image<TrackData> trackData,
+                                        Image<sMatrix6> outData,
+                                        const Matrix4 Ttrack,
                                         const Matrix4 view,
-                                        const Matrix4 delta,
-                                        const Matrix4 invPrevPose)
+                                        const Matrix4 delta)
 {
     float Tx = delta(0,3);
     float Ty = delta(1,3);
@@ -652,43 +651,50 @@ __global__ void icpCovarianceFirstTerm( const Image<float3, Device> dataVertex,
     a = yaw; b = pitch; c = roll;// important // According to the rotation matrix I used and after verification, it is Yaw Pitch ROLL = [a,b,c]== [R] matrix used in the MatLab also :)
 
     sMatrix6 ret;
-    for(int i=0;i<36;i++)
-        ret.data[i]=cov_big;
-    
+
+    //ICP not matched this vertex
     if(trackData.el().result!=1)
     {
+        for(int i=0;i<36;i++)
+            ret.data[i]=cov_big;
         outData.el()=ret;
         return;
     }
         
     
     const uint2 pixel = thr2pos2();
-    const float3 projectedVertex = pose * dataVertex[pixel];
-    //const float3 projectedVertex = inVertex[pixel];
-    const float3 projectedPos = view * projectedVertex;
-    //const float3 projectedPos = camMatrix * projectedVertex;
+    const float3 projectedVertex = Ttrack * inVertex[pixel];
+    const float3 projectedPos = view * projectedVertex;    
     const float2 projPixel = make_float2(projectedPos.x / projectedPos.z + 0.5f,
                                          projectedPos.y / projectedPos.z + 0.5f);
 
 
-    if (projPixel.x < 0 || projPixel.x > modelVertex.size.x - 1
-        || projPixel.y < 0 || projPixel.y > modelVertex.size.y - 1)
+    //out of bounds. add zeros
+    if (projPixel.x < 0 || projPixel.x > refVertex.size.x - 1
+        || projPixel.y < 0 || projPixel.y > refVertex.size.y - 1)
     {
+        for(int i=0;i<36;i++)
+            ret.data[i]=0.0;
         outData.el()=ret;
         return;
     }
 
     const uint2 refPixel = make_uint2(projPixel.x, projPixel.y);
+    const float3 referenceNormal = refNormal[refPixel];
 
-    if (modelNormals[refPixel].x == INVALID)
+    //invalid normal
+    if (referenceNormal.x == INVALID)
     {
+        for(int i=0;i<36;i++)
+            ret.data[i]=cov_big;
         outData.el()=ret;
         return;
     }
 
-    float3 fp=dataVertex[pixel];
-    float3 fq=invPrevPose*modelVertex[refPixel];
-    float3 fn=rotate(invPrevPose,modelNormals[refPixel]);
+    float3 fp=inVertex[pixel];
+    //float3 fq=invPrevPose*refVertex[refPixel];
+    float3 fq=refVertex[refPixel];
+    float3 fn=refNormal[refPixel];
 
     /*
     fp=fromVisionCordV(fp);
@@ -750,7 +756,6 @@ ret(5,0)    ret(5,1)    ret(5,2)   ret(5,3)   ret(5,4)   ret(5,5)
     // In this way, matlab can be used to generate these terms for various objective functions of ICP
     // and they can simply be copied to the C++ files and with appropriate changes to ICP estimation,
     // its covariance can be easily estimated.
-
 
     ret(0,0) =2*pow(nix,2);
 
@@ -923,21 +928,18 @@ ret(5,0)    ret(5,1)    ret(5,2)   ret(5,3)   ret(5,4)   ret(5,5)
 
     */
      
-    outData.el()=ret;
-    
-//     d2J_dX2 = d2J_dX2 + d2J_dX2_temp;
+    outData.el()=ret;    
 }
 
 
-__global__ void icpCovarianceSecondTerm( const Image<float3, Device> dataVertex,
-                                        const Image<float3, Device> modelVertex, 
-                                        const Image<float3, Device> modelNormals,
-                                        const Image<TrackData, Device>  trackData,
-                                        Image<sMatrix6, Device> outData,
+__global__ void icpCovarianceSecondTerm( const Image<float3> inVertex,
+                                        const Image<float3> refVertex,
+                                        const Image<float3> refNormal,
+                                        const Image<TrackData>  trackData,
+                                        Image<sMatrix6> outData,
                                         const Matrix4 Ttrack,
                                         const Matrix4 view,
                                         const Matrix4 delta,
-                                        const Matrix4 invPrevPose,
                                         float cov_z)
 {
 
@@ -956,56 +958,60 @@ __global__ void icpCovarianceSecondTerm( const Image<float3, Device> dataVertex,
     float  x, y, z, a, b, c;
     x = Tx; y = Ty; z = Tz;
     a = yaw; b = pitch; c = roll;
-    
+        
     sMatrix6 d2J_dZdX_temp,mat;
-    for(int i=0;i<36;i++)
-        mat.data[i]=cov_big;
-
     const uint2 pixel = thr2pos2();
         
     if(trackData[pixel].result!=1)
     {
-        outData.el()=mat;
+        for(int i=0;i<36;i++)
+            mat.data[i]=cov_big;
         return;
     }
 
 
-    if (pixel.x >= dataVertex.size.x || pixel.y >= dataVertex.size.y)
+    if (pixel.x >= inVertex.size.x || pixel.y >= inVertex.size.y)
     {
+        for(int i=0;i<36;i++)
+            mat.data[i]=cov_big;
         outData.el()=mat;
-        printf("Out of size\n");
         return;
     }
 
-
-    const float3 projectedVertex = Ttrack * dataVertex[pixel];
-    const float3 projectedPos = view * projectedVertex;    
+    const float3 projectedVertex = Ttrack * inVertex[pixel];
+    const float3 projectedPos = view * projectedVertex;
     const float2 projPixel = make_float2(projectedPos.x / projectedPos.z + 0.5f,
                                          projectedPos.y / projectedPos.z + 0.5f);
 
 
-    if (projPixel.x < 0 || projPixel.x > modelVertex.size.x - 1
-        || projPixel.y < 0 || projPixel.y > modelVertex.size.y - 1)
+    //out of bounds. add zeros
+    if (projPixel.x < 0 || projPixel.x > refVertex.size.x - 1
+        || projPixel.y < 0 || projPixel.y > refVertex.size.y - 1)
     {
+        for(int i=0;i<36;i++)
+            mat.data[i]=0.0;
         outData.el()=mat;
-        printf("Out of frame\n");
         return;
     }
 
     const uint2 refPixel = make_uint2(projPixel.x, projPixel.y);
+    const float3 referenceNormal = refNormal[refPixel];
 
-    if (modelNormals[refPixel].x == INVALID)
+    //invalid normal
+    if (referenceNormal.x == INVALID)
     {
+        for(int i=0;i<36;i++)
+            mat.data[i]=cov_big;
         outData.el()=mat;
-        printf("inv %d\n",trackData[pixel].result);
         return;
     }
 
+    float3 fp=inVertex[pixel];
+    //float3 fq=invPrevPose*refVertex[refPixel];
+    float3 fq=refVertex[refPixel];
+    //float3 fn=rotate(invPrevPose,modelNormals[refPixel]);
+    float3 fn=refNormal[refPixel];
 
-
-    float3 fp=dataVertex[pixel];
-    float3 fq=invPrevPose*modelVertex[refPixel];
-    float3 fn=rotate(invPrevPose,modelNormals[refPixel]);
 
     /*
     fp=fromVisionCordV(fp);
@@ -1028,7 +1034,6 @@ __global__ void icpCovarianceSecondTerm( const Image<float3, Device> dataVertex,
     if (niz!=niz) // for nan removal in input point cloud data
     {
         outData.el()=mat;
-        printf("Nan\n");
         return;
     }
 
@@ -1044,206 +1049,188 @@ __global__ void icpCovarianceSecondTerm( const Image<float3, Device> dataVertex,
                 d2J_dZdX_temp(5,0),    d2J_dZdX_temp(5,1),    d2J_dZdX_temp(5,2),       d2J_dZdX_temp(5,3),    d2J_dZdX_temp(5,4),    d2J_dZdX_temp(5,5);
         */
 
-        d2J_dZdX_temp(0,0) =
+    d2J_dZdX_temp(0,0) =
 
-                2*nix*(nix*cos(a)*cos(b) - niz*sin(b) + niy*cos(b)*sin(a));
+            2*nix*(nix*cos(a)*cos(b) - niz*sin(b) + niy*cos(b)*sin(a));
 
 
-        d2J_dZdX_temp(1,0) =
+    d2J_dZdX_temp(1,0) =
 
-                2*niy*(nix*cos(a)*cos(b) - niz*sin(b) + niy*cos(b)*sin(a));
+            2*niy*(nix*cos(a)*cos(b) - niz*sin(b) + niy*cos(b)*sin(a));
 
 
-        d2J_dZdX_temp(2,0) =
+    d2J_dZdX_temp(2,0) =
 
-                2*niz*(nix*cos(a)*cos(b) - niz*sin(b) + niy*cos(b)*sin(a));
+            2*niz*(nix*cos(a)*cos(b) - niz*sin(b) + niy*cos(b)*sin(a));
 
 
-        d2J_dZdX_temp(3,0) =
+    d2J_dZdX_temp(3,0) =
 
-                (2*niy*cos(a)*cos(b) - 2*nix*cos(b)*sin(a))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c))) + (2*niy*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - 2*nix*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)))*(nix*cos(a)*cos(b) - niz*sin(b) + niy*cos(b)*sin(a));
+            (2*niy*cos(a)*cos(b) - 2*nix*cos(b)*sin(a))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c))) + (2*niy*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - 2*nix*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)))*(nix*cos(a)*cos(b) - niz*sin(b) + niy*cos(b)*sin(a));
 
 
-        d2J_dZdX_temp(4,0) =
+    d2J_dZdX_temp(4,0) =
 
-                (2*niy*(piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c)) - 2*niz*(pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c)) + 2*nix*(piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c)))*(nix*cos(a)*cos(b) - niz*sin(b) + niy*cos(b)*sin(a)) - (2*niz*cos(b) + 2*nix*cos(a)*sin(b) + 2*niy*sin(a)*sin(b))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
+            (2*niy*(piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c)) - 2*niz*(pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c)) + 2*nix*(piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c)))*(nix*cos(a)*cos(b) - niz*sin(b) + niy*cos(b)*sin(a)) - (2*niz*cos(b) + 2*nix*cos(a)*sin(b) + 2*niy*sin(a)*sin(b))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
 
 
-        d2J_dZdX_temp(5,0) =
+    d2J_dZdX_temp(5,0) =
 
-                (2*nix*(piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - 2*niy*(piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + 2*niz*(piy*cos(b)*cos(c) - piz*cos(b)*sin(c)))*(nix*cos(a)*cos(b) - niz*sin(b) + niy*cos(b)*sin(a));
+            (2*nix*(piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - 2*niy*(piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + 2*niz*(piy*cos(b)*cos(c) - piz*cos(b)*sin(c)))*(nix*cos(a)*cos(b) - niz*sin(b) + niy*cos(b)*sin(a));
 
 
-        d2J_dZdX_temp(0,1) =
+    d2J_dZdX_temp(0,1) =
 
-                2*nix*(niy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - nix*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + niz*cos(b)*sin(c));
+            2*nix*(niy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - nix*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + niz*cos(b)*sin(c));
 
 
-        d2J_dZdX_temp(1,1) =
+    d2J_dZdX_temp(1,1) =
 
-                2*niy*(niy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - nix*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + niz*cos(b)*sin(c));
+            2*niy*(niy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - nix*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + niz*cos(b)*sin(c));
 
 
-        d2J_dZdX_temp(2,1) =
+    d2J_dZdX_temp(2,1) =
 
-                2*niz*(niy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - nix*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + niz*cos(b)*sin(c));
+            2*niz*(niy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - nix*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + niz*cos(b)*sin(c));
 
 
-        d2J_dZdX_temp(3,1) =
+    d2J_dZdX_temp(3,1) =
 
-                (2*niy*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - 2*nix*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)))*(niy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - nix*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + niz*cos(b)*sin(c)) - (2*nix*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) + 2*niy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
+            (2*niy*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - 2*nix*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)))*(niy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - nix*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + niz*cos(b)*sin(c)) - (2*nix*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) + 2*niy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
 
 
-        d2J_dZdX_temp(4,1) =
+    d2J_dZdX_temp(4,1) =
 
-                (2*niy*(piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c)) - 2*niz*(pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c)) + 2*nix*(piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c)))*(niy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - nix*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + niz*cos(b)*sin(c)) + (2*nix*cos(a)*cos(b)*sin(c) - 2*niz*sin(b)*sin(c) + 2*niy*cos(b)*sin(a)*sin(c))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
+            (2*niy*(piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c)) - 2*niz*(pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c)) + 2*nix*(piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c)))*(niy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - nix*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + niz*cos(b)*sin(c)) + (2*nix*cos(a)*cos(b)*sin(c) - 2*niz*sin(b)*sin(c) + 2*niy*cos(b)*sin(a)*sin(c))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
 
 
-        d2J_dZdX_temp(5,1) =
+    d2J_dZdX_temp(5,1) =
 
-                (2*nix*(piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - 2*niy*(piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + 2*niz*(piy*cos(b)*cos(c) - piz*cos(b)*sin(c)))*(niy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - nix*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + niz*cos(b)*sin(c)) + (2*nix*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*niy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*niz*cos(b)*cos(c))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
+            (2*nix*(piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - 2*niy*(piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + 2*niz*(piy*cos(b)*cos(c) - piz*cos(b)*sin(c)))*(niy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - nix*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + niz*cos(b)*sin(c)) + (2*nix*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*niy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*niz*cos(b)*cos(c))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
 
 
-        d2J_dZdX_temp(0,2) =
+    d2J_dZdX_temp(0,2) =
 
-                2*nix*(nix*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - niy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + niz*cos(b)*cos(c));
+            2*nix*(nix*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - niy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + niz*cos(b)*cos(c));
 
 
-        d2J_dZdX_temp(1,2) =
+    d2J_dZdX_temp(1,2) =
 
-                2*niy*(nix*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - niy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + niz*cos(b)*cos(c));
+            2*niy*(nix*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - niy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + niz*cos(b)*cos(c));
 
 
-        d2J_dZdX_temp(2,2) =
+    d2J_dZdX_temp(2,2) =
 
-                2*niz*(nix*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - niy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + niz*cos(b)*cos(c));
+            2*niz*(nix*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - niy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + niz*cos(b)*cos(c));
 
 
-        d2J_dZdX_temp(3,2) =
+    d2J_dZdX_temp(3,2) =
 
-                (2*niy*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - 2*nix*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)))*(nix*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - niy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + niz*cos(b)*cos(c)) + (2*nix*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*niy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
+            (2*niy*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - 2*nix*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)))*(nix*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - niy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + niz*cos(b)*cos(c)) + (2*nix*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*niy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
 
 
-        d2J_dZdX_temp(4,2) =
+    d2J_dZdX_temp(4,2) =
 
-                (2*niy*(piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c)) - 2*niz*(pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c)) + 2*nix*(piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c)))*(nix*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - niy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + niz*cos(b)*cos(c)) + (2*nix*cos(a)*cos(b)*cos(c) - 2*niz*cos(c)*sin(b) + 2*niy*cos(b)*cos(c)*sin(a))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
+            (2*niy*(piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c)) - 2*niz*(pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c)) + 2*nix*(piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c)))*(nix*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - niy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + niz*cos(b)*cos(c)) + (2*nix*cos(a)*cos(b)*cos(c) - 2*niz*cos(c)*sin(b) + 2*niy*cos(b)*cos(c)*sin(a))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
 
 
-        d2J_dZdX_temp(5,2) =
+    d2J_dZdX_temp(5,2) =
 
-                (2*nix*(piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - 2*niy*(piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + 2*niz*(piy*cos(b)*cos(c) - piz*cos(b)*sin(c)))*(nix*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - niy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + niz*cos(b)*cos(c)) - (2*niy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*nix*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*niz*cos(b)*sin(c))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
+            (2*nix*(piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - 2*niy*(piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + 2*niz*(piy*cos(b)*cos(c) - piz*cos(b)*sin(c)))*(nix*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - niy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + niz*cos(b)*cos(c)) - (2*niy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*nix*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*niz*cos(b)*sin(c))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
 
 
-        d2J_dZdX_temp(0,3) =
+    d2J_dZdX_temp(0,3) =
 
-                -2*pow(nix,2);
+            -2*pow(nix,2);
 
 
-        d2J_dZdX_temp(1,3) =
+    d2J_dZdX_temp(1,3) =
 
-                -2*nix*niy;
+            -2*nix*niy;
 
 
-        d2J_dZdX_temp(2,3) =
+    d2J_dZdX_temp(2,3) =
 
-                -2*nix*niz;
+            -2*nix*niz;
 
 
-        d2J_dZdX_temp(3,3) =
+    d2J_dZdX_temp(3,3) =
 
-                -nix*(2*niy*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - 2*nix*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)));
+            -nix*(2*niy*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - 2*nix*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)));
 
 
-        d2J_dZdX_temp(4,3) =
+    d2J_dZdX_temp(4,3) =
 
-                -nix*(2*niy*(piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c)) - 2*niz*(pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c)) + 2*nix*(piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c)));
+            -nix*(2*niy*(piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c)) - 2*niz*(pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c)) + 2*nix*(piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c)));
 
 
-        d2J_dZdX_temp(5,3) =
+    d2J_dZdX_temp(5,3) =
 
-                -nix*(2*nix*(piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - 2*niy*(piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + 2*niz*(piy*cos(b)*cos(c) - piz*cos(b)*sin(c)));
+            -nix*(2*nix*(piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - 2*niy*(piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + 2*niz*(piy*cos(b)*cos(c) - piz*cos(b)*sin(c)));
 
 
-        d2J_dZdX_temp(0,4) =
+    d2J_dZdX_temp(0,4) =
 
-                -2*nix*niy;
+            -2*nix*niy;
 
 
-        d2J_dZdX_temp(1,4) =
+    d2J_dZdX_temp(1,4) =
 
-                -2*pow(niy,2);
+            -2*pow(niy,2);
 
 
-        d2J_dZdX_temp(2,4) =
+    d2J_dZdX_temp(2,4) =
 
-                -2*niy*niz;
+            -2*niy*niz;
 
 
-        d2J_dZdX_temp(3,4) =
+    d2J_dZdX_temp(3,4) =
 
-                -niy*(2*niy*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - 2*nix*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)));
+            -niy*(2*niy*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - 2*nix*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)));
 
 
-        d2J_dZdX_temp(4,4) =
+    d2J_dZdX_temp(4,4) =
 
-                -niy*(2*niy*(piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c)) - 2*niz*(pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c)) + 2*nix*(piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c)));
+            -niy*(2*niy*(piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c)) - 2*niz*(pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c)) + 2*nix*(piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c)));
 
 
-        d2J_dZdX_temp(5,4) =
+    d2J_dZdX_temp(5,4) =
 
-                -niy*(2*nix*(piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - 2*niy*(piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + 2*niz*(piy*cos(b)*cos(c) - piz*cos(b)*sin(c)));
+            -niy*(2*nix*(piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - 2*niy*(piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + 2*niz*(piy*cos(b)*cos(c) - piz*cos(b)*sin(c)));
 
 
-        d2J_dZdX_temp(0,5) =
+    d2J_dZdX_temp(0,5) =
 
-                -2*nix*niz;
+            -2*nix*niz;
 
 
-        d2J_dZdX_temp(1,5) =
+    d2J_dZdX_temp(1,5) =
 
-                -2*niy*niz;
+            -2*niy*niz;
 
 
-        d2J_dZdX_temp(2,5) =
+    d2J_dZdX_temp(2,5) =
 
-                -2*pow(niz,2);
+            -2*pow(niz,2);
 
 
-        d2J_dZdX_temp(3,5) =
+    d2J_dZdX_temp(3,5) =
 
-                -niz*(2*niy*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - 2*nix*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)));
+            -niz*(2*niy*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - 2*nix*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)));
 
 
-        d2J_dZdX_temp(4,5) =
+    d2J_dZdX_temp(4,5) =
 
-                -niz*(2*niy*(piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c)) - 2*niz*(pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c)) + 2*nix*(piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c)));
+            -niz*(2*niy*(piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c)) - 2*niz*(pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c)) + 2*nix*(piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c)));
 
 
-        d2J_dZdX_temp(5,5) =
+    d2J_dZdX_temp(5,5) =
 
-                -niz*(2*nix*(piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - 2*niy*(piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + 2*niz*(piy*cos(b)*cos(c) - piz*cos(b)*sin(c)));
+            -niz*(2*nix*(piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - 2*niy*(piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + 2*niz*(piy*cos(b)*cos(c) - piz*cos(b)*sin(c)));
 
+    for(int i=0;i<36;i++)
+        mat.data[i]=0.0;
 
-                /*
-
-        d2J_dZdX_temp <<    d2J_dZdX_temp(0,0),    d2J_dZdX_temp(0,1),	d2J_dZdX_temp(0,2),  	   d2J_dZdX_temp(0,3),    d2J_dZdX_temp(0,4),	   d2J_dZdX_temp(0,5),
-                            d2J_dZdX_temp(1,0),    d2J_dZdX_temp(1,1),	d2J_dZdX_temp(1,2),   	   d2J_dZdX_temp(1,3),    d2J_dZdX_temp(1,4),	   d2J_dZdX_temp(1,5),
-                            d2J_dZdX_temp(2,0),    d2J_dZdX_temp(2,1),        d2J_dZdX_temp(2,2),       d2J_dZdX_temp(2,3),    d2J_dZdX_temp(2,4),    d2J_dZdX_temp(2,5),
-                            d2J_dZdX_temp(3,0),    d2J_dZdX_temp(3,1),        d2J_dZdX_temp(3,2),       d2J_dZdX_temp(3,3),    d2J_dZdX_temp(3,4),    d2J_dZdX_temp(3,5),
-                            d2J_dZdX_temp(4,0),    d2J_dZdX_temp(4,1),        d2J_dZdX_temp(4,2),       d2J_dZdX_temp(4,3),    d2J_dZdX_temp(4,4),    d2J_dZdX_temp(4,5),
-                            d2J_dZdX_temp(5,0),    d2J_dZdX_temp(5,1),        d2J_dZdX_temp(5,2),       d2J_dZdX_temp(5,3),    d2J_dZdX_temp(5,4),    d2J_dZdX_temp(5,5);
-
-
-        d2J_dZdX.block<6,6>(0,6*k) = d2J_dZdX_temp;
-        */
-                
-//     }
-
-//     sMatrix6 mat;
-    //d2J_dZdX_temp * transpose(d2J_dZdX_temp )
-    
-    
-    
     for(int i=0;i<6;i++)
     {
         for(int j=0;j<6;j++)
@@ -1253,23 +1240,6 @@ __global__ void icpCovarianceSecondTerm( const Image<float3, Device> dataVertex,
                 mat(i,j) += d2J_dZdX_temp(i,k) * d2J_dZdX_temp(j,k) * cov_z;
             }
         }
-    }    
+    }
     outData.el()=mat;
-    //By reaching here both the matrices d2J_dX2 and d2J_dZdX are calculated and lets print those values out;
-
-    //std::cout << "\n Finally here are the two matrices \n\n" << "d2J_dX2 = \n " << d2J_dX2 <<std::endl;
-    //std::cout << "\n\n\n" << "d2J_dZdX = \n " << d2J_dZdX <<std::endl;
-
-
-
-
-    /**************************************
-     *
-     * Here we create the matrix cov(z) as mentioned in Section 3.3 in the paper, "Covariance of ICP with 3D Point to Point and Point to Plane Error Metrics"
-     *
-     * ************************************/
-
-//     ICP_COV =  d2J_dX2.inverse() * d2J_dZdX * cov_z * d2J_dZdX.transpose() * d2J_dX2.inverse();
-
-
 }

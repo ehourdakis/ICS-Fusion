@@ -15,8 +15,8 @@
 #include <vector>
 
 
-//const float cov_big=1e-2;
-const float cov_big=0;
+const float cov_small=1e-10;
+const float cov_big=100;
 const float e_delta = 0.1f;
 const int radius = 2;
 const float dist_threshold = 0.1f;
