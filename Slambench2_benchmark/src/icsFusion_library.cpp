@@ -317,7 +317,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         }
     }
 
-    if(frame==59)
+    if(frame==59 || frame==79 ||frame==149)
     {
         poses.clear();
         gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
@@ -438,7 +438,7 @@ sMatrix4 getGt(/*SLAMBenchLibraryHelper *lib*/ const slambench::TimeStamp &ts_p,
     */
    
 //enable this for room dataset
-#if 1
+#if 0
      float tmp=ret.data[0].y;
      ret.data[0].y=-ret.data[1].x;
      ret.data[1].x=-tmp;

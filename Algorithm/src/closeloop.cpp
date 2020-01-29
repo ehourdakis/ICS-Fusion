@@ -140,7 +140,7 @@ bool CloseLoop::processFrame()
         */
     }
 
-    if(_frame==20 )
+    if(_frame==20 &&false)
     {
         smoothNet->readKeyPts();
         smoothNet->calculateLRF();

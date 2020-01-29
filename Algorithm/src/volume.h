@@ -155,9 +155,24 @@ class Volume
         }
 
         __device__
+        float2 operator[](const uint3 & pos) const
+        {
+            uint p=pos.x + pos.y * _resolution.x + pos.z * _resolution.x * _resolution.y;
+            const short2 d = data[p];
+            return make_float2(d.x * 0.00003051944088f, d.y); //  / 32766.0f
+        }
+
+        __device__
         float3 getColor(const int3 & pos) const
         {
             return color[getPos(pos)];
+        }
+
+        __device__
+        float3 getColor(const uint3 & pos) const
+        {
+            uint p=pos.x + pos.y * _resolution.x + pos.z * _resolution.x * _resolution.y;
+            return color[p];
         }
 
         __device__
@@ -202,12 +217,30 @@ class Volume
         }
 
         __device__
+        void set(const uint3 & pos, const float2 &d,const float3 &c)
+        {
+            uint p=pos.x + pos.y * _resolution.x + pos.z * _resolution.x * _resolution.y;
+            data[p] = make_short2(d.x * 32766.0f, d.y);
+            color[p] = c;
+        }
+
+
+        __device__
         float3 pos(const int3 & p) const
         {
             return make_float3( ( (p.x + 0.5f) * voxelSize.x),
                                 ( (p.y + 0.5f) * voxelSize.y),
                                 ( (p.z + 0.5f) * voxelSize.z));
         }
+
+        __device__
+        float3 pos(const uint3 & p) const
+        {
+            return make_float3( ( (p.x + 0.5f) * voxelSize.x),
+                                ( (p.y + 0.5f) * voxelSize.y),
+                                ( (p.z + 0.5f) * voxelSize.z));
+        }
+
 
         __device__
         float3 pos2(const int3 & p) const
@@ -294,7 +327,8 @@ class Volume
                                        -0.5-float(_resolution.y)/2,
                                        -0.5-float(_resolution.z)/2);
 
-            _offset=make_int3(int(offsetF.x),int(offsetF.y),int(offsetF.z));
+//            _offset=make_int3(int(offsetF.x),int(offsetF.y),int(offsetF.z));
+            _offset=make_int3(0,0,0);
         }
 
         __host__ __device__ int3 minVoxel() const

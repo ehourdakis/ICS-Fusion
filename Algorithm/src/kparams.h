@@ -12,13 +12,12 @@ typedef struct
     int rendering_rate = 1;
     int tracking_rate=1;
     uint3 volume_resolution = make_uint3(256,256,256);
-//    uint3 volume_resolution = make_uint3(288,288,288);
-
     //uint3 volume_resolution = make_uint3(512,512,512);
     //float3 volume_direction = make_float3(4.5,4.5,4.5);
 
 
-    float3 volume_direction = make_float3(0.0,0.0,0.0);//do not change this value
+//    float3 volume_direction = make_float3(0.0,0.0,0.0);//do not change this value
+    float3 volume_direction = make_float3(4.0,4.0,4.0);
     float3 volume_size = make_float3(8,8,8);
     //float3 volume_size = make_float3(16,16,16);
 

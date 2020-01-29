@@ -346,6 +346,61 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
                                 const float mu,
                                 const float maxweight)
 {
+    uint3 pix = make_uint3(thr2pos2());
+    float3 pos = invTrack * vol.pos(pix);
+    float3 cameraX = K * pos;
+    const float3 delta = rotate(invTrack,make_float3(0, 0, vol.getDimensions().z / vol.getResolution().z));
+    const float3 cameraDelta = rotate(K, delta);
+
+    for (pix.z = 0; pix.z < vol.getResolution().z; pix.z++, pos += delta, cameraX +=cameraDelta)
+    {
+        if (pos.z < 0.0001f) // some near plane constraint
+            continue;
+
+        const float2 pixel = make_float2(cameraX.x / cameraX.z + 0.5f,
+                                         cameraX.y / cameraX.z + 0.5f);
+
+        if (pixel.x < 0 || pixel.x > depth.size.x - 1 ||
+            pixel.y < 0 || pixel.y > depth.size.y - 1)
+        {
+            continue;
+        }
+
+        const uint2 px = make_uint2(pixel.x, pixel.y);
+
+        if (depth[px] == 0)
+            continue;
+        const float diff = (depth[px] - cameraX.z) *
+                           sqrt(1 + sq(pos.x / pos.z) + sq(pos.y / pos.z));
+
+        if (diff > -mu)
+        {
+            const float sdf = fminf(1.f, diff / mu);
+
+            float2 p_data = vol[pix];
+            float3 p_color = vol.getColor(pix);
+
+            float w=p_data.y+1;
+
+            float3 frgb=rgb2lab(rgb[px]);
+            p_data.x = clamp((p_data.y * p_data.x + sdf) / w, -1.f, 1.f);
+
+            frgb.x = (p_color.x * p_data.y + frgb.x ) / w;
+            frgb.y = (p_color.y * p_data.y + frgb.y ) / w;
+            frgb.z = (p_color.z * p_data.y + frgb.z ) / w;
+
+            frgb.x=clamp(frgb.x,MIN_L,MAX_L);
+            frgb.y=clamp(frgb.y,MIN_A,MAX_A);
+            frgb.z=clamp(frgb.z,MIN_B,MAX_B);
+            p_data.y=fmin(w,maxweight);
+            vol.set(pix,p_data, frgb);
+        }
+    }
+}
+
+
+#if 0
+{
     int3 pix = make_int3(thr2pos2());
     pix=pix+vol.getOffset();
 
@@ -405,6 +460,7 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
         }
     }
 }
+#endif
 
 //TODO fix me
 __global__ void deIntegrateKernel(Volume vol,
