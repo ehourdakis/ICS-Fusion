@@ -17,6 +17,7 @@
 #include <fstream>
 
 #include"closeloop.h"
+#include <unistd.h>
 
 #define SLAMBENCH_CH
 
@@ -279,6 +280,8 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
 {
     (void)slam_settings;
 
+    if(frame==0)
+        sleep(1);
     //enable this to use ground trouth pose instead of calculating visual odometry.
     //This is usefull for map integration testing
 #if 0

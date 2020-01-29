@@ -97,24 +97,10 @@ bool CloseLoop::preprocess(float *depth,uchar3 *rgb)
 
 bool CloseLoop::processFrame()
 {
-    if(_frame==0)
-        sleep(1);
-
     std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
 
-    //_fusion->preprocessing(depth,rgb);
-    tracked=_fusion->tracking(_frame);
+    bool tracked=_fusion->tracking(_frame);
     bool integrated=_fusion->integration(_frame);
-    if(integrated)
-    {
-        sMatrix4 p=_fusion->getPose();
-        _fusion->integrateNewData(p);
-    }
-
-    //calculate covariance before raycast
-    //icpCov =_fusion->calculate_ICP_COV();
-
-    _fusion->raycasting(_frame);
 
     if(!tracked)
     {
@@ -123,30 +109,38 @@ bool CloseLoop::processFrame()
     if(!integrated)
     {
         std::cerr<<"[FRAME="<<_frame<<"] Integration faild!"<<std::endl;        
-    } 
+    }
 
-    if(_frame==4)
+
+    if(_frame==3)
     {
         _isam->init(_fusion->getPose() );
         prevPose=_fusion->getPose();
         isamPoses.push_back(prevPose);
-
-        /*
-        _fusion->integrateNewData(prevPose);
-        char buf[64];
-        sprintf(buf,"f_/f_%d_single",_frame);
-        Volume v=_fusion->getNewDataVolume();
-        saveVoxelsToFile(v,params,std::string(buf) );
-        */
     }
-
-    if(_frame==20 &&false)
+    else if(_frame>3 && tracked)
     {
-        smoothNet->readKeyPts();
-        smoothNet->calculateLRF();
-        smoothNet->callCnn();
-        smoothNet->readDescriptorCsv();
+        sMatrix4 pose=_fusion->getPose();
+        DepthHost rawDepth;
+        _fusion->getDepthRaw(rawDepth);
+        depths.push_back(rawDepth);
+
+        RgbHost rawRgb;
+        _fusion->getImageRaw(rawRgb);
+        rgbs.push_back(rawRgb);
+
+        poses.push_back(pose);
+        //calculate covariance before raycast
+        sMatrix6 icpCov =_fusion->calculate_ICP_COV();
+        _isam->addFrame(pose,icpCov);
     }
+
+    bool raycast=_fusion->raycasting(_frame);
+    if(!raycast)
+    {
+        std::cerr<<"[FRAME="<<_frame<<"] Raycast faild!"<<std::endl;
+    }
+
     _frame++;
 
     return true;

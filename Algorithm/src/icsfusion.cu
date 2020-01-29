@@ -239,8 +239,6 @@ bool IcsFusion::tracking(uint frame)
 
 bool IcsFusion::raycasting(uint frame)
 {
-    (void)frame;
-    bool doRaycast = false;
     if (frame > 2)
     {
         oldRaycastPose = raycastPose;
@@ -254,10 +252,14 @@ bool IcsFusion::raycasting(uint frame)
                                               largestep,frame);
         TOCK();
     }
+    else
+    {
+        return false;
+    }
 
     printCUDAError();
 
-    return doRaycast;
+    return true;
 }
 
 void IcsFusion::integrateNewData(sMatrix4 p)
