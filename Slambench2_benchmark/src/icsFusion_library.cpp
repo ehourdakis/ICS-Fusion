@@ -54,6 +54,7 @@ static slambench::io::DepthSensor *depth_sensor;
 static slambench::io::CameraSensor *rgb_sensor;
 
 static std::vector<sMatrix4> gtPoses;
+static std::vector<sMatrix4> kfusionPoses;
 // ===========================================================
 // SLAMBench Outputs
 // ===========================================================
@@ -288,6 +289,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
 #else
     loopCl->preprocess(inputDepth,inputRGB);
     tracked=loopCl->processFrame();
+    kfusionPoses.push_back(loopCl->getPose());
 #endif
 
     IcsFusion *icsFusion=loopCl->fusion();
@@ -300,8 +302,11 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         initialGt=getGt(frameTimeStamp,slam_settings->getGt()); 
         std::cout<<"inital gt"<<std::endl;
         std::cout<<initialGt<<std::endl;
-//        sMatrix4 eye;
-//        gtPoses.push_back(eye);
+        char buf[32];
+        sprintf(buf,"data/ply/f_%d_vertices.ply",frame);
+        Image<float3, Host> vert=icsFusion->getAllVertex();
+        saveVertexPly(buf,vert);
+        
     }
     if(frame>=3)
     {
@@ -309,7 +314,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         sMatrix4 gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
         gtPoses.push_back(gtPose);
 
-        if( frame==3 || (frame%20) == 0)
+        if( (frame%20) == 0)
         {
             char buf[32];
             sprintf(buf,"data/gt/f_%d_pose",frame);
@@ -317,14 +322,17 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
 
             sprintf(buf,"data/gt/f_%d_poses",frame);
             savePoses(buf,gtPoses);
+            
+            sprintf(buf,"data/poses/f_%d_poses",frame);
+            savePoses(buf,kfusionPoses);
 
             //sprintf(buf,"data/volume/f_%d_volume",frame);
             //saveVoxelsToFile(buf,icsFusion->getVolume(),params);
-
-            sprintf(buf,"data/ply/f_%d_vertices.ply",frame);
-            Image<float3, Host> vert=icsFusion->getAllVertex();
-            saveVertexPly(buf,vert);
+            loopCl->addPoseConstrain(gtPose);
+            loopCl->optimize();
         }
+        
+        
     }
 #endif
     frame++;

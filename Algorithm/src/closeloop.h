@@ -33,8 +33,8 @@ class CloseLoop
         }
 
         sMatrix4 getPose() const;
-
-        static float2 checkDeltaPoseErr(sMatrix4 p1,sMatrix4 p2);
+        bool optimize();
+        bool addPoseConstrain(const sMatrix4 &pose);
     private:
         sMatrix4 firstPose;
         sMatrix4 prevPose;
@@ -50,7 +50,7 @@ class CloseLoop
         std::vector<sMatrix4> poses;
 
         void clear();
-        bool optimize();
+        
 
 };
 

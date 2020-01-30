@@ -1,7 +1,6 @@
-
 #include<Isam.h>
+#include<constant_parameters.h>
 
-#define SMALL_COV 1e-15
 
 using namespace isam;
 
@@ -77,16 +76,22 @@ void Isam::connectLandmark(float3 pos,int landIdx,int poseIdx, sMatrix3 &cov)
 void Isam::addFixPose(const sMatrix4 &fixPose)
 {
     sMatrix6 cov;
-    cov=cov*SMALL_COV;
+    cov=cov*cov_small;
     Eigen::MatrixXd eigenCov=toEigen(cov);
     sMatrix4 first_pose=fromIsamNode(pose_nodes.front());
-    sMatrix4 delta=inverse(fixPose)*first_pose;
+    //sMatrix4 delta=inverse(fixPose)*first_pose;
 
+    sMatrix4 delta=fixPose;
+    
     Noise noise = isam::Covariance(eigenCov);
     Pose3d vo= toIsamPose(delta);
+    /*
     Pose3d_Pose3d_Factor* factor = new Pose3d_Pose3d_Factor(pose_nodes.back(),
                                                             pose_nodes.front(), vo, noise);
-
+    */
+    Pose3d_Pose3d_Factor* factor = new Pose3d_Pose3d_Factor(pose_nodes.front(),
+                                                            pose_nodes.back(), vo, noise);
+    
     factors.push_back(factor);
 
     slam->add_factor(factor);
@@ -97,13 +102,13 @@ double Isam::optimize(int frame)
     //std::cout<<"Start isam optimization"<<std::endl;
     
     char buf[32];
-    sprintf(buf,"f_/f_%d_graph",frame);
+    sprintf(buf,"data/isam/f_%d_graph",frame);
     slam->save(buf);
 
     slam->batch_optimization();
 
 
-    sprintf(buf,"f_/f_%d_graph_new",frame);
+    sprintf(buf,"data/isam/f_%d_graph_opt",frame);
     slam->save(buf);
 
     //slam->print_stats();
@@ -136,7 +141,7 @@ void Isam::init(const sMatrix4 &initalP)
 
 
     Pose3d origin=toIsamPose(initalPose);
-    Noise noise =  isam::Covariance(Eigen::MatrixXd::Identity(6, 6)* SMALL_COV );
+    Noise noise =  isam::Covariance(Eigen::MatrixXd::Identity(6, 6)* cov_small );
 
     Pose3d_Factor* prior = new Pose3d_Factor(initial_pose_node, origin, noise);
     factors.push_back(prior);

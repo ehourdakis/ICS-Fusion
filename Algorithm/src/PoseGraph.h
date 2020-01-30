@@ -20,6 +20,7 @@ class PoseGraph
         virtual uint poseSize() const = 0;
         virtual uint landmarksSize() const = 0;
         
+        virtual void addFixPose(const sMatrix4 &fixPose) = 0;
         
         inline bool hasLandmarks() const
         {

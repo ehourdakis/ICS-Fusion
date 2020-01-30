@@ -13,7 +13,7 @@
 #include <unistd.h>
 CloseLoop::CloseLoop(kparams_t p,sMatrix4 initPose)
     :params(p),
-     _frame(0)
+     _frame(-1)
 {
     _fusion = new IcsFusion(params,initPose);
 
@@ -52,6 +52,7 @@ bool CloseLoop::preprocess(float *depth,uchar3 *rgb)
 
 bool CloseLoop::processFrame()
 {
+    _frame++;
     std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
 
     bool tracked=_fusion->tracking(_frame);
@@ -95,9 +96,13 @@ bool CloseLoop::processFrame()
         std::cerr<<"[FRAME="<<_frame<<"] Raycast faild!"<<std::endl;
     }
 
-    _frame++;
-
     return tracked;
+}
+
+bool CloseLoop::addPoseConstrain(const sMatrix4 &pose)
+{
+    _isam->addFixPose(pose);
+    return true;
 }
 
 bool CloseLoop::optimize()
