@@ -8,7 +8,6 @@
 #include<stdint.h>
 #include<iostream>
 
-#include"constant_parameters.h"
 
 //static bool firstAcquire = true;
 dim3 imageBlock = dim3(32, 16);
@@ -305,8 +304,6 @@ bool IcsFusion::integration(uint frame)
 
 bool IcsFusion::deIntegration(sMatrix4 p,const Host &depth,const Host &rgb)
 {
-    std::cout<<"deIntegration"<<std::endl;
-
     image_copy(rawDepth,depth, rawDepth.size.x*rawDepth.size.y*sizeof(float));
     image_copy(rawRgb,rgb, rawRgb.size.x*rawRgb.size.y*sizeof(uchar3));
 
@@ -324,8 +321,6 @@ bool IcsFusion::deIntegration(sMatrix4 p,const Host &depth,const Host &rgb)
 
 bool IcsFusion::reIntegration(sMatrix4 p,const Host &depth,const Host &rgb)
 {    
-    std::cout<<"reIntegration"<<std::endl;
-
     uint s = params.inputSize.x*params.inputSize.y;
     image_copy(rawDepth,depth, s*sizeof(float));
     image_copy(rawRgb,rgb, s*sizeof(uchar3));

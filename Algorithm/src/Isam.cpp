@@ -78,17 +78,11 @@ void Isam::addFixPose(const sMatrix4 &fixPose)
     sMatrix6 cov;
     cov=cov*cov_small;
     Eigen::MatrixXd eigenCov=toEigen(cov);
-    sMatrix4 first_pose=fromIsamNode(pose_nodes.front());
-    //sMatrix4 delta=inverse(fixPose)*first_pose;
 
     sMatrix4 delta=fixPose;
     
     Noise noise = isam::Covariance(eigenCov);
     Pose3d vo= toIsamPose(delta);
-    /*
-    Pose3d_Pose3d_Factor* factor = new Pose3d_Pose3d_Factor(pose_nodes.back(),
-                                                            pose_nodes.front(), vo, noise);
-    */
     Pose3d_Pose3d_Factor* factor = new Pose3d_Pose3d_Factor(pose_nodes.front(),
                                                             pose_nodes.back(), vo, noise);
     

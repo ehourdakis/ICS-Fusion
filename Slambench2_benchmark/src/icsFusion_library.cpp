@@ -314,7 +314,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         sMatrix4 gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
         gtPoses.push_back(gtPose);
 
-        if( (frame%20) == 0)
+        if( (frame%40) == 0)
         {
             char buf[32];
             sprintf(buf,"data/gt/f_%d_pose",frame);
@@ -326,8 +326,8 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
             sprintf(buf,"data/poses/f_%d_poses",frame);
             savePoses(buf,kfusionPoses);
 
-            //sprintf(buf,"data/volume/f_%d_volume",frame);
-            //saveVoxelsToFile(buf,icsFusion->getVolume(),params);
+//             sprintf(buf,"data/volume/f_%d_volume",frame);
+//             saveVoxelsToFile(buf,icsFusion->getVolume(),params);
             loopCl->addPoseConstrain(gtPose);
             loopCl->optimize();
         }

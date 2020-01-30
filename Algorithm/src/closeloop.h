@@ -43,6 +43,8 @@ class CloseLoop
 
         kparams_t params;
         int _frame;
+        
+        void fixMap();
 
         //save data for de-integration
         std::vector<DepthHost> depths;

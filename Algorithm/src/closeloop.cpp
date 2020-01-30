@@ -70,8 +70,19 @@ bool CloseLoop::processFrame()
 
     if(_frame==3)
     {
-        _isam->init(_fusion->getPose() );
+        sMatrix4 pose=_fusion->getPose();
+        _isam->init(pose);
         prevPose=_fusion->getPose();
+         
+        DepthHost rawDepth;
+        _fusion->getDepthRaw(rawDepth);
+        depths.push_back(rawDepth);
+// 
+         RgbHost rawRgb;
+         _fusion->getImageRaw(rawRgb);
+         rgbs.push_back(rawRgb);
+// 
+         poses.push_back(pose);
     }
     else if(_frame>3 && tracked)
     {
@@ -108,7 +119,30 @@ bool CloseLoop::addPoseConstrain(const sMatrix4 &pose)
 bool CloseLoop::optimize()
 {
     double err=_isam->optimize(_frame);
+    if(err<1)
+    {
+        fixMap();
+        bool raycast=_fusion->raycasting(_frame);
+    }
     return true;
+}
+
+void CloseLoop::fixMap()
+{
+    for(int i=(int)poses.size()-1; i>=0; i--)
+    {
+        _fusion->deIntegration(poses[i],depths[i],rgbs[i]);
+    }
+    poses.clear();
+    
+    for(int i=0;i<_isam->poseSize();i++)
+    {
+        sMatrix4 newPose=_isam->getPose(i);
+        _fusion->reIntegration(newPose,depths[i],rgbs[i]);
+        poses.push_back(newPose);        
+    }
+    sMatrix4 finalPose=_isam->getPose(poses.size()-1);
+    _fusion->setPose(finalPose);
 }
 
 sMatrix4 CloseLoop::getPose() const

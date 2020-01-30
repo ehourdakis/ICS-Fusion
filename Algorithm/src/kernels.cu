@@ -5,6 +5,8 @@
 #include"constant_parameters.h"
 #include"rgb2Lab.h"
 
+// #define USE_LAB
+
 __global__ void renderDepthKernel(Image<uchar3> out,
                                   const Image<float> depth,
                                   const float nearPlane,
@@ -182,20 +184,27 @@ __global__ void integrateKernel(Volume vol, const Image<float> depth,
             float2 p_data = vol[pix];
             float3 p_color = vol.getColor(pix);
 
-            float w=p_data.y+1;
+            float w=fmin(p_data.y,maxweight);
+            float new_w=w+1;
 
-            float3 frgb=rgb2lab(rgb[px]);
-            p_data.x = clamp((p_data.y * p_data.x + sdf) / w, -1.f, 1.f);
+#ifdef USE_LAB
+            float3 fcol=rgb2lab(rgb[px]);
+#else
+            float3 fcol = make_float3(rgb[px].x,rgb[px].y,rgb[px].z);
+#endif
+            p_data.x = clamp( (w*p_data.x + sdf) / new_w, -1.f, 1.f);
 
-            frgb.x = (p_color.x * p_data.y + frgb.x ) / w;
-            frgb.y = (p_color.y * p_data.y + frgb.y ) / w;
-            frgb.z = (p_color.z * p_data.y + frgb.z ) / w;
+            fcol.x = (w*p_color.x + fcol.x ) / new_w;
+            fcol.y = (w*p_color.y + fcol.y ) / new_w;
+            fcol.z = (w*p_color.z + fcol.z ) / new_w;
 
+            /*
             frgb.x=clamp(frgb.x,MIN_L,MAX_L);
             frgb.y=clamp(frgb.y,MIN_A,MAX_A);
             frgb.z=clamp(frgb.z,MIN_B,MAX_B);
-            p_data.y=fmin(w,maxweight);
-            vol.set(pix,p_data, frgb);
+            */
+            p_data.y=p_data.y+1;
+            vol.set(pix,p_data, fcol);
         }
     }
 }
@@ -209,13 +218,11 @@ __global__ void deIntegrateKernel(Volume vol,
                                   const float mu,
                                   const float maxweight)
 {
-    int3 pix = make_int3(thr2pos2());
+    uint3 pix = make_uint3(thr2pos2());
     float3 pos = invTrack * vol.pos(pix);
     float3 cameraX = K * pos;
     const float3 delta = rotate(invTrack,make_float3(0, 0, vol.getDimensions().z / vol.getResolution().z));
     const float3 cameraDelta = rotate(K, delta);
-
-
 
     for (pix.z=0; pix.z!=vol.getResolution().z; pix.z++, pos += delta, cameraX +=cameraDelta)
     {
@@ -239,34 +246,44 @@ __global__ void deIntegrateKernel(Volume vol,
         if (diff > -mu)
         {
             const float sdf = fminf(1.f, diff / mu);
-            pix=pix+vol.getOffset();
             float2 p_data = vol[pix];
 
-            float w=p_data.y-1;
-            float3 frgb;
+            float3 fcol;
+            float w=fmin(p_data.y,maxweight);
+            float new_w=w-1;            
             //if w is 0 restore initial contitions
-            if(w==0)
+            if(new_w==0)
             {
                 p_data.x = 1;
                 p_data.y = 0;
-                frgb = make_float3(0.0,0.0,0.0);
+                fcol = make_float3(0.0,0.0,0.0);
             }
             else
             {
+#ifdef USE_LAB                
+                float3 fcol=rgb2lab(rgb[px]);
+#else
+                float3 fcol = make_float3(rgb[px].x,rgb[px].y,rgb[px].z);
+#endif
                 float3 p_color = vol.getColor(pix);
-                p_data.x = clamp( (p_data.y * p_data.x - sdf) / w,-1.f,1.f);
-                frgb.x = (p_color.x * p_data.y - rgb[px].x ) / w;
-                frgb.y = (p_color.y * p_data.y - rgb[px].y ) / w;
-                frgb.z = (p_color.z * p_data.y - rgb[px].z ) / w;
-
+                
+                float w=fmin(p_data.y,maxweight);
+                
+                
+                p_data.x = clamp( (w * p_data.x - sdf) / new_w,-1.f,1.f);
+                fcol.x = (w * p_color.x - fcol.x ) / new_w;
+                fcol.y = (w * p_color.y - fcol.y ) / new_w;
+                fcol.z = (w * p_color.z - fcol.z ) / new_w;
+            
+                /*
                 frgb.x=clamp(frgb.x,MIN_L,MAX_L);
                 frgb.y=clamp(frgb.y,MIN_A,MAX_A);
                 frgb.z=clamp(frgb.z,MIN_B,MAX_B);
-
-                p_data.y = w;
+                */
+                p_data.y = p_data.y-1;
             }
 
-            vol.set(pix,p_data, frgb);
+            vol.set(pix,p_data, fcol);
         }
     }
 }
@@ -393,9 +410,16 @@ __global__ void renderRgbKernel(Image<uchar3> render,
         }
         else
         {
-            const float3 frgb = volume.rgb_interp(vertex);
-            uchar3 rgb;
-            rgb=lab2rgb(frgb);
+            float3 fcol = volume.rgb_interp(vertex);
+
+#ifdef USE_LAB              
+            fcol.x=clamp(flab.x,MIN_L,MAX_L);
+            fcol.y=clamp(flab.y,MIN_A,MAX_A);
+            fcol.z=clamp(flab.z,MIN_B,MAX_B);
+            uchar3 rgb=lab2rgb(flab);
+#else
+            uchar3 rgb=make_uchar3(fcol.x ,fcol.y ,fcol.z);
+#endif
             render.el()=rgb;
         }
 
