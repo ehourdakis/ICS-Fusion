@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<launch>
-    <node pkg="graph_viz" name="kfusion_viz" type="kfusion_viz.py">   
-    </node> 
-</launch>

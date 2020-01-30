@@ -40,6 +40,8 @@ def poseMarker(id, pose, rgb):
     nodes[id] = marker
     return marker
 
+
+
 def lineMarker(id1,id2):
     global lineId, nodes
  

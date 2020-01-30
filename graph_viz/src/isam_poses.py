@@ -13,15 +13,12 @@ import math
 import tf
 import rotations as Rot
 
-# origin = [4, 4, 4]
-origin = [4, 4, 4]
-scale = float(sys.argv[2])
-#scale = 10
+origin = [0, 0, 0]
+rgb = [0,0,0]
+scale = float(sys.argv[1])
 lineId = 5000
 nodes = dict()
-filePath = '/home/tavu/workspace/slambench2/f_/'
-fileName = 'f_%_graph_new'
-#fileName = 'f_100_graph'
+topic = 'isam_poses'
 
 markerArray = MarkerArray()
 
@@ -29,9 +26,8 @@ def publishMarkers():
     pub.publish(markerArray)
     rate.sleep()
 
-def addNodes(lines):
+def addNodes(lines,rgb):
     global markerArray
-    rgb = [1, 0.5, 0]
     for line in lines:
         words = line.split()                
         if words[0] == 'Pose3d_Node':
@@ -99,18 +95,33 @@ def readFile(fileName):
         lines.append(line)
     
     f.close()
-    addNodes(lines)
+    addNodes(lines,rgb)
     addLines(lines)
     
+rospy.init_node('isam_poses', anonymous=True)
 try:
-    pub = rospy.Publisher('graph_isam_opt', MarkerArray, queue_size=10)
-    rospy.init_node('isam_from_graph_opt', anonymous=True)
+    fileName = rospy.get_param("~file_name")    
+    rbgStr =rospy.get_param("~rgb")
+    originStr = rospy.get_param("~origin")
+    
+    rgbList = rbgStr.split(',')    
+    rgb[0] = int(rgbList[0])
+    rgb[1] = int(rgbList[1])
+    rgb[2] = int(rgbList[2])
+    
+    originList = originStr.split(',')
+    origin[0] = int(originList[0])
+    origin[1] = int(originList[1])
+    origin[2] = int(originList[2])
+except Exception as  e:
+    print("could not get parameters")
+    exit(1)    
+    
+try:
+    pub = rospy.Publisher(topic, MarkerArray, queue_size=10)
     rate = rospy.Rate(10) # 10hz
     
-    frame = sys.argv[1]
-    fileName = fileName.replace('%',frame) 
-    
-    readFile(filePath + fileName)
+    readFile(fileName)
     while not rospy.is_shutdown():
         publishMarkers()
         rate.sleep()
