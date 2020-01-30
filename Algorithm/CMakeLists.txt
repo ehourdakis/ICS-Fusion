@@ -57,6 +57,7 @@ set(cpp_srcs
     ${CMAKE_CURRENT_LIST_DIR}/src/g2oGraph.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/smoothnet.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/smoothnetcore.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/saveData.cpp
 )
 
 include_directories(

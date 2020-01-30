@@ -17,6 +17,7 @@
 #include <fstream>
 
 #include"closeloop.h"
+#include<saveData.h>
 #include <unistd.h>
 
 #define SLAMBENCH_CH
@@ -33,7 +34,7 @@ static  slambench::TimeStamp frameTimeStamp;
 std::string shader_dir;
 uint3 *keypts1;
 
-Matrix4 initialGt;
+static sMatrix4 initialGt;
 
 static IcsFusion * icsFusion=0;
 static CloseLoop *loopCl=0;
@@ -45,8 +46,6 @@ static uchar3* outputFeatRGB;
 static uchar3* inputDepthRGB;
 static uchar3* trackRGB;
 static uint16_t* inputDepth;
-
-static sMatrix4 gtPose;
 // ===========================================================
 // SLAMBench Sensors
 // ===========================================================
@@ -54,7 +53,7 @@ static sMatrix4 gtPose;
 static slambench::io::DepthSensor *depth_sensor;
 static slambench::io::CameraSensor *rgb_sensor;
 
-std::vector<sMatrix4> poses;
+static std::vector<sMatrix4> gtPoses;
 // ===========================================================
 // SLAMBench Outputs
 // ===========================================================
@@ -65,9 +64,6 @@ slambench::outputs::Output *rgb_frame_output;
 slambench::outputs::Output *track_frame_output;
 slambench::outputs::Output *volume_frame_output;
 slambench::outputs::Output *depth_frame_output;
-slambench::outputs::Output *gt_frame_output;
-slambench::outputs::Output *feat_frame_output;
-
 
 // ===========================================================
 // FunctionsDeclaration
@@ -88,29 +84,39 @@ Eigen::Matrix4f sMatrix4ToEigen(const sMatrix4 &mat)
     return ret;
 }
 
-void savePoses(char *fileName)
-{
-    using namespace std;
-    ofstream file(fileName, std::ios::out);
-
-    for(uint p=0;p<poses.size();p++)
-    {
-        sMatrix4 pose=poses[p];
-        Eigen::Matrix3f rot;
-
-        for (int i=0;i<3;i++)
-        {
-            for(int j=0;j<3;j++)
-            {
-                rot(i,j)=pose(i,j);
-            }
-        }
-        Eigen::Vector3f rotV = rot.eulerAngles(0, 1, 2);
-
-        file<<pose(0,3)<<','<<pose(1,3)<<','<<pose(2,3)<<" " ;
-        file<<rotV(0)<<','<<rotV(1)<<','<<rotV(2)<<'\n';
-    }
-
+sMatrix4 homo(const Eigen::Vector3f &trans,const Eigen::Vector3f &rot)
+{    
+    sMatrix3  R_x;
+    R_x(1,1)=cos(rot(0) );
+    R_x(1,2)=-sin(rot(0) );
+    R_x(2,1)=sin(rot(0) );
+    R_x(2,2)=cos(rot(0) );
+    
+    sMatrix3  R_y;
+    R_y(0,0)=cos(rot(1) );
+    R_y(0,2)=sin(rot(1) );
+    R_y(2,0)=-sin(rot(1) );
+    R_y(2,2)=cos(rot(1) );
+    
+    sMatrix3  R_z;
+    R_z(0,0)=cos(rot(2) );
+    R_z(0,1)=-sin(rot(2) );
+    R_z(1,0)=sin(rot(2) );
+    R_z(1,1)=cos(rot(2) );
+   
+    sMatrix3 tmp=R_y*R_x;
+    tmp=R_z*tmp;
+ 
+    sMatrix4 ret;
+    for(int i=0;i<3;i++)
+        for(int j=0;j<3;j++)
+            ret(i,j)=tmp(i,j);
+    
+    ret(0,3)=trans(0);
+    ret(1,3)=trans(1);
+    ret(2,3)=trans(2);
+    ret(3,3)=1;
+    return ret;
 }
 
 bool sb_new_slam_configuration(SLAMBenchLibraryHelper * slam_settings)
@@ -221,14 +227,6 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper * slam_settings)
     track_frame_output->SetKeepOnlyMostRecent(true);
     slam_settings->GetOutputManager().RegisterOutput(track_frame_output);
 
-    gt_frame_output = new slambench::outputs::Output("Gt Frame", slambench::values::VT_FRAME);
-    gt_frame_output->SetKeepOnlyMostRecent(true);
-    slam_settings->GetOutputManager().RegisterOutput(gt_frame_output);
-
-    feat_frame_output = new slambench::outputs::Output("Feature Frame", slambench::values::VT_FRAME);
-    feat_frame_output->SetKeepOnlyMostRecent(true);
-    slam_settings->GetOutputManager().RegisterOutput(feat_frame_output);
-
     depth_frame_output = new slambench::outputs::Output("Depth", slambench::values::VT_FRAME);
     depth_frame_output->SetKeepOnlyMostRecent(true);
     slam_settings->GetOutputManager().RegisterOutput(depth_frame_output);
@@ -285,7 +283,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
     //enable this to use ground trouth pose instead of calculating visual odometry.
     //This is usefull for map integration testing
 #if 0
-    gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
+    sMatrix4 gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
     tracked=loopCl->addFrameWithPose(inputDepth,inputRGB,gtPose);
 #else
     loopCl->preprocess(inputDepth,inputRGB);
@@ -297,41 +295,38 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
     //use ground truth pose for loop closure.
     //This is usefull for loop closure testing
 #ifdef SLAMBENCH_CH
-    if(frame==19)
+    if(frame==3)
     {
         initialGt=getGt(frameTimeStamp,slam_settings->getGt()); 
         std::cout<<"inital gt"<<std::endl;
         std::cout<<initialGt<<std::endl;
+//        sMatrix4 eye;
+//        gtPoses.push_back(eye);
     }
-    if(frame>=3 && false)
+    if(frame>=3)
     {
 
-        //poses.push_back(gtPose);
-        if(loopCl->isKeyFrame()  )
-        {
-            gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
-            std::cout<<"edo"<<std::endl;
-            poses.push_back(gtPose);
-//            loopCl->doLoopClosure(gtPose);
+        sMatrix4 gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
+        gtPoses.push_back(gtPose);
 
+        if( frame==3 || (frame%20) == 0)
+        {
             char buf[32];
-            sprintf(buf,"f_/f_%d_poses_gt",frame+1);
-            savePoses(buf);
+            sprintf(buf,"data/gt/f_%d_pose",frame);
+            savePose(buf,gtPose);
+
+            sprintf(buf,"data/gt/f_%d_poses",frame);
+            savePoses(buf,gtPoses);
+
+            //sprintf(buf,"data/volume/f_%d_volume",frame);
+            //saveVoxelsToFile(buf,icsFusion->getVolume(),params);
+
+            sprintf(buf,"data/ply/f_%d_vertices.ply",frame);
+            Image<float3, Host> vert=icsFusion->getAllVertex();
+            saveVertexPly(buf,vert);
         }
     }
-
-    if(frame==59 || frame==79 ||frame==149)
-    {
-        poses.clear();
-        gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
-        poses.push_back(gtPose);
-
-        char buf[32];
-        sprintf(buf,"f_/f_%d_poses_gt",frame+1);
-        savePoses(buf);
-    }
 #endif
-
     frame++;
 
     return true;
@@ -367,16 +362,19 @@ bool sb_clean_slam_system()
 //get ground truth using the first ground truth value as origin 
 sMatrix4 getGtTransformed(/*SLAMBenchLibraryHelper *lib*/ const slambench::TimeStamp &ts_p,slambench::outputs::BaseOutput *output)
 {
-    sMatrix4 gt=getGt(ts_p,output);
-    sMatrix4 pose;
+    sMatrix4 gt=getGt(ts_p,output);        
+    sMatrix4 delta=inverse(initialGt)*gt;
 
+    return delta;
+}
+
+sMatrix4 getGtToOrigin(/*SLAMBenchLibraryHelper *lib*/ const slambench::TimeStamp &ts_p,slambench::outputs::BaseOutput *output)
+{
+    sMatrix4 pose;
     pose.data[0].w+=params.volume_direction.x;
     pose.data[1].w+=params.volume_direction.y;
     pose.data[2].w+=params.volume_direction.z;
-    
-    sMatrix4 delta=inverse(initialGt)*gt;
-
-    return pose*delta;
+    return pose*getGtTransformed(ts_p,output);
 }
 
 //Some extremly compicated macaroni code
@@ -432,16 +430,8 @@ sMatrix4 getGt(/*SLAMBenchLibraryHelper *lib*/ const slambench::TimeStamp &ts_p,
             ret(i,j) = gt_pose(i,j);
 
 
-    /*
-     sMatrix4 T_B_P;   
-     T_B_P.data[0]=make_float4(0,-1,0,0);
-     T_B_P.data[1]=make_float4(0,0,-1,0);
-     T_B_P.data[2]=make_float4(1,0,0,0);
-     T_B_P.data[3]=make_float4(0,0,0,1);
-    */
-   
 //enable this for room dataset
-#if 0
+#if 1
      float tmp=ret.data[0].y;
      ret.data[0].y=-ret.data[1].x;
      ret.data[1].x=-tmp;
@@ -512,28 +502,6 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
     }
 
 
-    if(gt_frame_output->IsActive() )
-    {
-        //icsFusion->getImageProjection(gtPose,outputGtRGB);
-        icsFusion->renderDepthFromVertex(outputGtRGB);
-        std::lock_guard<FastLock> lock (lib->GetOutputManager().GetLock());
-        gt_frame_output->AddPoint(ts, new slambench::values::FrameValue( params.inputSize.x,
-                                                                         params.inputSize.y,
-                                                                         slambench::io::pixelformat::RGB_III_888,
-                                                                         outputGtRGB));
-    }
-
-
-    if(feat_frame_output->IsActive() )
-    {
-        loopCl->getFeatDetector()->getFeatImage(outputFeatRGB);
-        icsFusion->getImageProjection(gtPose,outputGtRGB);
-        std::lock_guard<FastLock> lock (lib->GetOutputManager().GetLock());
-        feat_frame_output->AddPoint(ts, new slambench::values::FrameValue( params.inputSize.x,
-                                                                         params.inputSize.y,
-                                                                         slambench::io::pixelformat::RGB_III_888,
-                                                                         outputFeatRGB));
-    }
 
     return true;
 }

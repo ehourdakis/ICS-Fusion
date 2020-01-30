@@ -89,6 +89,11 @@ class Volume
             return dim;
         }
 
+        __host__ __device__ __forceinline__ uint getPos(const uint3 &pos) const
+        {
+            return pos.x + pos.y * _resolution.x + pos.z * _resolution.x * _resolution.y;
+        }
+
         __device__ size_t getPos(const int3 &p) const
         {
             int3 pos;

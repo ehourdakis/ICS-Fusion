@@ -21,31 +21,18 @@ class CloseLoop
         CloseLoop(kparams_t p, sMatrix4 initPose);
         ~CloseLoop();
 
+        bool preprocess(uint16_t *depth,uchar3 *rgb);
+        bool preprocess(float *depth,uchar3 *rgb);
+
         bool processFrame();
         bool addFrameWithPose(uint16_t *depth,uchar3 *rgb,sMatrix4 gt);
-
-        bool isKeyFrame() const;
 
         IcsFusion* fusion() const
         {
             return _fusion;
         }
 
-        sMatrix4 doLoopClosure(sMatrix4 pose);
-        sMatrix4 fixPoses(sMatrix4 fixPose);
-        void findFrameDescr();
-
-        FeatureDetector* getFeatDetector()
-        {
-            return _featDet;
-        }
-
         sMatrix4 getPose() const;
-
-        bool checkKeyFrameDeltaPose() const;
-        
-        bool preprocess(uint16_t *depth,uchar3 *rgb);
-        bool preprocess(float *depth,uchar3 *rgb);
 
         static float2 checkDeltaPoseErr(sMatrix4 p1,sMatrix4 p2);
     private:
@@ -53,8 +40,6 @@ class CloseLoop
         sMatrix4 prevPose;
         IcsFusion *_fusion;
         PoseGraph *_isam;
-        FeatureDetector *_featDet;
-        keyptsMap *_keyMap;
 
         kparams_t params;
         int _frame;
@@ -63,40 +48,9 @@ class CloseLoop
         std::vector<DepthHost> depths;
         std::vector<RgbHost> rgbs;
         std::vector<sMatrix4> poses;
-        std::vector<sMatrix4> isamPoses;
-        std::vector<sMatrix4> isamPoses2;
-        std::vector<VolumeSlices> slices;
-
-        sMatrix6 icpCov;
 
         void clear();
-        void saveDescData(const std::vector<float3> &keypts,const std::vector<FeatDescriptor> &desc);
-        void savePoses(char *fileName, std::vector<sMatrix4> &poses, sMatrix4 fp);
-        void savePoses(char *fileName,std::vector<sMatrix4> &poses);
-        void saveDescriptors(std::string fileName, const std::vector<FeatDescriptor> &desc);
-        void saveKeypoints(std::string fileName,const std::vector<float3> &keypts);
-        void savePose(char *fileName,const sMatrix4 &pose);
-
-        bool tracked;
-
-        sMatrix3 minRot;
-        sMatrix3 maxRot;
-
-        float minTrans;
-        float maxTrans;
-
-        uint3 sliceSize;
-
-
-
-        //check if volume need sift
-        bool siftVolume(VolumeSlices &slices) const;
-        bool addPoseToIsam(VolumeSlices &sl);
         bool optimize();
-        bool featuresMatching();
-        bool fixMap();
-
-        SmoothNet *smoothNet;
 
 };
 
