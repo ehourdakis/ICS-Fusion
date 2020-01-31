@@ -51,9 +51,12 @@
 #define BASE_LINK "base_link"
 
 #define DEFAULT_CUT_OFF 0.7
+#define FEET_PROB_THR 0.95
 
 #define PUBLISH_POINT_RATE 10
 #define PUBLISH_IMAGE_RATE 1
+
+#define KEY_FRAME_THR 30
 
 typedef unsigned char uchar;
 
@@ -92,12 +95,15 @@ void publishPoints();
 //Low pass filters for GEM
 butterworthLPF leftFilter;
 butterworthLPF rightFilter;
-double leftFeetValue=0;
-double rightFeetValue=0;
+
+int leftFeetValue=0;
+int rightFeetValue=0;
+int lastKeyFrame=0;
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans);
-void publishFeetProb();
+void publishFeetProb(float l,float r);
 
+double cut_off;
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans)
 {
     geometry_msgs::Pose pose;
@@ -143,9 +149,51 @@ void readIteFusionParams(ros::NodeHandle &n_p)
 }
 
 void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_msgs::ImageConstPtr &depth)
-{
-//    ROS_INFO("EDO");
+{        
+    int leftFeetVal=leftFeetValue;
+    int rightFeetVal=rightFeetValue;
+        
+    /*
+    if(leftFeetVal>2)
+        leftFeetVal=1;
+    else
+        leftFeetVal=0;
 
+    if(rightFeetVal>2)
+        rightFeetVal=1;
+    else
+        rightFeetVal=0;
+    */
+    leftFeetValue=0;
+    rightFeetValue=0;
+    
+    bool isKeyFrame=false;
+    if(lastKeyFrame>KEY_FRAME_THR)
+    {
+        if( (rightFeetVal>2) && (leftFeetVal==0) )
+            isKeyFrame=true;
+        else if( (rightFeetVal==0) && (leftFeetVal>2)) 
+            isKeyFrame=true;  
+    }  
+    
+    if(isKeyFrame)
+        lastKeyFrame=0;
+    else
+        lastKeyFrame++;
+    
+    if(publish_foot_prob)
+    {
+        float l=0;
+        float r=0;
+        
+        if(isKeyFrame && leftFeetVal>2)
+            l=1;
+        if(isKeyFrame && rightFeetVal>2)
+            r=1;
+        
+        publishFeetProb( l,r);
+    }
+        
     if(strcmp(rgb->encoding.c_str(), "rgb8")==0) //rgb8
     {
         memcpy(inputRGB,rgb->data.data(),params.inputSize.y*params.inputSize.x*sizeof(uchar)*3 );        
@@ -180,6 +228,8 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     
     loopCl->processFrame();
     
+    
+    
     publishOdom();
     
     if(publish_volume)
@@ -191,10 +241,11 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     if(publish_points && frame % publish_points_rate ==0)
          publishPoints();
     
-    if(publish_foot_prob)
-    {
-        publishFeetProb();
-    }
+//     if(publish_foot_prob)
+//     {
+//         publishFeetProb(leftFeetVal,rightFeetVal);
+//     }
+//     
     
     frame++;
 }
@@ -299,13 +350,16 @@ void publishOdom()
 void gemLeftCallback(const std_msgs::Float32 f)
 {
     ROS_INFO("Left foot probability:%f\n",f.data);
-    leftFeetValue=leftFilter.filter(f.data);
+    if(f.data>FEET_PROB_THR)
+       leftFeetValue++;
 }
 
 void gemRightCallback(const std_msgs::Float32 f)
 {
     ROS_INFO("Right foot probability:%f\n",f.data);
-    rightFeetValue=rightFilter.filter(f.data);
+
+    if(f.data>FEET_PROB_THR)
+       rightFeetValue++;
 }
 
 void publishPoints()
@@ -335,13 +389,13 @@ void publishPoints()
     points_pub.publish(pcloud);
 }
 
-void publishFeetProb()
+void publishFeetProb(float l,float r)
 {
     std_msgs::Float32 leftFoot;
-    leftFoot.data=leftFeetValue;
+    leftFoot.data=l;
     
     std_msgs::Float32 rightFoot;
-    leftFoot.data=rightFeetValue;
+    rightFoot.data=r;
     
     left_prob_pub.publish(leftFoot);
     right_prob_pub.publish(rightFoot);
@@ -387,7 +441,7 @@ int main(int argc, char **argv)
         gem_right_topic=GEM_RIGHT_TOPIC;
     }
     
-    double cut_off;
+//     double cut_off;
     n_p.param("cut_off",cut_off,DEFAULT_CUT_OFF);
     n_p.param("publish_foot_prob",publish_foot_prob,true);
     
@@ -412,12 +466,12 @@ int main(int argc, char **argv)
 
     odom_pub = n_p.advertise<nav_msgs::Odometry>(PUB_ODOM_TOPIC, 50);
     
-    leftFilter.init("left-leg",100,cut_off);
-    rightFilter.init("right-leg",100,cut_off);
+    leftFilter.init("left-leg",90,cut_off);
+    rightFilter.init("right-leg",90,cut_off);
     
     //subscribe to GEM
-    ros::Subscriber gem_left_sub = n_p.subscribe(gem_left_topic, 1000, gemLeftCallback);
-    ros::Subscriber gem_right_sub = n_p.subscribe(gem_right_topic,1000, gemRightCallback);
+    ros::Subscriber gem_left_sub = n_p.subscribe(gem_left_topic, 1, gemLeftCallback);
+    ros::Subscriber gem_right_sub = n_p.subscribe(gem_right_topic,1, gemRightCallback);
 
     
     ROS_INFO("Waiting camera info");
