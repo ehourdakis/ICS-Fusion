@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 
 #include <std_msgs/String.h>
+#include <std_msgs/Float32.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud.h>
 #include <geometry_msgs/Point32.h>
@@ -30,11 +31,15 @@
 #define CAM_INFO_TOPIC "/camera/depth/camera_info"
 #define RGB_TOPIC "/camera/rgb/image_rect_color"
 #define DEPTH_TOPIC "/camera/depth/image_rect"
+#define GEM_LEFT_TOPIC "/gem/LLegContactProbability"
+#define GEM_RIGHT_TOPIC "/gem/RLegContactProbability"
+
 
 #define PUB_VOLUME_TOPIC "/ics_fusion/volume_rendered"
 #define PUB_ODOM_TOPIC "/ics_fusion/odom"
 #define PUB_POINTS_TOPIC "/ics_fusion/pointCloud"
 #define PUB_IMAGE_TOPIC "/ics_fusion/volume_rgb"
+
 
 #define DEPTH_FRAME "camera_rgb_optical_frame"
 #define VO_FRAME "visual_odom"
@@ -57,20 +62,15 @@ float *inputDepthFl=0;
 uchar3 *inputRGB;
 uchar3 *volumeRender;
 
-
 //other params
 bool publish_volume=true;
 bool publish_points=true;
 int publish_points_rate;
 
-
-//ros pub/subs
-// ros::Subscriber cam_info_sub;
+//ros publishers
 ros::Publisher volume_pub;
 ros::Publisher odom_pub ;
 ros::Publisher points_pub;
-//ros::Publisher image_pub;
-//nav_msgs::Odometry odom_;
 
 
 //frames
@@ -277,6 +277,16 @@ void publishOdom()
     odom_pub.publish(odom);
 }
 
+void gemLeftCallback(const std_msgs::Float32 f)
+{
+    ROS_INFO("Left foot propability:%f\n",f.data);
+}
+
+void gemRightCallback(const std_msgs::Float32 f)
+{
+    ROS_INFO("Right foot propability:%f\n",f.data);
+}
+
 void publishPoints()
 {
     IcsFusion *icsFusion=loopCl->fusion();
@@ -309,7 +319,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "ite_fusion_node",ros::init_options::AnonymousName);
     ros::NodeHandle n_p("~");
 
-    std::string cam_info_topic,depth_topic,rgb_topic;
+    std::string cam_info_topic,depth_topic,rgb_topic,gem_left_topic,gem_right_topic;
     if(!n_p.getParam("cam_info_topic", cam_info_topic))
     {
         cam_info_topic=std::string(CAM_INFO_TOPIC);
@@ -333,6 +343,14 @@ int main(int argc, char **argv)
     if(!n_p.getParam("publish_points_rate", publish_points_rate))
     {
         publish_points_rate=PUBLISH_POINT_RATE;
+    }
+    if(!n_p.getParam("gem_left_prop", gem_left_topic))
+    {
+        gem_left_topic=GEM_LEFT_TOPIC;
+    } 
+    if(!n_p.getParam("gem_right_prop", gem_right_topic))
+    {
+        gem_right_topic=GEM_RIGHT_TOPIC;
     } 
     
     ROS_INFO("Depth Frame:%s",depth_frame.c_str());
@@ -348,6 +366,10 @@ int main(int argc, char **argv)
 
 
     odom_pub = n_p.advertise<nav_msgs::Odometry>(PUB_ODOM_TOPIC, 50);
+    
+    //subscribe to GEM
+    ros::Subscriber gem_left_sub = n_p.subscribe(gem_left_topic, 1000, gemLeftCallback);
+    ros::Subscriber gem_right_sub = n_p.subscribe(gem_right_topic,1000, gemRightCallback);
 
     ROS_INFO("Waiting camera info");
     while(ros::ok())
