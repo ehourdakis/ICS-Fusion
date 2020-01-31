@@ -15,6 +15,9 @@
         <param name="depth_topic"    type="str"    value="/camera/depth_registered/sw_registered/image_rect" />
         <param name="rgb_topic"      type="str" value="/camera/rgb/image_rect_color" />
         
+        <param name="cut_off"      type="double" value="0.8" />
+        <param name="cut_off"      type="double" value="0.8" />
+        
     </node>    
     
 <!--     <node pkg="rosbag" type="play" name="rosbag" required="true" args="- - clock /home/tavu/jetson_ws/bags/icraWS1.bag"/> -->
