@@ -39,8 +39,7 @@
 #define PUB_ODOM_TOPIC "/ics_fusion/odom"
 #define PUB_POINTS_TOPIC "/ics_fusion/pointCloud"
 #define PUB_IMAGE_TOPIC "/ics_fusion/volume_rgb"
-#define PUB_LEFT_PROB_TOPIC "/ics_fusion/left_foot_prob"
-#define PUB_RIGHT_PROB_TOPIC "/ics_fusion/right_foot_prob"
+#define PUB_KEY_FRAME_TOPIC "/ics_fusion/key_frame"
 
 
 #define DEPTH_FRAME "camera_rgb_optical_frame"
@@ -70,15 +69,15 @@ uchar3 *volumeRender;
 //other params
 bool publish_volume=true;
 bool publish_points=true;
-bool publish_foot_prob=true;
+bool publish_key_frame=true;
 int publish_points_rate;
+int key_frame_thr;
 
 //ros publishers
 ros::Publisher volume_pub;
 ros::Publisher odom_pub ;
 ros::Publisher points_pub;
-ros::Publisher left_prob_pub;
-ros::Publisher right_prob_pub;
+ros::Publisher key_frame_pub;
 
 
 //frames
@@ -91,10 +90,9 @@ void publishPoints();
 
 int leftFeetValue=0;
 int rightFeetValue=0;
-int lastKeyFrame=0;
+int passedFromLastKeyFrame=0;
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans);
-void publishFeetProb(float l,float r);
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans)
 {
@@ -149,7 +147,7 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     rightFeetValue=0;
     
     bool isKeyFrame=false;
-    if(lastKeyFrame>KEY_FRAME_THR)
+    if(passedFromLastKeyFrame>KEY_FRAME_THR)
     {
         if( (rightFeetVal>2) && (leftFeetVal==0) )
             isKeyFrame=true;
@@ -158,21 +156,15 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     }  
     
     if(isKeyFrame)
-        lastKeyFrame=0;
+        passedFromLastKeyFrame=0;
     else
-        lastKeyFrame++;
+        passedFromLastKeyFrame++;
     
-    if(publish_foot_prob)
-    {
-        float l=0;
-        float r=0;
-        
-        if(isKeyFrame && leftFeetVal>2)
-            l=1;
-        if(isKeyFrame && rightFeetVal>2)
-            r=1;
-        
-        publishFeetProb( l,r);
+    if(publish_key_frame)
+    {    
+        std_msgs::Float32 data;
+        data.data=(float)isKeyFrame;        
+        key_frame_pub.publish(data);
     }
         
     if(strcmp(rgb->encoding.c_str(), "rgb8")==0) //rgb8
@@ -364,18 +356,6 @@ void publishPoints()
     points_pub.publish(pcloud);
 }
 
-void publishFeetProb(float l,float r)
-{
-    std_msgs::Float32 leftFoot;
-    leftFoot.data=l;
-    
-    std_msgs::Float32 rightFoot;
-    rightFoot.data=r;
-    
-    left_prob_pub.publish(leftFoot);
-    right_prob_pub.publish(rightFoot);
-}
-
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "ite_fusion_node",ros::init_options::AnonymousName);
@@ -395,18 +375,6 @@ int main(int argc, char **argv)
     {
         rgb_topic=std::string(RGB_TOPIC);
     }
-    if(!n_p.getParam("publish_volume", publish_volume))
-    {
-        publish_volume=true;
-    }
-    if(!n_p.getParam("publish_points", publish_points))
-    {
-        publish_points=true;
-    } 
-    if(!n_p.getParam("publish_points_rate", publish_points_rate))
-    {
-        publish_points_rate=PUBLISH_POINT_RATE;
-    }
     if(!n_p.getParam("gem_left_prob", gem_left_topic))
     {
         gem_left_topic=GEM_LEFT_TOPIC;
@@ -416,12 +384,17 @@ int main(int argc, char **argv)
         gem_right_topic=GEM_RIGHT_TOPIC;
     }
 
-    n_p.param("publish_foot_prob",publish_foot_prob,true);
+    n_p.param("publish_volume",publish_volume,true);
+    n_p.param("publish_key_frame",publish_key_frame,true);
+    n_p.param("publish_points",publish_points,true);
+    n_p.param("publish_points_rate",publish_points_rate,PUBLISH_POINT_RATE);
+    n_p.param("key_frame_thr",key_frame_thr,KEY_FRAME_THR);
+    
+
     
     
     ROS_INFO("Depth Frame:%s",depth_frame.c_str());      
     //TODO read fusion param from yaml
-    //readIteFusionParams(n_p);
     
     if(publish_volume)
         volume_pub = n_p.advertise<sensor_msgs::Image>(PUB_VOLUME_TOPIC, 1000);
@@ -429,10 +402,9 @@ int main(int argc, char **argv)
     if(publish_points)
         points_pub = n_p.advertise<sensor_msgs::PointCloud>(PUB_POINTS_TOPIC, 100);
 
-    if(publish_foot_prob)
+    if(publish_key_frame)
     {
-        left_prob_pub = n_p.advertise<std_msgs::Float32>(PUB_LEFT_PROB_TOPIC, 100);
-        right_prob_pub = n_p.advertise<std_msgs::Float32>(PUB_RIGHT_PROB_TOPIC, 100);
+        key_frame_pub = n_p.advertise<std_msgs::Float32>(PUB_KEY_FRAME_TOPIC, 100);
     }
 
     odom_pub = n_p.advertise<nav_msgs::Odometry>(PUB_ODOM_TOPIC, 50);
