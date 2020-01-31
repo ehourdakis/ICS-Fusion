@@ -31,10 +31,10 @@
 #define RGB_TOPIC "/camera/rgb/image_rect_color"
 #define DEPTH_TOPIC "/camera/depth/image_rect"
 
-#define PUB_VOLUME_TOPIC "/itefusion/volume_rendered"
-#define PUB_ODOM_TOPIC "/itefusion/odom"
-#define PUB_POINTS_TOPIC "/itefusion/pointCloud"
-#define PUB_IMAGE_TOPIC "/itefusion/volume_rgb"
+#define PUB_VOLUME_TOPIC "/ics_fusion/volume_rendered"
+#define PUB_ODOM_TOPIC "/ics_fusion/odom"
+#define PUB_POINTS_TOPIC "/ics_fusion/pointCloud"
+#define PUB_IMAGE_TOPIC "/ics_fusion/volume_rgb"
 
 #define DEPTH_FRAME "camera_rgb_optical_frame"
 #define VO_FRAME "visual_odom"

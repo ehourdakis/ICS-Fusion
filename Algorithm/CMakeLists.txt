@@ -54,7 +54,7 @@ set(cpp_srcs
     ${CMAKE_CURRENT_LIST_DIR}/src/Isam.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/featuredetector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/keyptsmap.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/g2oGraph.cpp
+#     ${CMAKE_CURRENT_LIST_DIR}/src/g2oGraph.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/smoothnet.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/smoothnetcore.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/saveData.cpp
@@ -97,7 +97,7 @@ endif()
 
 
 SET_TARGET_PROPERTIES(ics_fusion_cuda PROPERTIES COMPILE_FLAGS "-fPIC" )
-target_link_libraries(ics_fusion_cuda ics_fusion_cuda_library ${CUDA_LIBRARIES} isam cholmod  ${OpenCV_LIBS} ${G2O_LIBS} ${PCL_LIBRARIES})
+target_link_libraries(ics_fusion_cuda ics_fusion_cuda_library ${CUDA_LIBRARIES} isam cholmod  ${OpenCV_LIBS} ${PCL_LIBRARIES})
 
 
 

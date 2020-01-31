@@ -28,7 +28,6 @@ include_directories(
 
 add_executable(ics_fusion_node 
     ${CMAKE_CURRENT_LIST_DIR}/src/ics_fusion_node.cpp 
-    ${CMAKE_CURRENT_LIST_DIR}/src/image_process.cpp
 )
 
 target_link_libraries(ics_fusion_node
