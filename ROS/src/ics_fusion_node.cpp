@@ -28,8 +28,6 @@
 #include<icsFusion.h>
 #include<volume.h>
 
-#include"butterworthLPF.h"
-
 #define CAM_INFO_TOPIC "/camera/depth/camera_info"
 #define RGB_TOPIC "/camera/rgb/image_rect_color"
 #define DEPTH_TOPIC "/camera/depth/image_rect"
@@ -50,7 +48,6 @@
 #define ODOM_FRAME "odom"
 #define BASE_LINK "base_link"
 
-#define DEFAULT_CUT_OFF 0.7
 #define FEET_PROB_THR 0.95
 
 #define PUBLISH_POINT_RATE 10
@@ -92,10 +89,6 @@ void publishVolumeProjection();
 void publishOdom();
 void publishPoints();
 
-//Low pass filters for GEM
-butterworthLPF leftFilter;
-butterworthLPF rightFilter;
-
 int leftFeetValue=0;
 int rightFeetValue=0;
 int lastKeyFrame=0;
@@ -103,7 +96,6 @@ int lastKeyFrame=0;
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans);
 void publishFeetProb(float l,float r);
 
-double cut_off;
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans)
 {
     geometry_msgs::Pose pose;
@@ -152,18 +144,7 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
 {        
     int leftFeetVal=leftFeetValue;
     int rightFeetVal=rightFeetValue;
-        
-    /*
-    if(leftFeetVal>2)
-        leftFeetVal=1;
-    else
-        leftFeetVal=0;
 
-    if(rightFeetVal>2)
-        rightFeetVal=1;
-    else
-        rightFeetVal=0;
-    */
     leftFeetValue=0;
     rightFeetValue=0;
     
@@ -240,12 +221,6 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     
     if(publish_points && frame % publish_points_rate ==0)
          publishPoints();
-    
-//     if(publish_foot_prob)
-//     {
-//         publishFeetProb(leftFeetVal,rightFeetVal);
-//     }
-//     
     
     frame++;
 }
@@ -440,15 +415,11 @@ int main(int argc, char **argv)
     {
         gem_right_topic=GEM_RIGHT_TOPIC;
     }
-    
-//     double cut_off;
-    n_p.param("cut_off",cut_off,DEFAULT_CUT_OFF);
+
     n_p.param("publish_foot_prob",publish_foot_prob,true);
     
     
-    ROS_INFO("Depth Frame:%s",depth_frame.c_str());
-    ROS_INFO("Gem cut off:%f",cut_off);
-      
+    ROS_INFO("Depth Frame:%s",depth_frame.c_str());      
     //TODO read fusion param from yaml
     //readIteFusionParams(n_p);
     
@@ -465,9 +436,6 @@ int main(int argc, char **argv)
     }
 
     odom_pub = n_p.advertise<nav_msgs::Odometry>(PUB_ODOM_TOPIC, 50);
-    
-    leftFilter.init("left-leg",90,cut_off);
-    rightFilter.init("right-leg",90,cut_off);
     
     //subscribe to GEM
     ros::Subscriber gem_left_sub = n_p.subscribe(gem_left_topic, 1, gemLeftCallback);
