@@ -11,6 +11,7 @@ typedef struct
     int integration_rate=1;
     int rendering_rate = 1;
     int tracking_rate=1;
+    float optim_thr=5e3;
     uint3 volume_resolution = make_uint3(256,256,256);
     //uint3 volume_resolution = make_uint3(512,512,512);
     //float3 volume_direction = make_float3(4.5,4.5,4.5);

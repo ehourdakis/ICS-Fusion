@@ -77,12 +77,12 @@ bool CloseLoop::processFrame()
         DepthHost rawDepth;
         _fusion->getDepthRaw(rawDepth);
         depths.push_back(rawDepth);
-// 
-         RgbHost rawRgb;
-         _fusion->getImageRaw(rawRgb);
-         rgbs.push_back(rawRgb);
-// 
-         poses.push_back(pose);
+
+        RgbHost rawRgb;
+        _fusion->getImageRaw(rawRgb);
+        rgbs.push_back(rawRgb);
+
+        poses.push_back(pose);
     }
     else if(_frame>3 && tracked)
     {
@@ -119,7 +119,7 @@ bool CloseLoop::addPoseConstrain(const sMatrix4 &pose)
 bool CloseLoop::optimize()
 {
     double err=_isam->optimize(_frame);
-    if(err<1)
+    if(err<params.optim_thr)
     {
         fixMap();
         bool raycast=_fusion->raycasting(_frame);
