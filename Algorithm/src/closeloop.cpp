@@ -23,6 +23,8 @@ CloseLoop::CloseLoop(kparams_t p,sMatrix4 initPose)
     _isam=new Isam();
 #endif
     firstPose=initPose;
+
+    smoothNet=new SmoothNet(_fusion);
 }
 
 //For testing purposes only.
@@ -108,6 +110,15 @@ bool CloseLoop::processFrame()
     }
 
     return tracked;
+}
+
+bool CloseLoop::processKeyFrame()
+{
+    smoothNet->readKeyPts();
+    smoothNet->calculateLRF(_frame);
+    smoothNet->callCnn(_frame);
+    smoothNet->readDescriptorCsv();
+    return true;
 }
 
 bool CloseLoop::addPoseConstrain(const sMatrix4 &pose)

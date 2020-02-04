@@ -25,6 +25,7 @@ class CloseLoop
         bool preprocess(float *depth,uchar3 *rgb);
 
         bool processFrame();
+        bool processKeyFrame();
         bool addFrameWithPose(uint16_t *depth,uchar3 *rgb,sMatrix4 gt);
 
         IcsFusion* fusion() const
@@ -52,7 +53,8 @@ class CloseLoop
         std::vector<sMatrix4> poses;
 
         void clear();
-        
+
+        SmoothNet *smoothNet;
 
 };
 

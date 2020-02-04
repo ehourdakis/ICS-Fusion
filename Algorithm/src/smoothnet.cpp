@@ -18,6 +18,7 @@
 #define CSV_DIR "./data/csv/"
 #define OUT_FILE_NAME "./data/sdv/smoothnet.csv"
 #define CSV_FILE "./data/csv/smoothnet.csv_3DSmoothNet.txt"
+
 SmoothNet::SmoothNet(IcsFusion *f)
 {
     _fusion=f;
@@ -32,7 +33,7 @@ SmoothNet::SmoothNet(IcsFusion *f)
     smoothing_factor = smoothing_kernel_width * (radius / num_voxels); // Equals half a voxel size so that 3X is 1.5 voxel
 }
 
-void SmoothNet::calculateLRF()
+void SmoothNet::calculateLRF(int frame)
 {    
 
     Image<float3, Host> v=_fusion->getAllVertex();
@@ -65,9 +66,7 @@ void SmoothNet::calculateLRF()
     std::vector <std::vector <int>> nearest_neighbors_smoothing(cloud->width);
     std::vector <std::vector <float>> nearest_neighbors_smoothing_dist(cloud->width);
 
-    // Compute the local reference frame for the interes points (code adopted from https://www.researchgate.net/publication/310815969_TOLDI_An_effective_and_robust_approach_for_3D_local_shape_description
-    // and not optimized)
-
+    // Compute the local reference frame for the interes points
 
     toldiComputeLRF(cloud,
                     evaluation_points,
@@ -79,7 +78,7 @@ void SmoothNet::calculateLRF()
 
     // Compute the SDV representation for all the points
 
-
+    sprintf(sdv_file,"./data/sdv/frame%d.sdv",frame);
 
     computeLocalDepthFeature(cloud,
                              evaluation_points,
@@ -89,19 +88,18 @@ void SmoothNet::calculateLRF()
                              voxel_coordinates,
                              num_voxels,
                              smoothing_factor,
-                             OUT_FILE_NAME);
+                             sdv_file);
 }
 
-bool SmoothNet::callCnn()
+bool SmoothNet::callCnn(int frame)
 {
+    sprintf(descr_file,"./data/descr/frame%d.csv",frame);
+
     char cmd[512];
 
-//    sprintf(cmd,"python main_cnn.py --run_mode=test --evaluate_input_folder=%s --evaluate_output_folder=%s",
-//            SDV_DIR,
-//            CSV_DIR);
     sprintf(cmd,"./run_3dsmoothnet.sh %s %s",
-            SDV_DIR,
-            CSV_DIR);
+            sdv_file,
+            descr_file);
     int status=system(cmd);
 
     if(status==0)

@@ -328,6 +328,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
 
 //             sprintf(buf,"data/volume/f_%d_volume",frame);
 //             saveVoxelsToFile(buf,icsFusion->getVolume(),params);
+            loopCl->processKeyFrame();
             loopCl->addPoseConstrain(gtPose);
             loopCl->optimize();
         }

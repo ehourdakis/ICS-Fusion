@@ -14,12 +14,12 @@ class SmoothNet
 
         SmoothNet(IcsFusion *f);
         
-        void calculateLRF();
+        void calculateLRF(int frame);
         void readKeyPts();
 
         void calculatePointLRF(const uint2 pt);
         void calculateLRFPtr(uint2 pt);
-        bool callCnn();
+        bool callCnn(int frame);
         bool readDescriptorCsv();
     private:
 
@@ -31,6 +31,8 @@ class SmoothNet
         std::vector<int> evaluation_points;
         std::vector<descr_t> descriptors;
 
+        char sdv_file[256];
+        char descr_file[256];
 
         float radius;
         int num_voxels;

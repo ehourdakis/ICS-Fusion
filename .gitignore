@@ -5,3 +5,9 @@
 *.bak
 *.back
 *~
+#ignore pyc
+*.pyc
+
+#ignore python virtual enviroment
+./3DSmoothNet/env/
+./3DSmoothNet/models
