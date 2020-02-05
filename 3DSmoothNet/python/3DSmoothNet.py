@@ -23,7 +23,7 @@ keyVert = None
 prevKeyVert = None
 
 prevFrame = None
-frame = 40
+#frame = 40
 
 
 def receiveLrf(conn):
@@ -53,8 +53,8 @@ def execute_global_registration(source_down, target_down, reference_desc, target
             [CorrespondenceCheckerBasedOnEdgeLength(0.9),
             CorrespondenceCheckerBasedOnDistance(distance_threshold)],
             RANSACConvergenceCriteria(4000000, 500))
-    print(result.fitness)
-    print(result.inlier_rmse)
+    #print(result.fitness)
+    #print(result.inlier_rmse)
     return result 
 
 def draw_registration_result(source, target, transformation):
@@ -79,20 +79,6 @@ def receiveKeyVertex(connection, size):
     return x
 
 def registration(reference_pc_keypoints, test_pc_keypoints, reference_desc, test_desc):    
-    global frame,prevFrame
-
-    point_cloud_files = [ "./data/ply/f_" + str(prevFrame) + "_vertices.ply",
-                          "./data/ply/f_" + str(frame) + "_vertices.ply" ]
-        
-    #outfile_name="./data/transformations/frame" + str(frame) + ".txt"
-
-    reference_pc = read_point_cloud(point_cloud_files[0])
-    test_pc = read_point_cloud(point_cloud_files[1])
-
-    #np.savetxt("./data/key_vertex/frame" + str(prevFrame) +"py.csv", reference_pc_keypoints,delimiter=',')
-    
-    reference_desc = prevDescr    
-    test_desc = descr;
     
     # Save ad open3d point clouds
     ref_key = PointCloud()
@@ -108,23 +94,14 @@ def registration(reference_pc_keypoints, test_pc_keypoints, reference_desc, test
     test = open3d.registration.Feature()
     test.data = test_desc.T
     result_ransac = execute_global_registration(ref_key, test_key,ref, test, 0.05)
+    
+    '''
+    point_cloud_files = [ "./data/ply/f_" + str(prevFrame) + "_vertices.ply","./data/ply/f_" + str(frame) + "_vertices.ply" ]        
     draw_registration_result(reference_pc, test_pc,result_ransac.transformation)
-
-    #trans=result_ransac.transformation
+    '''
     
     return result_ransac.fitness, result_ransac.inlier_rmse, result_ransac.transformation
     
-    #f = open(outfile_name,"w")
-
-    #f.write( str(result_ransac.fitness) + '\n' )
-    #f.write( str(result_ransac.inlier_rmse) + '\n' )
-    
-    #for x in range(0,4):
-        #for y in range(0,4):
-            #f.write( str(trans[x,y])+" " )
-        #f.write('\n')
-    #f.close()
-
 def sendTf(conn, fitness, rmse, tf):
     buff = bytearray()
     buff = buff + struct.pack('f',fitness)
@@ -167,13 +144,9 @@ while True:
             keyVert = receiveKeyVertex(connection, keyptsSize)
             if  keyVert  is None:
                 continue
-            
-            #config_arguments, unparsed_arguments = config.get_config()
-            evaluate_input_file = "./data/sdv/frame" + str(frame) + ".sdv"
-            evaluate_output_file = "./data/descr/frame" + str(frame) + ".csv"
 
             prevDescr = descr
-            descr = smooth_net.test(lrf,evaluate_input_file,evaluate_output_file)
+            descr = smooth_net.test(lrf)
             
             if prevKeyVert is not None:
                 fitness, rmse, tr = registration(prevKeyVert, keyVert, prevDescr, descr)
@@ -182,19 +155,13 @@ while True:
                 rmse = -1.0
                 tr = np.zeros( (4,4) )
             sendTf(connection, fitness, rmse, tr)
-            #status = 0
-            #print(status)
-            #statusBytes = status.to_bytes(1,byteorder='little')
-            #connection.send(statusBytes)
-            
-            
-            
-            prevFrame = frame
-            prevKeyVert = keyVert
-            frame = frame + 40            
-            
-            
 
+            
+            prevKeyVert = keyVert
+            '''
+            frame = frame + 40            
+            prevFrame = frame
+            '''
     finally:
         # Clean up the connection
         connection.close()

@@ -125,8 +125,7 @@ double Isam::optimize(int frame)
 
     //slam->print_stats();
     
-    double error=slam->chi2();
-    std::cerr<<"Error:"<<error<<std::endl;
+    double error=slam->chi2();    
 
     //std::cout<<"End isam optimization"<<std::endl;
     return error;

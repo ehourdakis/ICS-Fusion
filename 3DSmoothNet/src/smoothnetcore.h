@@ -54,7 +54,6 @@ void computeLocalDepthFeature(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
                               flann::Matrix<float> voxel_coordinates,
                               int counter_voxel,
                               float smoothing_factor,
-                              std::string saveFileName,
                               float **DIMATCH_Descriptor);
 
 #endif

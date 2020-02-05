@@ -16,32 +16,25 @@ class SmoothNet
 
         SmoothNet(IcsFusion *f,kparams_t params);
         ~SmoothNet();
+
         void clear();
-                
-        void loadFrameData(int frame);
-        void findKeyPts(int frame);
-        void calculateLRF(int frame);
-        bool callCnn(int frame);
-        bool readDescriptorCsv(int frame);
-        void readKeyPts();
-        void saveKeyPts(int frame);
-        void saveKeyVertex(int frame);
-        void sendKeyVertex(int frame);
-
         bool socketConnect();
-        bool sendLrfToSoc();
-
-        bool receiveTf(sMatrix4 &mat, float &fitness, float &rmse);
-        float findTransformation(sMatrix4 &mat, float &rmse, int frame);
-
-
-
-
+        void loadFrameData(int frame);
         bool findTf(sMatrix4 &tf,
                     float &fitness,
                     float &rmse,
                     int _frame);
+
+        void saveKeyPts(char *outFile,int frame);
+        void saveKeyVertex(char *outFile,int frame);
+
     private:
+        bool sendLrfToSoc();
+        bool receiveTf(sMatrix4 &mat, float &fitness, float &rmse);
+        void sendKeyVertex(int frame);
+        void findKeyPts(int frame);
+        void calculateLRF(int frame);
+
         kparams_t _params;
         Image<float3, Host> vertices;
         Image<TrackData, Host> trackData;
@@ -54,12 +47,6 @@ class SmoothNet
         std::vector<descr_t> descriptors;        
 
         bool firstTime;
-        char sdv_file[256];
-        char descr_file[256];
-        char prev_descr_file[256];
-        char key_vert_file[256];
-        char prev_key_vert_file[256];
-        char trans_file[256];
         float3 *keyVert;
 
         float radius;

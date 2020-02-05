@@ -122,41 +122,16 @@ bool CloseLoop::processKeyFrame()
 
     if(smoothNet->findTf(tr,fitness,rmse,_frame) )
     {
+        std::cout<<"Registration fitness:"<<fitness<<std::endl;
+        std::cout<<"Registration RMSE:"<<rmse<<std::endl;
+
         sMatrix6 cov;
-        cov=cov*(rmse*rmse*fitness);
+        cov=cov*(rmse*rmse/fitness);
         _isam->addPoseConstrain(currPose,prevKeyPose,tr,cov);
         optimize();
+
     }
-    std::cout<<"Registration fitness:"<<fitness<<std::endl;
-    std::cout<<"Registration RMSE:"<<rmse<<std::endl;
-    std::cout<<tr<<rmse<<std::endl;
 
-//    smoothNet->findKeyPts(_frame);
-//    smoothNet->calculateLRF(_frame);
-
-//    smoothNet->saveKeyPts(_frame);
-//    smoothNet->saveKeyVertex(_frame);
-
-//    smoothNet->sendLrfToSoc();
-//    smoothNet->sendKeyVertex(_frame);
-
-//    smoothNet->callCnn(_frame);
-//    smoothNet->readDescriptorCsv(_frame);
-
-
-//    sMatrix4 tr;
-//    float rmse;
-//    float fitness=smoothNet->findTransformation(tr,rmse,_frame);
-//    sMatrix6 cov;
-
-
-
-//    if(fitness>0)
-//    {
-//        //_isam->addPoseConstrain(prevKeyPose,currPose,tr,cov);
-//        _isam->addPoseConstrain(currPose,prevKeyPose,tr,cov);
-//        optimize();
-//    }
     smoothNet->clear();
     prevKeyPose=currPose;
 
@@ -169,7 +144,8 @@ bool CloseLoop::optimize()
     if(err<params.optim_thr )
     {
         fixMap();
-        bool raycast=_fusion->raycasting(_frame);
+        std::cout<<"Optimization error:"<<err<<std::endl;
+        //bool raycast=_fusion->raycasting(_frame);
 
     }
     return true;

@@ -316,6 +316,8 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
 
         if( (frame%40) == 0)
         {
+
+#if 0 //enable this for logging
             char buf[32];
             sprintf(buf,"data/gt/f_%d_pose",frame);
             savePose(buf,gtPose);
@@ -330,17 +332,10 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
             Image<float3, Host> vert=icsFusion->getAllVertex();
             saveVertexPly(buf,vert);
             vert.release();
-
-//            sprintf(buf,"data/volume/frame%d_volume",frame);
-//            saveVoxelsToFile(buf,icsFusion->getVolume(),params);
+#endif
+            //sprintf(buf,"data/volume/frame%d_volume",frame);
+            //saveVoxelsToFile(buf,icsFusion->getVolume(),params);
             loopCl->processKeyFrame();
-//            loopCl->addPoseConstrain(gtPose);
-//            loopCl->optimize();
-
-//            std::cout<<"GT"<<std::endl;
-//            std::cout<<tr<<std::endl;
-
-
         }
         
         

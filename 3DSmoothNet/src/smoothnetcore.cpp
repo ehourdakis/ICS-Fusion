@@ -340,23 +340,16 @@ void computeLocalDepthFeature(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
                               flann::Matrix<float> voxel_coordinates,
                               int counter_voxel,
                               float smoothing_factor,
-                              std::string saveFileName,
                               float **DIMATCH_Descriptor)
 {
     // Iterrate over all the points for which the descriptor is to be computed
     pcl::PointXYZ queryPoint;
     pcl::ExtractIndices<pcl::PointXYZ> extract;
-//    int counter_voxel = num_voxels * num_voxels * num_voxels;
 
-    // Create the filtering object
-//     std::string saving_path_file;
     int threads_ = omp_get_max_threads();
     std::cout << "Starting SDV computation!" << std::endl;
     std::cout << threads_ << " threads will be used!!" << std::endl;
 
-    // Initialize the space for the SDV values
-//    std::vector <std::vector <float>> DIMATCH_Descriptor(evaluation_points.size(), std::vector<float>(counter_voxel, 0));
-//    float *descriptor=(float
     // Initialize the point to the descriptor for each thread used
     Eigen::VectorXf *descriptor = new Eigen::VectorXf[threads_];
 
@@ -367,11 +360,7 @@ void computeLocalDepthFeature(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
     }
 
     int tid;
-
-    // Create path for saving
     const char* path = "data";
-//     boost::filesystem::path dir(path);
-//     boost::filesystem::create_directory(dir);
     int progress_counter = 0;
 
     #pragma omp parallel for shared(cloud,evaluation_points,indices_neighbors,counter_voxel,DIMATCH_Descriptor,progress_counter) private(tid,extract)  num_threads(threads_)
@@ -488,10 +477,6 @@ void computeLocalDepthFeature(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
         }
     }
 
-    // Create the name with the radius, number of voxels and the smoothing factor
-    //saving_path_file = saveFileName + "_" + std::to_string(sup_radius) + "_" + std::to_string(num_voxels) + "_" + std::to_string(smoothing_factor * num_voxels / sup_radius) + ".csv";
-//     saving_path_file = saveFileName;
-
     // Write descriptor to CSV file
-    saveVector(saveFileName, DIMATCH_Descriptor,evaluation_points.size(),counter_voxel);
+    //saveVector(saveFileName, DIMATCH_Descriptor,evaluation_points.size(),counter_voxel);
 }
