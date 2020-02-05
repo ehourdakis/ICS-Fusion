@@ -326,11 +326,21 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
             sprintf(buf,"data/poses/f_%d_poses",frame);
             savePoses(buf,kfusionPoses);
 
-//             sprintf(buf,"data/volume/f_%d_volume",frame);
-//             saveVoxelsToFile(buf,icsFusion->getVolume(),params);
+            sprintf(buf,"data/ply/f_%d_vertices.ply",frame);
+            Image<float3, Host> vert=icsFusion->getAllVertex();
+            saveVertexPly(buf,vert);
+            vert.release();
+
+//            sprintf(buf,"data/volume/frame%d_volume",frame);
+//            saveVoxelsToFile(buf,icsFusion->getVolume(),params);
             loopCl->processKeyFrame();
-            loopCl->addPoseConstrain(gtPose);
-            loopCl->optimize();
+//            loopCl->addPoseConstrain(gtPose);
+//            loopCl->optimize();
+
+//            std::cout<<"GT"<<std::endl;
+//            std::cout<<tr<<std::endl;
+
+
         }
         
         
@@ -440,7 +450,7 @@ sMatrix4 getGt(/*SLAMBenchLibraryHelper *lib*/ const slambench::TimeStamp &ts_p,
 
 
 //enable this for room dataset
-#if 1
+#if 0
      float tmp=ret.data[0].y;
      ret.data[0].y=-ret.data[1].x;
      ret.data[1].x=-tmp;

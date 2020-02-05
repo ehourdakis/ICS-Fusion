@@ -91,6 +91,24 @@ void Isam::addFixPose(const sMatrix4 &fixPose)
     slam->add_factor(factor);
 }
 
+void Isam::addPoseConstrain(int p1,int p2,const sMatrix4 &delta, const sMatrix6 &cov)
+{
+    Eigen::MatrixXd eigenCov=toEigen(cov);
+
+    Noise noise = isam::Covariance(eigenCov);
+    Pose3d vo= toIsamPose(delta);
+
+    Pose3d_Pose3d_Factor* factor = new Pose3d_Pose3d_Factor(pose_nodes[p1],
+                                                            pose_nodes[p2],
+                                                            vo,
+                                                            noise);
+
+
+    factors.push_back(factor);
+
+    slam->add_factor(factor);
+}
+
 double Isam::optimize(int frame)
 {
     //std::cout<<"Start isam optimization"<<std::endl;

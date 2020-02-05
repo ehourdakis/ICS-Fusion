@@ -13,13 +13,19 @@
 
 #include <pcl/common/centroid.h>
 #include"smoothnetcore.h"
+#include <random>
+#include<strings.h>
 
-#define SDV_DIR "./data/sdv/"
-#define CSV_DIR "./data/csv/"
-#define OUT_FILE_NAME "./data/sdv/smoothnet.csv"
-#define CSV_FILE "./data/csv/smoothnet.csv_3DSmoothNet.txt"
+//#define SDV_DIR "./data/sdv/"
+//#define CSV_DIR "./data/csv/"
+//#define OUT_FILE_NAME "./data/sdv/smoothnet.csv"
+//#define CSV_FILE "./data/csv/smoothnet.csv_3DSmoothNet.txt"
 
-SmoothNet::SmoothNet(IcsFusion *f)
+#define KEYPTS_SIZE 200
+
+SmoothNet::SmoothNet(IcsFusion *f,kparams_t params)
+    :_params(params),
+      firstTime(true)
 {
     _fusion=f;
 
@@ -33,24 +39,84 @@ SmoothNet::SmoothNet(IcsFusion *f)
     smoothing_factor = smoothing_kernel_width * (radius / num_voxels); // Equals half a voxel size so that 3X is 1.5 voxel
 }
 
+SmoothNet::~SmoothNet()
+{
+    clear();
+}
+
+void SmoothNet::clear()
+{
+    evaluation_points.clear();
+    vertices.release();
+    trackData.release();
+}
+
+void SmoothNet::loadFrameData(int frame)
+{
+    vertices=_fusion->getAllVertex();
+    trackData=_fusion->getTrackData();
+
+    if(!firstTime)
+    {
+        strcpy(prev_descr_file,descr_file);
+        strcpy(prev_key_vert_file,key_vert_file);
+    }
+
+
+}
+
+void SmoothNet::findKeyPts(int frame)
+{
+    evaluation_points.clear();
+
+    std::vector<int> tmp_points;
+
+    uint idx=0;
+    uint2 pix;
+    for(pix.x=0;pix.x<trackData.size.x;pix.x++)
+    {
+        for(pix.y=0;pix.y<trackData.size.y;pix.y++)
+        {
+            if(trackData[pix].result==-5)
+            {
+                tmp_points.push_back(idx);
+            }
+            idx++;
+        }
+    }
+
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<int> distr(0, tmp_points.size());
+
+    for(int i=0;i<KEYPTS_SIZE;i++)
+    {
+        int oldIdx=distr(gen);
+        while(tmp_points[oldIdx]==-1)
+        {
+            oldIdx=distr(gen);
+        }
+        evaluation_points.push_back(tmp_points[oldIdx]);
+        tmp_points[oldIdx]=-1;
+    }
+
+    std::cout<<"Key pts size:"<<evaluation_points.size()<<std::endl;
+}
+
 void SmoothNet::calculateLRF(int frame)
 {    
-
-    Image<float3, Host> v=_fusion->getAllVertex();
-
     std::cout<<"Reading key pts..."<<std::endl;
 
     uint2 p;
     //create pcl point cloud
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    for(p.x=0;p.x<v.size.x;p.x++)
+    for(p.x=0;p.x<vertices.size.x;p.x++)
     {
-        for(p.y=0;p.y<v.size.y;p.y++)
+        for(p.y=0;p.y<vertices.size.y;p.y++)
         {
-            float3 vertex=v[p];
+            float3 vertex=vertices[p];
             pcl::PointXYZ pt(vertex.x,vertex.y,vertex.z);
             cloud->push_back(pt);
-
         }
     }
 
@@ -100,6 +166,8 @@ bool SmoothNet::callCnn(int frame)
     sprintf(cmd,"./run_3dsmoothnet.sh %s %s",
             sdv_file,
             descr_file);
+
+    std::cout<<cmd<<std::endl;
     int status=system(cmd);
 
     if(status==0)
@@ -135,7 +203,8 @@ void SmoothNet::readKeyPts()
 
 bool SmoothNet::readDescriptorCsv()
 {
-    std::ifstream inFile(CSV_FILE,std::ios::in);
+    descriptors.clear();
+    std::ifstream inFile(descr_file,std::ios::in);
     while(true)
     {
         std::string line;
@@ -171,22 +240,86 @@ bool SmoothNet::readDescriptorCsv()
     }
 
     inFile.close();    
-    std::cout<<"Red:"<<descriptors.size()<<" reatures."<<std::endl;
+    std::cout<<"Red:"<<descriptors.size()<<" features."<<std::endl;
     return true;
 }
 
-void SmoothNet::calculateLRFPtr(uint2 pt)
+void SmoothNet::saveKeyPts(int frame)
 {
+    char out_file_name[256];
+    sprintf(out_file_name,"./data/keypts/f_%d_keypoints.txt",frame);
+    std::ofstream outFile(out_file_name,std::ios::out);
 
-
+    for(int i=0;i<evaluation_points.size();i++)
+    {
+        outFile<<evaluation_points[i]<<"\n";
+    }
+    outFile.close();
 }
 
-bool SmoothNet::calculateLRFHost(uint2 pt,sMatrix3 &covar)
+void SmoothNet::saveKeyVertex(int frame)
 {
+    sprintf(key_vert_file,"./data/key_vertex/frame%d.csv",frame);
+    std::ofstream outFile(key_vert_file,std::ios::out);
 
+    float3 *vert_arr=vertices.data();
+    for(int i=0;i<evaluation_points.size();i++)
+    {
+        int idx=evaluation_points[i];
+        float3 vert=vert_arr[idx];
+
+        outFile<<vert.x<<","<<vert.y<<","<<vert.z<<"\n";
+    }
+    outFile.close();
 }
 
+float SmoothNet::findTransformation(sMatrix4 &mat,float &rmse,int frame)
+{
+    rmse=0.0;
+    if(firstTime)
+    {
+        firstTime=false;
+        prevFrame=frame;
+        return -2.0;
+    }
 
+    sprintf(trans_file,"./data/transformations/frame%d.txt",frame);
+
+    char cmd[512];
+    sprintf(cmd,"./run_ransac_demo.sh %d %d",
+            prevFrame,
+            frame);
+
+    std::cout<<cmd<<std::endl;
+
+    int status=system(cmd);
+
+    prevFrame=frame;
+    if(status!=0)
+    {
+        std::cout<<"Error"<<std::endl;
+        return -1.0;
+    }
+
+    std::ifstream inFile(trans_file,std::ios::in);
+    float ret;
+
+    inFile>>ret;
+    inFile>>rmse;
+    for(int i=0;i<4;i++)
+    {
+        for(int j=0;j<4;j++)
+        {
+            float f;
+            inFile>>f;
+            mat(i,j)=f;
+
+        }
+
+    }
+
+    return ret;
+}
 
 
 

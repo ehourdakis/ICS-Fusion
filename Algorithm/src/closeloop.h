@@ -35,12 +35,13 @@ class CloseLoop
 
         sMatrix4 getPose() const;
         bool optimize();
-        bool addPoseConstrain(const sMatrix4 &pose);
+        float findTransformation(sMatrix4 &tr);
     private:
         sMatrix4 firstPose;
         sMatrix4 prevPose;
         IcsFusion *_fusion;
         PoseGraph *_isam;
+        int prevKeyPose;
 
         kparams_t params;
         int _frame;

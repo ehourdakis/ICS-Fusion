@@ -29,6 +29,7 @@ class Isam :public PoseGraph
 
         void addFixPose(const sMatrix4 &fixPose);
         double optimize(int frame) override;
+        void addPoseConstrain(int p1,int p2,const sMatrix4 &delta, const sMatrix6 &cov);
         //void convertCovariance(sMatrix4 pose,sMatrix6 cov) override;
 
 

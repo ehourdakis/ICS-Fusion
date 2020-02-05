@@ -24,7 +24,7 @@ CloseLoop::CloseLoop(kparams_t p,sMatrix4 initPose)
 #endif
     firstPose=initPose;
 
-    smoothNet=new SmoothNet(_fusion);
+    smoothNet=new SmoothNet(_fusion,params);
 }
 
 //For testing purposes only.
@@ -114,26 +114,43 @@ bool CloseLoop::processFrame()
 
 bool CloseLoop::processKeyFrame()
 {
-    smoothNet->readKeyPts();
+//    smoothNet->readKeyPts();
+    smoothNet->loadFrameData(_frame);
+    smoothNet->findKeyPts(_frame);
     smoothNet->calculateLRF(_frame);
     smoothNet->callCnn(_frame);
     smoothNet->readDescriptorCsv();
-    return true;
-}
+    smoothNet->saveKeyPts(_frame);
+    smoothNet->saveKeyVertex(_frame);
 
-bool CloseLoop::addPoseConstrain(const sMatrix4 &pose)
-{
-    _isam->addFixPose(pose);
+    sMatrix4 tr;
+    float rmse;
+    float fitness=smoothNet->findTransformation(tr,rmse,_frame);
+    sMatrix6 cov;
+    cov=cov*(rmse*rmse*fitness);
+    std::cout<<"Registration fitness:"<<fitness<<std::endl;
+
+    int currPose=_isam->poseSize()-1;
+    if(fitness>0)
+    {
+        //_isam->addPoseConstrain(prevKeyPose,currPose,tr,cov);
+        _isam->addPoseConstrain(currPose,prevKeyPose,tr,cov);
+        optimize();
+    }
+    smoothNet->clear();
+    prevKeyPose=currPose;
+
     return true;
 }
 
 bool CloseLoop::optimize()
 {
     double err=_isam->optimize(_frame);
-    if(err<params.optim_thr)
+    if(err<params.optim_thr )
     {
         fixMap();
         bool raycast=_fusion->raycasting(_frame);
+
     }
     return true;
 }
@@ -154,6 +171,12 @@ void CloseLoop::fixMap()
     }
     sMatrix4 finalPose=_isam->getPose(poses.size()-1);
     _fusion->setPose(finalPose);
+
+    /*
+    clear();
+    _isam->clear();
+    _isam->init(finalPose);
+    */
 }
 
 sMatrix4 CloseLoop::getPose() const
