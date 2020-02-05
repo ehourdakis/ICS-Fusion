@@ -48,7 +48,8 @@ bool fileExist(const std::string& name)
 }
 
 // Saves the descriptor to a binary csv file
-void saveVector(std::string filename, const std::vector<std::vector<float>> descriptor)
+//void saveVector(std::string filename, const std::vector<std::vector<float>> descriptor)
+void saveVector(std::string filename, float **descriptor,int max_x,int max_y)
 {
     std::cout << "Saving Features to a SVD file:" << std::endl;
     std::cout << filename << std::endl;
@@ -57,9 +58,9 @@ void saveVector(std::string filename, const std::vector<std::vector<float>> desc
     outFile.open(filename, std::ios::binary);
 
     float writerTemp;
-    for (int i = 0; i < descriptor.size(); i++)
+    for (int i = 0; i < max_x; i++)
     {
-        for (int j = 0; j < descriptor[i].size(); j++)
+        for (int j = 0; j < max_y; j++)
         {
             writerTemp = descriptor[i][j];
             outFile.write(reinterpret_cast<const char*>(&writerTemp), sizeof(float));
@@ -337,14 +338,15 @@ void computeLocalDepthFeature(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
                               std::vector<LRF> cloud_LRF,
                               float sup_radius,
                               flann::Matrix<float> voxel_coordinates,
-                              int num_voxels,
+                              int counter_voxel,
                               float smoothing_factor,
-                              std::string saveFileName)
+                              std::string saveFileName,
+                              float **DIMATCH_Descriptor)
 {
     // Iterrate over all the points for which the descriptor is to be computed
     pcl::PointXYZ queryPoint;
     pcl::ExtractIndices<pcl::PointXYZ> extract;
-    int counter_voxel = num_voxels * num_voxels * num_voxels;
+//    int counter_voxel = num_voxels * num_voxels * num_voxels;
 
     // Create the filtering object
 //     std::string saving_path_file;
@@ -353,8 +355,8 @@ void computeLocalDepthFeature(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
     std::cout << threads_ << " threads will be used!!" << std::endl;
 
     // Initialize the space for the SDV values
-    std::vector <std::vector <float>> DIMATCH_Descriptor(evaluation_points.size(), std::vector<float>(counter_voxel, 0));
-
+//    std::vector <std::vector <float>> DIMATCH_Descriptor(evaluation_points.size(), std::vector<float>(counter_voxel, 0));
+//    float *descriptor=(float
     // Initialize the point to the descriptor for each thread used
     Eigen::VectorXf *descriptor = new Eigen::VectorXf[threads_];
 
@@ -491,5 +493,5 @@ void computeLocalDepthFeature(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
 //     saving_path_file = saveFileName;
 
     // Write descriptor to CSV file
-    saveVector(saveFileName, DIMATCH_Descriptor);
+    saveVector(saveFileName, DIMATCH_Descriptor,evaluation_points.size(),counter_voxel);
 }

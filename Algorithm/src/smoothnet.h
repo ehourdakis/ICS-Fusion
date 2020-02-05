@@ -51,11 +51,14 @@ class SmoothNet
 
         float radius;
         int num_voxels;
+        int counter_voxel;
         float smoothing_kernel_width;
         float voxel_step_size;
         float grid_size;
         float lrf_radius;
         float smoothing_factor;
+
+        float **descr;
 
 };
 #endif

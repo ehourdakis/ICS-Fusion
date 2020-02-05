@@ -37,11 +37,25 @@ SmoothNet::SmoothNet(IcsFusion *f,kparams_t params)
     voxel_step_size = (2 * radius) / num_voxels;
     lrf_radius = sqrt(3)*radius; // Such that the circumscribed sphere is obtained
     smoothing_factor = smoothing_kernel_width * (radius / num_voxels); // Equals half a voxel size so that 3X is 1.5 voxel
+
+    counter_voxel = num_voxels * num_voxels * num_voxels;
+
+    descr=new float*[KEYPTS_SIZE];
+
+    for(int i=0;i<KEYPTS_SIZE;i++)
+    {
+        descr[i] = new float[counter_voxel];
+    }
 }
 
 SmoothNet::~SmoothNet()
 {
     clear();
+    for(int i=0;i<KEYPTS_SIZE;i++)
+    {
+        delete descr[i];
+    }
+    delete descr;
 }
 
 void SmoothNet::clear()
@@ -152,9 +166,10 @@ void SmoothNet::calculateLRF(int frame)
                              cloud_lrf,
                              radius,
                              voxel_coordinates,
-                             num_voxels,
+                             counter_voxel,
                              smoothing_factor,
-                             sdv_file);
+                             sdv_file,
+                             descr);
 }
 
 bool SmoothNet::callCnn(int frame)

@@ -35,7 +35,7 @@ typedef pcl::PointCloud<PointNormalT> PointCloudWithNormals;
 bool processCommandLine(int argc, char** argv, std::string &file_cloud, float &support_radius, int &num_voxels, float &smoothing_kernel_width, std::string &file_keypoints, std::string &output_folder);
 std::vector<int> readKeypoints(std::string filename);
 bool fileExist(const std::string& name);
-void saveVector(std::string filename, const std::vector<std::vector<float>> descriptor);
+void saveVector(std::string filename, float **descriptor, int max_x, int max_y);
 flann::Matrix<float> initializeGridMatrix(const int n, float x_step, float y_step, float z_step);
 
 //	TOLDI_LRF functions
@@ -46,7 +46,15 @@ void toldiComputeLRF(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::vector<int>
 
 //	SDV computation
 void transformCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,LRF pointLRF,pcl::PointCloud<pcl::PointXYZ>::Ptr &transformed_cloud);
-void computeLocalDepthFeature(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::vector<int> indices, std::vector<std::vector<int>> indices_neighbors, std::vector<LRF> cloud_LRF, float sup_radius, flann::Matrix<float> voxel_coordinates, int num_voxels, float smoothingFactor, std::string saveFileName);
-
+void computeLocalDepthFeature(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
+                              std::vector<int> evaluation_points,
+                              std::vector<std::vector<int>> indices_neighbors,
+                              std::vector<LRF> cloud_LRF,
+                              float sup_radius,
+                              flann::Matrix<float> voxel_coordinates,
+                              int counter_voxel,
+                              float smoothing_factor,
+                              std::string saveFileName,
+                              float **DIMATCH_Descriptor);
 
 #endif
