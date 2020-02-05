@@ -26,12 +26,21 @@ class SmoothNet
         void readKeyPts();
         void saveKeyPts(int frame);
         void saveKeyVertex(int frame);
+        void sendKeyVertex(int frame);
 
         bool socketConnect();
         bool sendLrfToSoc();
 
+        bool receiveTf(sMatrix4 &mat, float &fitness, float &rmse);
         float findTransformation(sMatrix4 &mat, float &rmse, int frame);
 
+
+
+
+        bool findTf(sMatrix4 &tf,
+                    float &fitness,
+                    float &rmse,
+                    int _frame);
     private:
         kparams_t _params;
         Image<float3, Host> vertices;
@@ -51,6 +60,7 @@ class SmoothNet
         char key_vert_file[256];
         char prev_key_vert_file[256];
         char trans_file[256];
+        float3 *keyVert;
 
         float radius;
         int num_voxels;

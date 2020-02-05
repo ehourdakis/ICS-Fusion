@@ -115,34 +115,48 @@ bool CloseLoop::processFrame()
 
 bool CloseLoop::processKeyFrame()
 {
-//    smoothNet->readKeyPts();
     smoothNet->loadFrameData(_frame);
-    smoothNet->findKeyPts(_frame);
-    smoothNet->calculateLRF(_frame);
-
-    smoothNet->saveKeyPts(_frame);
-    smoothNet->saveKeyVertex(_frame);
-
-    smoothNet->sendLrfToSoc();
-
-//    smoothNet->callCnn(_frame);
-    smoothNet->readDescriptorCsv(_frame);
-
-
     sMatrix4 tr;
-    float rmse;
-    float fitness=smoothNet->findTransformation(tr,rmse,_frame);
-    sMatrix6 cov;
-    cov=cov*(rmse*rmse*fitness);
-    std::cout<<"Registration fitness:"<<fitness<<std::endl;
-
+    float rmse,fitness;
     int currPose=_isam->poseSize()-1;
-    if(fitness>0)
+
+    if(smoothNet->findTf(tr,fitness,rmse,_frame) )
     {
-        //_isam->addPoseConstrain(prevKeyPose,currPose,tr,cov);
+        sMatrix6 cov;
+        cov=cov*(rmse*rmse*fitness);
         _isam->addPoseConstrain(currPose,prevKeyPose,tr,cov);
         optimize();
     }
+    std::cout<<"Registration fitness:"<<fitness<<std::endl;
+    std::cout<<"Registration RMSE:"<<rmse<<std::endl;
+    std::cout<<tr<<rmse<<std::endl;
+
+//    smoothNet->findKeyPts(_frame);
+//    smoothNet->calculateLRF(_frame);
+
+//    smoothNet->saveKeyPts(_frame);
+//    smoothNet->saveKeyVertex(_frame);
+
+//    smoothNet->sendLrfToSoc();
+//    smoothNet->sendKeyVertex(_frame);
+
+//    smoothNet->callCnn(_frame);
+//    smoothNet->readDescriptorCsv(_frame);
+
+
+//    sMatrix4 tr;
+//    float rmse;
+//    float fitness=smoothNet->findTransformation(tr,rmse,_frame);
+//    sMatrix6 cov;
+
+
+
+//    if(fitness>0)
+//    {
+//        //_isam->addPoseConstrain(prevKeyPose,currPose,tr,cov);
+//        _isam->addPoseConstrain(currPose,prevKeyPose,tr,cov);
+//        optimize();
+//    }
     smoothNet->clear();
     prevKeyPose=currPose;
 

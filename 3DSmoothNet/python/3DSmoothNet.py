@@ -10,6 +10,7 @@ from core import network
 import copy
 import subprocess
 from open3d import *
+import struct
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
 sizeOfInt = 4
@@ -17,7 +18,9 @@ sizeOfFloat = 4
 server_address = '/tmp/3dsmoothnet'
 
 descr = None
-oldDescr = None
+prevDescr = None
+keyVert = None
+prevKeyVert = None
 
 prevFrame = None
 frame = 40
@@ -26,7 +29,7 @@ frame = 40
 def receiveLrf(conn):
     data = connection.recv(2*sizeOfInt)
     if not data:
-        return None
+        return None, None, None
     keyptsSizeBinary = data[0:sizeOfInt]
     counterVoxelBinary = data[sizeOfInt:2*sizeOfInt]
     
@@ -40,7 +43,7 @@ def receiveLrf(conn):
     dt = dt.newbyteorder('<')
     x = np.frombuffer(ultimate_buffer, dtype=dt)
     x = x.reshape(keyptsSize,counterVoxel)
-    return x
+    return keyptsSize, counterVoxel, x
 
 def execute_global_registration(source_down, target_down, reference_desc, target_desc, distance_threshold):
     result = registration_ransac_based_on_feature_matching(
@@ -50,7 +53,8 @@ def execute_global_registration(source_down, target_down, reference_desc, target
             [CorrespondenceCheckerBasedOnEdgeLength(0.9),
             CorrespondenceCheckerBasedOnDistance(distance_threshold)],
             RANSACConvergenceCriteria(4000000, 500))
-    #print(result.fitness)
+    print(result.fitness)
+    print(result.inlier_rmse)
     return result 
 
 def draw_registration_result(source, target, transformation):
@@ -61,35 +65,33 @@ def draw_registration_result(source, target, transformation):
     source_temp.transform(transformation)
     draw_geometries([source_temp, target_temp])
 
+def receiveKeyVertex(connection, size):
+    ultimate_buffer = bytearray()
+    totalSize = 3*size*sizeOfFloat;
+    while len(ultimate_buffer) < totalSize:
+        receiving_buffer = connection.recv( min(1024, totalSize - len(ultimate_buffer)) )
+        ultimate_buffer = ultimate_buffer + receiving_buffer
+        
+    dt = np.dtype(np.float32)
+    dt = dt.newbyteorder('<')
+    x = np.frombuffer(ultimate_buffer, dtype=dt)
+    x = x.reshape(size,3)
+    return x
 
-def registration():    
+def registration(reference_pc_keypoints, test_pc_keypoints, reference_desc, test_desc):    
     global frame,prevFrame
-    
-    if prevFrame is None:
-        return
-    
+
     point_cloud_files = [ "./data/ply/f_" + str(prevFrame) + "_vertices.ply",
                           "./data/ply/f_" + str(frame) + "_vertices.ply" ]
         
-    keypoints_files = [ "./data/keypts/f_" + str(prevFrame) + "_keypoints.txt",
-                       "./data/keypts/f_" + str(frame) + "_keypoints.txt" ]
-    
-    outfile_name="./data/transformations/frame" + str(frame) + ".txt"
+    #outfile_name="./data/transformations/frame" + str(frame) + ".txt"
 
-    print(point_cloud_files)
-    print(keypoints_files)
-    
-    
     reference_pc = read_point_cloud(point_cloud_files[0])
     test_pc = read_point_cloud(point_cloud_files[1])
 
-    indices_ref = np.genfromtxt(keypoints_files[0])
-    indices_test = np.genfromtxt(keypoints_files[1])
-
-    reference_pc_keypoints = np.asarray(reference_pc.points)[indices_ref.astype(int),:]
-    test_pc_keypoints = np.asarray(test_pc.points)[indices_test.astype(int),:]
-
-    reference_desc = oldDescr    
+    #np.savetxt("./data/key_vertex/frame" + str(prevFrame) +"py.csv", reference_pc_keypoints,delimiter=',')
+    
+    reference_desc = prevDescr    
     test_desc = descr;
     
     # Save ad open3d point clouds
@@ -108,17 +110,32 @@ def registration():
     result_ransac = execute_global_registration(ref_key, test_key,ref, test, 0.05)
     draw_registration_result(reference_pc, test_pc,result_ransac.transformation)
 
-    trans=result_ransac.transformation
-    f = open(outfile_name,"w")
-
-    f.write( str(result_ransac.fitness) + '\n' )
-    f.write( str(result_ransac.inlier_rmse) + '\n' )
+    #trans=result_ransac.transformation
     
-    for x in range(0,4):
-        for y in range(0,4):
-            f.write( str(trans[x,y])+" " )
-        f.write('\n')
-    f.close()
+    return result_ransac.fitness, result_ransac.inlier_rmse, result_ransac.transformation
+    
+    #f = open(outfile_name,"w")
+
+    #f.write( str(result_ransac.fitness) + '\n' )
+    #f.write( str(result_ransac.inlier_rmse) + '\n' )
+    
+    #for x in range(0,4):
+        #for y in range(0,4):
+            #f.write( str(trans[x,y])+" " )
+        #f.write('\n')
+    #f.close()
+
+def sendTf(conn, fitness, rmse, tf):
+    buff = bytearray()
+    buff = buff + struct.pack('f',fitness)
+    buff = buff + struct.pack('f',rmse)
+    
+    for i in range(0,4):
+        for j in range(0,4):
+            buff = buff + struct.pack('f', tf[i,j])
+    
+    connection.send(buff)
+
 
 #3DSmoothNet configs
 config_arguments, unparsed_arguments = config.get_config()
@@ -144,27 +161,36 @@ while True:
     #global smooth_net
     try:
         while True:
-            lrf = receiveLrf(connection)            
+            keyptsSize, counterVoxel, lrf = receiveLrf(connection)
             if  lrf is None:
+                continue
+            keyVert = receiveKeyVertex(connection, keyptsSize)
+            if  keyVert  is None:
                 continue
             
             #config_arguments, unparsed_arguments = config.get_config()
             evaluate_input_file = "./data/sdv/frame" + str(frame) + ".sdv"
             evaluate_output_file = "./data/descr/frame" + str(frame) + ".csv"
-                 
-            oldDescr = descr
+
+            prevDescr = descr
             descr = smooth_net.test(lrf,evaluate_input_file,evaluate_output_file)
             
-            registration()
-            
-            status = 10
-            print(status)
-            statusBytes = status.to_bytes(1,byteorder='little')
-            connection.send(statusBytes)
+            if prevKeyVert is not None:
+                fitness, rmse, tr = registration(prevKeyVert, keyVert, prevDescr, descr)
+            else:
+                fitness = -1.0
+                rmse = -1.0
+                tr = np.zeros( (4,4) )
+            sendTf(connection, fitness, rmse, tr)
+            #status = 0
+            #print(status)
+            #statusBytes = status.to_bytes(1,byteorder='little')
+            #connection.send(statusBytes)
             
             
             
             prevFrame = frame
+            prevKeyVert = keyVert
             frame = frame + 40            
             
             

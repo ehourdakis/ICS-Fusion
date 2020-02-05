@@ -43,10 +43,40 @@ SmoothNet::SmoothNet(IcsFusion *f,kparams_t params)
     counter_voxel = num_voxels * num_voxels * num_voxels;
 
     lrf=new float*[KEYPTS_SIZE];
+    keyVert=new float3[KEYPTS_SIZE];
 
     for(int i=0;i<KEYPTS_SIZE;i++)
     {
         lrf[i] = new float[counter_voxel];
+    }
+}
+
+SmoothNet::~SmoothNet()
+{
+    clear();
+    for(int i=0;i<KEYPTS_SIZE;i++)
+    {
+        delete lrf[i];
+    }
+    delete lrf;
+}
+
+void SmoothNet::clear()
+{
+    evaluation_points.clear();
+    vertices.release();
+    trackData.release();
+}
+
+void SmoothNet::loadFrameData(int frame)
+{
+    vertices=_fusion->getAllVertex();
+    trackData=_fusion->getTrackData();
+
+    if(!firstTime)
+    {
+        strcpy(prev_descr_file,descr_file);
+        strcpy(prev_key_vert_file,key_vert_file);
     }
 }
 
@@ -81,59 +111,18 @@ bool SmoothNet::sendLrfToSoc()
 
     for (int i = 0; i < KEYPTS_SIZE; i++)
     {
-        float *d=lrf[i];
-        write(sock,d,sizeof(float)*counter_voxel);
-    }
+        int totalSend=0;
+        int totalSize=sizeof(float)*counter_voxel;
+        char *d=(char*)lrf[i];
 
-    char status=-1;
-    while(true)
-    {
-        ssize_t s=recv(sock,&status,sizeof(char),0);
-        if(s>0)
+        while(totalSend<totalSize)
         {
-            std::cout<<"status:"<<(int)status<<std::endl;
-            break;
-        }
-        else if(s<0)
-        {
-            char buff[64];
-            sprintf(buff,"Error reading from socket:%d",s);
-            perror(buff);
-            exit(1);
+            int s=write(sock,d,totalSize-totalSend);
+            d+=s;
+            totalSend+=s;
         }
     }
     return true;
-}
-
-SmoothNet::~SmoothNet()
-{
-    clear();
-    for(int i=0;i<KEYPTS_SIZE;i++)
-    {
-        delete lrf[i];
-    }
-    delete lrf;
-}
-
-void SmoothNet::clear()
-{
-    evaluation_points.clear();
-    vertices.release();
-    trackData.release();
-}
-
-void SmoothNet::loadFrameData(int frame)
-{
-    vertices=_fusion->getAllVertex();
-    trackData=_fusion->getTrackData();
-
-    if(!firstTime)
-    {
-        strcpy(prev_descr_file,descr_file);
-        strcpy(prev_key_vert_file,key_vert_file);
-    }
-
-
 }
 
 void SmoothNet::findKeyPts(int frame)
@@ -141,7 +130,6 @@ void SmoothNet::findKeyPts(int frame)
     evaluation_points.clear();
 
     std::vector<int> tmp_points;
-
     uint idx=0;
     uint2 pix;
     for(pix.x=0;pix.x<trackData.size.x;pix.x++)
@@ -162,22 +150,26 @@ void SmoothNet::findKeyPts(int frame)
 
     for(int i=0;i<KEYPTS_SIZE;i++)
     {
-        int oldIdx=distr(gen);
-        while(tmp_points[oldIdx]==-1)
+        int idx=distr(gen);
+        while(tmp_points[idx]==-1)
         {
-            oldIdx=distr(gen);
+            idx=distr(gen);
         }
-        evaluation_points.push_back(tmp_points[oldIdx]);
-        tmp_points[oldIdx]=-1;
+        evaluation_points.push_back(tmp_points[idx]);
+
+        uint2 pix;
+        pix.x=tmp_points[idx]/vertices.size.y;
+        pix.y=tmp_points[idx]%vertices.size.y;
+        keyVert[i]=vertices[pix];
+
+        tmp_points[idx]=-1;
     }
 
-    std::cout<<"Key pts size:"<<evaluation_points.size()<<std::endl;
+    //std::cout<<"Key pts size:"<<evaluation_points.size()<<std::endl;
 }
 
 void SmoothNet::calculateLRF(int frame)
 {    
-    std::cout<<"Reading key pts..."<<std::endl;
-
     uint2 p;
     //create pcl point cloud
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -317,33 +309,77 @@ bool SmoothNet::readDescriptorCsv(int frame)
     return true;
 }
 
-void SmoothNet::saveKeyPts(int frame)
+bool SmoothNet::findTf(sMatrix4 &tf,
+                       float &fitness,
+                       float &rmse,
+                       int _frame)
 {
-    char out_file_name[256];
-    sprintf(out_file_name,"./data/keypts/f_%d_keypoints.txt",frame);
-    std::ofstream outFile(out_file_name,std::ios::out);
-
-    for(int i=0;i<evaluation_points.size();i++)
-    {
-        outFile<<evaluation_points[i]<<"\n";
-    }
-    outFile.close();
+    findKeyPts(_frame);
+    calculateLRF(_frame);
+    sendLrfToSoc();
+    sendKeyVertex(_frame);
+    return receiveTf(tf,fitness,rmse);
 }
 
-void SmoothNet::saveKeyVertex(int frame)
+bool SmoothNet::receiveTf(sMatrix4 &mat, float &fitness, float &rmse)
 {
-    sprintf(key_vert_file,"./data/key_vertex/frame%d.csv",frame);
-    std::ofstream outFile(key_vert_file,std::ios::out);
-
-    float3 *vert_arr=vertices.data();
-    for(int i=0;i<evaluation_points.size();i++)
+    float fbuff[18];
+    int totalSize=18*sizeof(float);
+    int totalRec=0;
+    char *buff=(char*)fbuff;
+    while(totalRec<totalSize)
     {
-        int idx=evaluation_points[i];
-        float3 vert=vert_arr[idx];
+        int s=recv(sock,buff,min(1024,totalSize-totalRec),0 );
+        if(s<0)
+            return -1;
 
-        outFile<<vert.x<<","<<vert.y<<","<<vert.z<<"\n";
+        buff+=s;
+        totalRec+=s;
     }
-    outFile.close();
+    fitness=fbuff[0];
+    rmse=fbuff[1];
+    for(int i=0;i<16;i++)
+    {
+        int x=i/4;
+        int y=i%4;
+        mat(x,y)=fbuff[i+2];
+    }
+    return fitness>0;
+}
+
+
+void SmoothNet::sendKeyVertex(int frame)
+{
+    char *buff=(char*)keyVert;
+
+    int totalSend=0;
+    int totalSize=evaluation_points.size()*3*sizeof(float);
+
+    while(totalSend<totalSize)
+    {
+        int s=write(sock,buff,min(1024,totalSize-totalSend) );
+        buff+=s;
+        totalSend+=s;
+    }
+
+//    char status=-1;
+//    while(true)
+//    {
+//        ssize_t s=recv(sock,&status,sizeof(char),0);
+//        if(s>0)
+//        {
+//            std::cout<<"status:"<<(int)status<<std::endl;
+//            break;
+//        }
+//        else if(s<0)
+//        {
+//            char buff[64];
+//            sprintf(buff,"Error reading from socket:%d",s);
+//            perror(buff);
+//            exit(1);
+//        }
+//    }
+//    return ;
 }
 
 float SmoothNet::findTransformation(sMatrix4 &mat,float &rmse,int frame)
@@ -403,4 +439,32 @@ float SmoothNet::findTransformation(sMatrix4 &mat,float &rmse,int frame)
 
 
 
+void SmoothNet::saveKeyPts(int frame)
+{
+    char out_file_name[256];
+    sprintf(out_file_name,"./data/keypts/f_%d_keypoints.txt",frame);
+    std::ofstream outFile(out_file_name,std::ios::out);
 
+    for(int i=0;i<evaluation_points.size();i++)
+    {
+        outFile<<evaluation_points[i]<<"\n";
+    }
+    outFile.close();
+}
+
+void SmoothNet::saveKeyVertex(int frame)
+{
+    sprintf(key_vert_file,"./data/key_vertex/frame%d.csv",frame);
+    std::ofstream outFile(key_vert_file,std::ios::out);
+    for(int i=0;i<evaluation_points.size();i++)
+    {
+        int idx=evaluation_points[i];
+
+        uint2 pix;
+        pix.x=idx/vertices.size.y;
+        pix.y=idx%vertices.size.y;
+        float3 v=vertices[pix];
+        outFile<<v.x<<","<<v.y<<","<<v.z<<"\n";
+    }
+    outFile.close();
+}
