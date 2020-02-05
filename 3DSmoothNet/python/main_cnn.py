@@ -22,7 +22,7 @@ import tensorflow as tf
 
 # Import custom functions
 from core import config
-from core import network
+from core import network2 as network
 
 
 print('The version of TF is {}'.format(tf.__version__))
@@ -39,13 +39,10 @@ def main(config_arguments):
     if config_arguments.run_mode == "train":
         smooth_net.train()
     elif config_arguments.run_mode == "test":
-
         # Evaluate the network
         smooth_net.test()
-
     else:
         raise ValueError('%s is not a valid run mode.'.format(config_arguments.run_mode))
-
 
 
 if __name__ == "__main__":

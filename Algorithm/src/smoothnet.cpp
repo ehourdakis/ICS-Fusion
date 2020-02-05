@@ -16,12 +16,14 @@
 #include <random>
 #include<strings.h>
 
-//#define SDV_DIR "./data/sdv/"
-//#define CSV_DIR "./data/csv/"
-//#define OUT_FILE_NAME "./data/sdv/smoothnet.csv"
-//#define CSV_FILE "./data/csv/smoothnet.csv_3DSmoothNet.txt"
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #define KEYPTS_SIZE 200
+#define SOCKET_PATH "/tmp/3dsmoothnet"
 
 SmoothNet::SmoothNet(IcsFusion *f,kparams_t params)
     :_params(params),
@@ -40,12 +42,67 @@ SmoothNet::SmoothNet(IcsFusion *f,kparams_t params)
 
     counter_voxel = num_voxels * num_voxels * num_voxels;
 
-    descr=new float*[KEYPTS_SIZE];
+    lrf=new float*[KEYPTS_SIZE];
 
     for(int i=0;i<KEYPTS_SIZE;i++)
     {
-        descr[i] = new float[counter_voxel];
+        lrf[i] = new float[counter_voxel];
     }
+}
+
+bool SmoothNet::socketConnect()
+{
+    struct sockaddr_un addr;
+    if ( (sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
+    {
+        perror("socket error");
+        return false;
+    }
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, SOCKET_PATH, sizeof(addr.sun_path)-1);
+
+    if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) == -1)
+    {
+        perror("connect error");
+        exit(1);
+        return false;
+    }
+    return true;
+}
+
+bool SmoothNet::sendLrfToSoc()
+{
+    int tmp[2];
+    tmp[0]=KEYPTS_SIZE;
+    tmp[1]=counter_voxel;
+    write(sock,tmp,sizeof(int)*2);
+
+    for (int i = 0; i < KEYPTS_SIZE; i++)
+    {
+        float *d=lrf[i];
+        write(sock,d,sizeof(float)*counter_voxel);
+    }
+
+    char status=-1;
+    while(true)
+    {
+        ssize_t s=recv(sock,&status,sizeof(char),0);
+        if(s>0)
+        {
+            std::cout<<"status:"<<(int)status<<std::endl;
+            break;
+        }
+        else if(s<0)
+        {
+            char buff[64];
+            sprintf(buff,"Error reading from socket:%d",s);
+            perror(buff);
+            exit(1);
+        }
+    }
+    return true;
 }
 
 SmoothNet::~SmoothNet()
@@ -53,9 +110,9 @@ SmoothNet::~SmoothNet()
     clear();
     for(int i=0;i<KEYPTS_SIZE;i++)
     {
-        delete descr[i];
+        delete lrf[i];
     }
-    delete descr;
+    delete lrf;
 }
 
 void SmoothNet::clear()
@@ -169,7 +226,7 @@ void SmoothNet::calculateLRF(int frame)
                              counter_voxel,
                              smoothing_factor,
                              sdv_file,
-                             descr);
+                             lrf);
 }
 
 bool SmoothNet::callCnn(int frame)
@@ -216,8 +273,9 @@ void SmoothNet::readKeyPts()
     inFile.close();
 }
 
-bool SmoothNet::readDescriptorCsv()
+bool SmoothNet::readDescriptorCsv(int frame)
 {
+    sprintf(descr_file,"./data/descr/frame%d.csv",frame);
     descriptors.clear();
     std::ifstream inFile(descr_file,std::ios::in);
     while(true)
@@ -298,6 +356,7 @@ float SmoothNet::findTransformation(sMatrix4 &mat,float &rmse,int frame)
         return -2.0;
     }
 
+    /*
     sprintf(trans_file,"./data/transformations/frame%d.txt",frame);
 
     char cmd[512];
@@ -315,7 +374,7 @@ float SmoothNet::findTransformation(sMatrix4 &mat,float &rmse,int frame)
         std::cout<<"Error"<<std::endl;
         return -1.0;
     }
-
+    */
     std::ifstream inFile(trans_file,std::ios::in);
     float ret;
 

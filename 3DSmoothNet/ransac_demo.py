@@ -42,9 +42,6 @@ def execute_global_registration(source_down, target_down, reference_desc, target
 reference_pc = read_point_cloud(point_cloud_files[0])
 test_pc = read_point_cloud(point_cloud_files[1])
 
-#print(reference_pc.size())
-#print(test_pc.size())
-
 indices_ref = np.genfromtxt(keypoints_files[0])
 indices_test = np.genfromtxt(keypoints_files[1])
 

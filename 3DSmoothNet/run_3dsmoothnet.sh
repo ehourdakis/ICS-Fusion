@@ -7,4 +7,5 @@ source ${ENV}/bin/activate
 LOGS="./data/logs/main_cnn.log"
 
 python ./python/main_cnn.py --run_mode=test --evaluate_input_file="$1" --evaluate_output_file="$2" >"$LOGS" 2>&1 
+
 cd -

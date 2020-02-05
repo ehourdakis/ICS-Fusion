@@ -25,6 +25,7 @@ CloseLoop::CloseLoop(kparams_t p,sMatrix4 initPose)
     firstPose=initPose;
 
     smoothNet=new SmoothNet(_fusion,params);
+    smoothNet->socketConnect();
 }
 
 //For testing purposes only.
@@ -118,10 +119,15 @@ bool CloseLoop::processKeyFrame()
     smoothNet->loadFrameData(_frame);
     smoothNet->findKeyPts(_frame);
     smoothNet->calculateLRF(_frame);
-    smoothNet->callCnn(_frame);
-    smoothNet->readDescriptorCsv();
+
     smoothNet->saveKeyPts(_frame);
     smoothNet->saveKeyVertex(_frame);
+
+    smoothNet->sendLrfToSoc();
+
+//    smoothNet->callCnn(_frame);
+    smoothNet->readDescriptorCsv(_frame);
+
 
     sMatrix4 tr;
     float rmse;

@@ -22,10 +22,13 @@ class SmoothNet
         void findKeyPts(int frame);
         void calculateLRF(int frame);
         bool callCnn(int frame);
-        bool readDescriptorCsv();
+        bool readDescriptorCsv(int frame);
         void readKeyPts();
         void saveKeyPts(int frame);
         void saveKeyVertex(int frame);
+
+        bool socketConnect();
+        bool sendLrfToSoc();
 
         float findTransformation(sMatrix4 &mat, float &rmse, int frame);
 
@@ -58,7 +61,9 @@ class SmoothNet
         float lrf_radius;
         float smoothing_factor;
 
-        float **descr;
+        float **lrf;
+
+        int sock;
 
 };
 #endif

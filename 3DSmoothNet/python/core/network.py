@@ -278,7 +278,7 @@ class NetworkBuilder(object):
             self.step += 1
 
 
-    def test(self):
+    def test(self, lrf, evaluate_input_file, evaluate_output_file):
         # Check if the selected model exists
         model_path = self.config.saved_model_dir + '{}_dim/'.format(self.config.output_dim)
         model_file_name = self.config.saved_model_evaluate + '_{}_dim.ckpt'.format(self.config.output_dim)
@@ -293,15 +293,16 @@ class NetworkBuilder(object):
         print('Loaded saved model {0}.'.format(model_path + model_file_name))
 
         # Check if input data exists
-        if not os.path.exists(self.config.evaluate_input_file):
-            print('Evaluate input data file {} does not exist.'.format(self.config.evaluate_input_file))
-            raise ValueError('The input data file {} does not exist.'.format(self.config.evaluate_input_file))
+        #if not os.path.exists(self.config.evaluate_input_file):
+            #print('Evaluate input data file " does not exist.'.format(self.config.evaluate_input_file))
+            #raise ValueError('The input data file {} does not exist.'.format(self.config.evaluate_input_file))
 
         
         #evaluation_files = glob.glob(self.config.evaluate_input_folder + '*.csv')
-        file = self.config.evaluate_input_file
-        print('Loading test file: ' + file)
-        evaluation_features = np.fromfile(file, dtype=np.float32).reshape(-1, self.config.input_dim)
+        #file = evaluate_input_file
+        #print('Loading test file: ' + file)
+        #evaluation_features = np.fromfile(file, dtype=np.float32).reshape(-1, self.config.input_dim)
+        evaluation_features = lrf
 
         # Reshape the feature so that they fit the input format
         evaluation_features = np.reshape(evaluation_features, newshape=(-1, int(np.cbrt(self.config.input_dim)),
@@ -326,9 +327,9 @@ class NetworkBuilder(object):
 
         end = time.time()
 
-        print('{0} features computed in {1} seconds.'.format(len(evaluation_features), end - start))
+        #print('{0} features computed in {1} seconds.'.format(len(evaluation_features), end - start))
         # Get the name of the file
-        evaluate_file_name = file.split('/')[-1]
+        #evaluate_file_name = file.split('/')[-1]
 
         # Save 3DSmoothNet descriptors as *.npz and *.txt
         #np.savez_compressed(self.config.evaluate_output_folder + '/{}_dim/'.format(self.config.output_dim) +
@@ -338,9 +339,10 @@ class NetworkBuilder(object):
                     #evaluate_file_name[:-4] + '_3DSmoothNet.txt', all_predictions, delimiter=',', encoding=None)
                     
         #np.savez_compressed(self.config.evaluate_output_folder + '/' + evaluate_file_name[:-4] + '_3DSmoothNet.npz', data=all_predictions)
-        np.savetxt(self.config.evaluate_output_file, all_predictions, delimiter=',', encoding=None)
+        #np.savetxt(evaluate_output_file, all_predictions, delimiter=',', encoding=None)
+        return all_predictions
 
-        print('Wrote file ' + self.config.evaluate_output_file)
+        #print('Wrote file ' + self.config.evaluate_output_file)
 
 
     def validation(self):
