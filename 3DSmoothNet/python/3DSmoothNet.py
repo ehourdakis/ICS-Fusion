@@ -100,7 +100,7 @@ def registration(reference_pc_keypoints, test_pc_keypoints, reference_desc, test
     reference_pc = read_point_cloud(point_cloud_files[0])
     test_pc = read_point_cloud(point_cloud_files[1])
     draw_registration_result(reference_pc, test_pc,result_ransac.transformation)
-    #draw_registration_result(test_pc, reference_pc,result_ransac.transformation)
+    
     
     
     return result_ransac.fitness, result_ransac.inlier_rmse, result_ransac.transformation

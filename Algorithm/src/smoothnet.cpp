@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define KEYPTS_SIZE 200
+#define KEYPTS_SIZE 1000
 #define SOCKET_PATH "/tmp/3dsmoothnet"
 
 SmoothNet::SmoothNet(IcsFusion *f,kparams_t params)
@@ -228,9 +228,9 @@ bool SmoothNet::receiveTf(sMatrix4 &mat, float &fitness, float &rmse)
     char *buff=(char*)fbuff;
     while(totalRec<totalSize)
     {
-        int s=recv(sock,buff,min(1024,totalSize-totalRec),0 );
+        int s=recv(sock,buff,totalSize-totalRec,0 );
         if(s<0)
-            return -1;
+            return false;
 
         buff+=s;
         totalRec+=s;

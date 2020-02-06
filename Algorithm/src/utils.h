@@ -373,6 +373,12 @@ struct TrackData
     float J[6];
 };
 
+bool __forceinline__ __host__ __device__ operator==(const TrackData &d1,const TrackData &d2)
+{
+    return d1.result==d2.result;
+}
+
+
 template<typename P>
 inline Matrix4 toMatrix4(const TooN::SE3<P> & p)
 {

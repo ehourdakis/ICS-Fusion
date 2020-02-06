@@ -621,6 +621,19 @@ void IcsFusion::getIcpValues(Image<float3, Host> &depthVertex,
     cudaMemcpy(trackData.data(), reduction.data(),reduction.size.x*reduction.size.y*sizeof(TrackData),cudaMemcpyDeviceToHost);
 }
 
+float IcsFusion::getFitness()
+{
+    size_t size=reduction.size.x*reduction.size.y;
+    thrust::device_ptr<TrackData> ptr=thrust::device_pointer_cast(reduction.data());
+    TrackData d;
+    d.result=1;
+    int count = thrust::count(ptr,ptr+size,d);
+
+    float ret=(float)count/size;
+    return ret;
+}
+
+
 sMatrix6 IcsFusion::calculate_ICP_COV()
 {
     sMatrix4 currPose=pose;
@@ -628,23 +641,6 @@ sMatrix6 IcsFusion::calculate_ICP_COV()
     sMatrix4 delta=invPrevPose*currPose;
 
     Matrix4 projectedReference = camMatrix*inverse(Matrix4(&raycastPose));
-    //delta=fromVisionCord(delta);
-
-//     sMatrix4 delta=inverse(this->getPose())*this->getDeltaPose()*this->getPose();
-//     sMatrix4 delta=this->getDeltaPose();
-    
-//     Matrix4 pose=this->getDeltaPose();
-//     pose=inverse(pose)*this->getPose();
-//     pose=inverse(pose)*this->getPose();
-//    sMatrix4 delta=fromVisionCord(this->getDeltaPose());
-    
-//     sMatrix4 T_B_P;
-//     T_B_P.data[0]=make_float4(0,-1,0,0);
-//     T_B_P.data[1]=make_float4(0,0,-1,0);
-//     T_B_P.data[2]=make_float4(1,0,0,0);
-//     T_B_P.data[3]=make_float4(0,0,0,1);
-//     delta=T_B_P*delta;
-//     
     dim3 grid=divup(make_uint2(params.inputSize.x,params.inputSize.y),imageBlock );
 
     sMatrix6 initMat;

@@ -101,6 +101,10 @@ bool CloseLoop::processFrame()
         poses.push_back(pose);
         //calculate covariance before raycast
         sMatrix6 icpCov =_fusion->calculate_ICP_COV();
+        float icpFitness=_fusion->getFitness();
+        std::cout<<"ICP Fitness:"<<icpFitness<<std::endl;
+        icpCov=icpCov*(1/icpFitness);
+
         _isam->addFrame(pose,icpCov);
     }
 
@@ -127,9 +131,8 @@ bool CloseLoop::processKeyFrame()
         std::cout<<"Registration RMSE:"<<rmse<<std::endl;
 
         sMatrix6 cov;
-//        cov=cov*(rmse*rmse/fitness);
+        //cov=cov*(rmse*rmse/fitness);
         cov=cov*0.01;
-        //_isam->addPoseConstrain(currPose,prevKeyPose,tr,cov);
         _isam->addPoseConstrain(currPose,prevKeyPose,tr,cov);
         optimized=optimize();
 //        if(optimized)

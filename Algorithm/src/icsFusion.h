@@ -66,6 +66,7 @@ class IcsFusion
 
         void getVertices(std::vector<float3> &vertices);
 
+        float getFitness();
         sMatrix4 getPose() const
         {
             return pose;
