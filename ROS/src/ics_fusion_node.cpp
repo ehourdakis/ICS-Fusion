@@ -201,6 +201,12 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     
     loopCl->processFrame();
     
+    if(isKeyFrame)
+    {
+        ROS_INFO("Key frame");
+        loopCl->processKeyFrame();
+    }
+    
     
     
     publishOdom();
@@ -316,15 +322,12 @@ void publishOdom()
 
 void gemLeftCallback(const std_msgs::Float32 f)
 {
-    ROS_INFO("Left foot probability:%f\n",f.data);
     if(f.data>FEET_PROB_THR)
        leftFeetValue++;
 }
 
 void gemRightCallback(const std_msgs::Float32 f)
 {
-    ROS_INFO("Right foot probability:%f\n",f.data);
-
     if(f.data>FEET_PROB_THR)
        rightFeetValue++;
 }

@@ -119,6 +119,7 @@ bool CloseLoop::processKeyFrame()
     sMatrix4 tr;
     float rmse,fitness;
     int currPose=_isam->poseSize()-1;
+    bool optimized=false;
 
     if(smoothNet->findTf(tr,fitness,rmse,_frame) )
     {
@@ -126,14 +127,24 @@ bool CloseLoop::processKeyFrame()
         std::cout<<"Registration RMSE:"<<rmse<<std::endl;
 
         sMatrix6 cov;
-        cov=cov*(rmse*rmse/fitness);
+//        cov=cov*(rmse*rmse/fitness);
+        cov=cov*0.01;
+        //_isam->addPoseConstrain(currPose,prevKeyPose,tr,cov);
         _isam->addPoseConstrain(currPose,prevKeyPose,tr,cov);
-        optimize();
-
+        optimized=optimize();
+//        if(optimized)
+//        {
+//            reInit();
+//        }
     }
+//    if(optimized)
+//    {
+//        prevKeyPose=currPose;
+//    }
 
-    smoothNet->clear();
     prevKeyPose=currPose;
+    smoothNet->clear();
+
 
     return true;
 }
@@ -141,12 +152,11 @@ bool CloseLoop::processKeyFrame()
 bool CloseLoop::optimize()
 {
     double err=_isam->optimize(_frame);
+    std::cout<<"Optimization error:"<<err<<std::endl;
     if(err<params.optim_thr )
     {
         fixMap();
-        std::cout<<"Optimization error:"<<err<<std::endl;
-        //bool raycast=_fusion->raycasting(_frame);
-
+        bool raycast=_fusion->raycasting(_frame);
     }
     return true;
 }
@@ -167,12 +177,6 @@ void CloseLoop::fixMap()
     }
     sMatrix4 finalPose=_isam->getPose(poses.size()-1);
     _fusion->setPose(finalPose);
-
-    /*
-    clear();
-    _isam->clear();
-    _isam->init(finalPose);
-    */
 }
 
 sMatrix4 CloseLoop::getPose() const
@@ -180,12 +184,42 @@ sMatrix4 CloseLoop::getPose() const
     return _fusion->getPose();
 }
 
+void CloseLoop::reInit()
+{
+    int size=poses.size()-1;
+    for(uint i=0; i<size;i++ )
+    {
+        DepthHost depth=depths[i];
+        RgbHost rgb=rgbs[i];
+
+        depth.release();
+        rgb.release();
+    }
+
+    DepthHost initialDepth=depths[size];
+    RgbHost initialRgb=rgbs[size];
+    sMatrix4 initialPose=poses[size];
+
+    depths.clear();
+    rgbs.clear();
+    poses.clear();
+    _isam->clear();
+
+    depths.push_back(initialDepth);
+    rgbs.push_back(initialRgb);
+    poses.push_back(initialPose);
+
+    _isam->init(initialPose);
+    prevKeyPose=0;
+}
+
 void CloseLoop::clear()
 {        
-    for(uint i=0; i<poses.size();i++ )
+    int size=poses.size();
+    for(uint i=0; i<size;i++ )
     {
-        Host depth=depths[i];
-        Host rgb=rgbs[i];
+        DepthHost depth=depths[i];
+        RgbHost rgb=rgbs[i];
 
         depth.release();
         rgb.release();

@@ -20,9 +20,9 @@ set(SUITESPARSE_INCLUDE_DIR "/usr/include/suitesparse")
 # set(EIGEN3_INCLUDE_DIR "$ENV{HOME}/src/eigen")
 # set(OPENCV_INCLUDE_DIR "/home/tavu/workspace/slambench2/deps/opencv/include/opencv2/")
 
-
+find_package(CUDA)
 set(cpp_srcs
-#     ${CMAKE_CURRENT_LIST_DIR}/src/smoothnet.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/smoothnet.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/smoothnetcore.cpp
 )
 
@@ -38,8 +38,9 @@ SET_TARGET_PROPERTIES(3d_smooth_net_lib PROPERTIES COMPILE_FLAGS "-fPIC" )
 
 include_directories( ${PCL_INCLUDE_DIRS} )
 target_compile_definitions(3d_smooth_net_lib PRIVATE ${PCL_DEFINITIONS})
-target_link_libraries(3d_smooth_net_lib ${PCL_LIBRARIES})
-target_link_libraries(3d_smooth_net_lib ${OpenCV_LIBS} ${PCL_LIBRARIES})
+# target_link_libraries(3d_smooth_net_lib ${PCL_LIBRARIES} ${CUDA_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(3d_smooth_net_lib ${PCL_LIBRARIES}  ${OpenCV_LIBS})
+# target_link_libraries(3d_smooth_net_lib ${OpenCV_LIBS} ${PCL_LIBRARIES})
 
 
 

@@ -25,8 +25,8 @@ class SmoothNet
                     float &rmse,
                     int _frame);
 
-        void saveKeyPts(char *outFile,int frame);
-        void saveKeyVertex(char *outFile,int frame);
+        void saveKeyPts(char *outFileName, int frame);
+        void saveKeyVertex(char *outFileName,int frame);
 
     private:
         bool sendLrfToSoc();

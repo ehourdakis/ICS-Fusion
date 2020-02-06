@@ -56,7 +56,7 @@ set(cpp_srcs
     ${CMAKE_CURRENT_LIST_DIR}/src/keyptsmap.cpp
     #${CMAKE_CURRENT_LIST_DIR}/src/g2oGraph.cpp    
     ${CMAKE_CURRENT_LIST_DIR}/src/saveData.cpp
-    #${CMAKE_CURRENT_LIST_DIR}/src/smoothnet/smoothnetcore.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/smoothnetcore.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/smoothnet.cpp
 )
 
@@ -85,9 +85,14 @@ cuda_add_library(ics_fusion_cuda_library   STATIC  ${cuda_srcs}  OPTIONS -std=c+
 
 
 find_package( PCL 1.8 REQUIRED )
+include_directories( ${PCL_INCLUDE_DIRS} )
+
+
 
 SET_TARGET_PROPERTIES(ics_fusion_cuda_library PROPERTIES COMPILE_FLAGS "-fPIC" )
 add_library(ics_fusion_cuda ${cpp_srcs})
+
+target_compile_definitions(ics_fusion_cuda PRIVATE ${PCL_DEFINITIONS})
 
 # if( PCL_FOUND )
 #     include_directories( ${PCL_INCLUDE_DIRS} )
@@ -99,7 +104,7 @@ add_library(ics_fusion_cuda ${cpp_srcs})
 SET_TARGET_PROPERTIES(ics_fusion_cuda PROPERTIES COMPILE_FLAGS "-fPIC" )
 # target_link_libraries(ics_fusion_cuda ics_fusion_cuda_library ${CUDA_LIBRARIES} isam cholmod  ${OpenCV_LIBS} ${PCL_LIBRARIES})
 target_link_libraries(ics_fusion_cuda ics_fusion_cuda_library ${CUDA_LIBRARIES} isam cholmod  ${OpenCV_LIBS} )
-
+target_link_libraries(ics_fusion_cuda ${PCL_LIBRARIES})
 
 
 

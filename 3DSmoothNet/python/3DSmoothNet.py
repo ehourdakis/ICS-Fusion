@@ -23,7 +23,7 @@ keyVert = None
 prevKeyVert = None
 
 prevFrame = None
-#frame = 40
+frame = 40
 
 
 def receiveLrf(conn):
@@ -95,10 +95,13 @@ def registration(reference_pc_keypoints, test_pc_keypoints, reference_desc, test
     test.data = test_desc.T
     result_ransac = execute_global_registration(ref_key, test_key,ref, test, 0.05)
     
-    '''
-    point_cloud_files = [ "./data/ply/f_" + str(prevFrame) + "_vertices.ply","./data/ply/f_" + str(frame) + "_vertices.ply" ]        
+    
+    point_cloud_files = [ "./data/ply/f_" + str(prevFrame) + "_vertices.ply","./data/ply/f_" + str(frame) + "_vertices.ply" ]
+    reference_pc = read_point_cloud(point_cloud_files[0])
+    test_pc = read_point_cloud(point_cloud_files[1])
     draw_registration_result(reference_pc, test_pc,result_ransac.transformation)
-    '''
+    #draw_registration_result(test_pc, reference_pc,result_ransac.transformation)
+    
     
     return result_ransac.fitness, result_ransac.inlier_rmse, result_ransac.transformation
     
@@ -158,10 +161,11 @@ while True:
 
             
             prevKeyVert = keyVert
-            '''
-            frame = frame + 40            
+            
             prevFrame = frame
-            '''
+            frame = frame + 40            
+            
+            
     finally:
         # Clean up the connection
         connection.close()

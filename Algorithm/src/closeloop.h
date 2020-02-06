@@ -54,6 +54,7 @@ class CloseLoop
         std::vector<sMatrix4> poses;
 
         void clear();
+        void reInit();
 
         SmoothNet *smoothNet;
 

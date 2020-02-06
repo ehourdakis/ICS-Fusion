@@ -2,14 +2,14 @@
 
 #include<fstream>
 #include<eigen3/Eigen/Dense>
-#include <pcl/common/eigen.h>
+//#include <pcl/common/eigen.h>
 #include <vector>
 #include <algorithm>
 #include <pcl/point_types.h>
 #include <pcl/common/projection_matrix.h>
 
-#include <pcl/common/centroid.h>
-#include"smoothnetcore.h"
+//#include <pcl/common/centroid.h>
+#include<smoothnetcore.h>
 #include <random>
 #include<strings.h>
 
