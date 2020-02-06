@@ -45,7 +45,7 @@ def receiveLrf(conn):
     x = x.reshape(keyptsSize,counterVoxel)
     return keyptsSize, counterVoxel, x
 
-def execute_global_registration(source_down, target_down, reference_desc, target_desc, distance_threshold):
+def do_execute_global_registration(source_down, target_down, reference_desc, target_desc, distance_threshold):
     result = registration_ransac_based_on_feature_matching(
             source_down, target_down, reference_desc, target_desc,
             distance_threshold,
@@ -55,6 +55,8 @@ def execute_global_registration(source_down, target_down, reference_desc, target
             RANSACConvergenceCriteria(4000000, 500))
     #print(result.fitness)
     #print(result.inlier_rmse)
+    #print(result.correspondence_set)
+    #print(result.correspondence_set[0])    
     return result 
 
 def draw_registration_result(source, target, transformation):
@@ -78,7 +80,7 @@ def receiveKeyVertex(connection, size):
     x = x.reshape(size,3)
     return x
 
-def registration(reference_pc_keypoints, test_pc_keypoints, reference_desc, test_desc):    
+def execute_global_registration(reference_pc_keypoints, test_pc_keypoints, reference_desc, test_desc):    
     
     # Save ad open3d point clouds
     ref_key = PointCloud()
@@ -93,17 +95,17 @@ def registration(reference_pc_keypoints, test_pc_keypoints, reference_desc, test
 
     test = open3d.registration.Feature()
     test.data = test_desc.T
-    result_ransac = execute_global_registration(ref_key, test_key,ref, test, 0.05)
+    result_ransac = do_execute_global_registration(ref_key, test_key,ref, test, 0.05)
     
-    
+    """
     point_cloud_files = [ "./data/ply/f_" + str(prevFrame) + "_vertices.ply","./data/ply/f_" + str(frame) + "_vertices.ply" ]
     reference_pc = read_point_cloud(point_cloud_files[0])
     test_pc = read_point_cloud(point_cloud_files[1])
     draw_registration_result(reference_pc, test_pc,result_ransac.transformation)
+    """
     
-    
-    
-    return result_ransac.fitness, result_ransac.inlier_rmse, result_ransac.transformation
+    corr = np.asarray(result_ransac.correspondence_set, dtype=np.int32)
+    return result_ransac.fitness, result_ransac.inlier_rmse, result_ransac.transformation, corr
     
 def sendTf(conn, fitness, rmse, tf):
     buff = bytearray()
@@ -116,6 +118,15 @@ def sendTf(conn, fitness, rmse, tf):
     
     connection.send(buff)
 
+def sendCorresp(connection, corr):
+    buff = bytearray()
+    size = len(corr)
+    
+    buff = buff + struct.pack('i',size)
+    for x in corr:
+        buff = buff + struct.pack('i',x[0])
+        buff = buff + struct.pack('i',x[1])        
+    connection.send(buff)
 
 #3DSmoothNet configs
 config_arguments, unparsed_arguments = config.get_config()
@@ -152,13 +163,14 @@ while True:
             descr = smooth_net.test(lrf)
             
             if prevKeyVert is not None:
-                fitness, rmse, tr = registration(prevKeyVert, keyVert, prevDescr, descr)
+                fitness, rmse, tr, corr = execute_global_registration(prevKeyVert, keyVert, prevDescr, descr)
+                sendTf(connection, fitness, rmse, tr)
+                sendCorresp(connection, corr)
             else:
                 fitness = -1.0
                 rmse = -1.0
                 tr = np.zeros( (4,4) )
-            sendTf(connection, fitness, rmse, tr)
-
+                sendTf(connection, fitness, rmse, tr)
             
             prevKeyVert = keyVert
             

@@ -46,6 +46,8 @@ set(cuda_srcs
     ${CMAKE_CURRENT_LIST_DIR}/src/kernels.cu
     ${CMAKE_CURRENT_LIST_DIR}/src/icsfusion.cu
     ${CMAKE_CURRENT_LIST_DIR}/src/utils.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/kernelscalls.cu
+
 )
 
 set(cpp_srcs

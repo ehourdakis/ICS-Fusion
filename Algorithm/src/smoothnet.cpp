@@ -19,12 +19,15 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define KEYPTS_SIZE 1000
+#include"kernelscalls.h"
+
+#define KEYPTS_SIZE 100
 #define SOCKET_PATH "/tmp/3dsmoothnet"
 
 SmoothNet::SmoothNet(IcsFusion *f,kparams_t params)
     :_params(params),
-      firstTime(true)
+      firstTime(true),
+      corresp(0)
 {
     _fusion=f;
 
@@ -40,7 +43,11 @@ SmoothNet::SmoothNet(IcsFusion *f,kparams_t params)
     counter_voxel = num_voxels * num_voxels * num_voxels;
 
     lrf=new float*[KEYPTS_SIZE];
-    keyVert=new float3[KEYPTS_SIZE];
+    vertBuff1=new float3[KEYPTS_SIZE];
+    vertBuff2=new float3[KEYPTS_SIZE];
+
+    keyVert=vertBuff1;
+    prevKeyVert=vertBuff2;
 
     for(int i=0;i<KEYPTS_SIZE;i++)
     {
@@ -56,6 +63,8 @@ SmoothNet::~SmoothNet()
         delete lrf[i];
     }
     delete lrf;
+    delete vertBuff1;
+    delete vertBuff2;
 }
 
 void SmoothNet::clear()
@@ -63,12 +72,22 @@ void SmoothNet::clear()
     evaluation_points.clear();
     vertices.release();
     trackData.release();
+    if(corresp!=0)
+    {
+        delete corresp;
+        corresp=0;
+    }
 }
 
 void SmoothNet::loadFrameData(int frame)
 {
     vertices=_fusion->getAllVertex();
     trackData=_fusion->getTrackData();
+
+    float3 *tmp;
+    tmp=prevKeyVert;
+    prevKeyVert=keyVert;
+    keyVert=tmp;
 }
 
 bool SmoothNet::socketConnect()
@@ -211,13 +230,67 @@ void SmoothNet::calculateLRF(int frame)
 bool SmoothNet::findTf(sMatrix4 &tf,
                        float &fitness,
                        float &rmse,
+                       sMatrix6 &cov,
                        int _frame)
 {
     findKeyPts(_frame);
     calculateLRF(_frame);
     sendLrfToSoc();
     sendKeyVertex(_frame);
-    return receiveTf(tf,fitness,rmse);
+    bool b=receiveTf(tf,fitness,rmse);
+    std::cout<<fitness<<std::endl;
+    if(!b)
+    {
+        return false;
+    }
+    if(!receiveCorresp() )
+    {
+            return false;
+    }
+    cov=calculatePoint2PointCov(keyVert,
+                                KEYPTS_SIZE,
+                                prevKeyVert,
+                                KEYPTS_SIZE,
+                                corresp,
+                                correspSize,
+                                tf);
+
+    return true;
+}
+
+bool SmoothNet::receiveCorresp()
+{
+    std::cout<<"rec corresp"<<std::endl;
+    int size;
+    char *buff=(char*)&size;
+    //first receive the size
+    int s=recv(sock,buff,sizeof(int),0 );
+    if(s!=sizeof(int))
+        return false;
+
+    corresp = new int2[size];
+
+    std::cout<<size<<std::endl;
+    int totalSize=2*sizeof(int)*size;
+    int totalRec=0;
+    buff=(char*)corresp;
+
+    while(totalRec<totalSize)
+    {
+        int s=recv(sock,buff,totalSize-totalRec,0 );
+        if(s<0)
+            return false;
+
+        buff+=s;
+        totalRec+=s;
+    }
+    correspSize=size;
+    return true;
+
+    /*
+    for(int i=0;i<size;i++)
+        std::cout<<corresp[i].x<<","<<corresp[i].y<<std::endl;
+    */
 }
 
 bool SmoothNet::receiveTf(sMatrix4 &mat, float &fitness, float &rmse)

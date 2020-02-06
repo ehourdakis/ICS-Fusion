@@ -124,15 +124,15 @@ bool CloseLoop::processKeyFrame()
     float rmse,fitness;
     int currPose=_isam->poseSize()-1;
     bool optimized=false;
-
-    if(smoothNet->findTf(tr,fitness,rmse,_frame) )
+    sMatrix6 cov;
+    if(smoothNet->findTf(tr,fitness,rmse,cov,_frame) )
     {
         std::cout<<"Registration fitness:"<<fitness<<std::endl;
         std::cout<<"Registration RMSE:"<<rmse<<std::endl;
 
         sMatrix6 cov;
-        //cov=cov*(rmse*rmse/fitness);
-        cov=cov*0.01;
+        cov=cov*(rmse/fitness);
+//        cov=cov*0.01;
         _isam->addPoseConstrain(currPose,prevKeyPose,tr,cov);
         optimized=optimize();
 //        if(optimized)

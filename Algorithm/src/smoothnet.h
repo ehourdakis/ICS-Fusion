@@ -22,7 +22,7 @@ class SmoothNet
         void loadFrameData(int frame);
         bool findTf(sMatrix4 &tf,
                     float &fitness,
-                    float &rmse,
+                    float &rmse, sMatrix6 &cov,
                     int _frame);
 
         void saveKeyPts(char *outFileName, int frame);
@@ -31,6 +31,7 @@ class SmoothNet
     private:
         bool sendLrfToSoc();
         bool receiveTf(sMatrix4 &mat, float &fitness, float &rmse);
+        bool receiveCorresp();
         void sendKeyVertex(int frame);
         void findKeyPts(int frame);
         void calculateLRF(int frame);
@@ -48,6 +49,13 @@ class SmoothNet
 
         bool firstTime;
         float3 *keyVert;
+        float3 *prevKeyVert;
+
+        float3 *vertBuff1;
+        float3 *vertBuff2;
+
+        int2 *corresp;
+        int correspSize;
 
         float radius;
         int num_voxels;
