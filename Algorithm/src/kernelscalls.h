@@ -2,11 +2,11 @@
 #define KERNELS_CALLS_H
 #include"utils.h"
 
-sMatrix6 calculatePoint2PointCov(float3 *vert,
+sMatrix6 calculatePoint2PointCov(const float3 *vert,
                                  int vertSize,
-                                 float3 *prevVert,
+                                 const float3 *prevVert,
                                  int prevVertSize,
-                                 int2 *corresp,
-                                 int correspSize,
-                                 sMatrix4 tf);
+                                 const int2 *corresp,
+                                 size_t correspSize,
+                                 const sMatrix4 &tf);
 #endif

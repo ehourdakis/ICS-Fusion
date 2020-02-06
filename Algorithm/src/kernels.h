@@ -163,4 +163,23 @@ __global__ void icpCovarianceSecondTerm(const Image<float3>  dataVertex,
                                          const Matrix4 view,
                                          const Matrix4 delta,
                                          float cov_z);
+
+__global__ void point2PointCovFirstTerm(const float3 *vert,
+                                        int vertSize,
+                                        const float3 *prevVert,
+                                        int prevVertSize,
+                                        const int2 *corresp,
+                                        int correspSize,
+                                        sMatrix4 delta,
+                                        sMatrix6 *outData);
+
+__global__ void point2PointCovSecondTerm(const float3 *vert,
+                                        int vertSize,
+                                        const float3 *prevVert,
+                                        int prevVertSize,
+                                        const int2 *corresp,
+                                        int correspSize,
+                                        const sMatrix4 delta,
+                                        float cov_z,
+                                        sMatrix6 *outData);
 #endif // KERNEL_GLOBALS_H
