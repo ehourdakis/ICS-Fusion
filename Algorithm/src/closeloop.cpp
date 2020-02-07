@@ -103,7 +103,9 @@ bool CloseLoop::processFrame()
         sMatrix6 icpCov =_fusion->calculate_ICP_COV();
         float icpFitness=_fusion->getFitness();
         std::cout<<"ICP Fitness:"<<icpFitness<<std::endl;
-        icpCov=icpCov*(1/icpFitness);
+        //icpCov=icpCov*(1/icpFitness);
+//        icpCov=icpCov*1000;
+        std::cout<<"ICP Fitness:"<<icpCov<<std::endl;
 
         _isam->addFrame(pose,icpCov);
     }
@@ -130,10 +132,11 @@ bool CloseLoop::processKeyFrame()
         std::cout<<"Registration fitness:"<<fitness<<std::endl;
         std::cout<<"Registration RMSE:"<<rmse<<std::endl;
 
-        sMatrix6 cov;
-        cov=cov*(rmse/fitness);
+//        sMatrix6 cov;
+//        cov=cov*(rmse/fitness);
 //        cov=cov*0.01;
-        _isam->addPoseConstrain(currPose,prevKeyPose,tr,cov);
+        _isam->addPoseConstrain(prevKeyPose,currPose,tr,cov);
+        std::cout<<cov<<std::endl;
         optimized=optimize();
 //        if(optimized)
 //        {

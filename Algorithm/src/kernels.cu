@@ -1485,7 +1485,6 @@ __global__ void point2PointCovSecondTerm(const float3 *vert,
         return;
     }
     
-    
     float3 fp=vert[pair.x];
     float3 fq=prevVert[pair.y];
 

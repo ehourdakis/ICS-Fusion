@@ -101,7 +101,7 @@ def execute_global_registration(reference_pc_keypoints, test_pc_keypoints, refer
     point_cloud_files = [ "./data/ply/f_" + str(prevFrame) + "_vertices.ply","./data/ply/f_" + str(frame) + "_vertices.ply" ]
     reference_pc = read_point_cloud(point_cloud_files[0])
     test_pc = read_point_cloud(point_cloud_files[1])
-    draw_registration_result(reference_pc, test_pc,result_ransac.transformation)
+    draw_registration_result(test_pc,reference_pc,result_ransac.transformation)
     """
     
     corr = np.asarray(result_ransac.correspondence_set, dtype=np.int32)
@@ -163,7 +163,8 @@ while True:
             descr = smooth_net.test(lrf)
             
             if prevKeyVert is not None:
-                fitness, rmse, tr, corr = execute_global_registration(prevKeyVert, keyVert, prevDescr, descr)
+                #fitness, rmse, tr, corr = execute_global_registration(prevKeyVert, keyVert, prevDescr, descr)
+                fitness, rmse, tr, corr = execute_global_registration(keyVert, prevKeyVert, descr, prevDescr)
                 sendTf(connection, fitness, rmse, tr)
                 sendCorresp(connection, corr)
             else:
