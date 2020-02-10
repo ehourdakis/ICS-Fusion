@@ -16,9 +16,9 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(CATKIN_DEPENDS)
 
 include( ${CMAKE_CURRENT_LIST_DIR}/Algorithm/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/3DSmoothNet/CMakeLists.txt)
+# include(${CMAKE_CURRENT_LIST_DIR}/3DSmoothNet/CMakeLists.txt)
 
-include_directories(${CMAKE_CURRENT_LIST_DIR}/3DSmoothNet/src)
+# include_directories(${CMAKE_CURRENT_LIST_DIR}/3DSmoothNet/src)
 
 find_package(Eigen3   REQUIRED)
 find_package(CUDA)
@@ -42,7 +42,6 @@ message(WARNING ${CUDA_LIBRARIES})
 target_link_libraries(ics_fusion_node
     ${catkin_LIBRARIES}  
     ics_fusion_cuda
-    3d_smooth_net_lib
     /usr/local/cuda/lib64/libcudart_static.a
     /usr/lib/x86_64-linux-gnu/librt.so
     /usr/lib/x86_64-linux-gnu/libc_nonshared.a

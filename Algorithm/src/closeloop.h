@@ -41,7 +41,7 @@ class CloseLoop
         sMatrix4 prevPose;
         IcsFusion *_fusion;
         PoseGraph *_isam;
-        int prevKeyPose;
+        int prevKeyPoseIdx;
 
         kparams_t params;
         int _frame;
@@ -52,6 +52,8 @@ class CloseLoop
         std::vector<DepthHost> depths;
         std::vector<RgbHost> rgbs;
         std::vector<sMatrix4> poses;
+
+        bool firstKeyFrame;
 
         void clear();
         void reInit();

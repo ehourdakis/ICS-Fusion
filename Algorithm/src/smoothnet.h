@@ -20,26 +20,53 @@ class SmoothNet
         void clear();
         bool socketConnect();
         void loadFrameData(int frame);
-        bool findTf(sMatrix4 &tf,
+        bool findDescriptors(int frame);
+
+        /*
+        bool getTf(sMatrix4 &tf,
                     float &fitness,
-                    float &rmse, sMatrix6 &cov,
+                    float &rmse,
+                    sMatrix6 &cov,
                     int _frame);
+        */
+
+        sMatrix4 getTf() const
+        {
+            return last_tf;
+        }
+
+        float getFitness() const
+        {
+            return last_fitness;
+        }
+
+        float getRmse() const
+        {
+            return last_rmse;
+        }
+
+        sMatrix6 calculateCov();
 
         void saveKeyPts(char *outFileName, int frame);
         void saveKeyVertex(char *outFileName,int frame);
+
 
     private:
         bool sendLrfToSoc();
         bool receiveTf(sMatrix4 &mat, float &fitness, float &rmse);
         bool receiveCorresp();
         void sendKeyVertex(int frame);
-        void findKeyPts(int frame);
+        bool findKeyPts(int frame);
         void calculateLRF(int frame);
 
         kparams_t _params;
         Image<float3, Host> vertices;
         Image<TrackData, Host> trackData;
         int prevFrame;
+
+        float last_rmse;
+        float last_fitness;
+        sMatrix4 last_tf;
 
         uint2 keypts[1000];
         IcsFusion *_fusion;

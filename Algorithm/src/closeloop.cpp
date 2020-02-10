@@ -13,7 +13,8 @@
 #include <unistd.h>
 CloseLoop::CloseLoop(kparams_t p,sMatrix4 initPose)
     :params(p),
-     _frame(-1)
+     _frame(-1),
+     firstKeyFrame(true)
 {
     _fusion = new IcsFusion(params,initPose);
 
@@ -102,11 +103,9 @@ bool CloseLoop::processFrame()
         //calculate covariance before raycast
         sMatrix6 icpCov =_fusion->calculate_ICP_COV();
         float icpFitness=_fusion->getFitness();
-        std::cout<<"ICP Fitness:"<<icpFitness<<std::endl;
-        //icpCov=icpCov*(1/icpFitness);
-//        icpCov=icpCov*1000;
-        std::cout<<"ICP Fitness:"<<icpCov<<std::endl;
-
+        //std::cout<<"ICP Fitness:"<<icpFitness<<std::endl;
+        //std::cout<<"ICP Fitness:"<<icpCov<<std::endl;
+        //icpCov=icpCov*1000;
         _isam->addFrame(pose,icpCov);
     }
 
@@ -122,36 +121,27 @@ bool CloseLoop::processFrame()
 bool CloseLoop::processKeyFrame()
 {
     smoothNet->loadFrameData(_frame);
-    sMatrix4 tr;
-    float rmse,fitness;
-    int currPose=_isam->poseSize()-1;
-    bool optimized=false;
-    sMatrix6 cov;
-    if(smoothNet->findTf(tr,fitness,rmse,cov,_frame) )
+    bool found=smoothNet->findDescriptors(_frame);
+
+    if(found)
     {
-        std::cout<<"Registration fitness:"<<fitness<<std::endl;
-        std::cout<<"Registration RMSE:"<<rmse<<std::endl;
-
-//        sMatrix6 cov;
-//        cov=cov*(rmse/fitness);
-//        cov=cov*0.01;
-        _isam->addPoseConstrain(prevKeyPose,currPose,tr,cov);
-        std::cout<<cov<<std::endl;
-        optimized=optimize();
-//        if(optimized)
-//        {
-//            reInit();
-//        }
+        int currPoseIdx=_isam->poseSize()-1;
+        if(firstKeyFrame)
+        {
+            prevKeyPoseIdx=currPoseIdx;
+            firstKeyFrame=false;
+        }
+        else
+        {
+            sMatrix4 tf=smoothNet->getTf();
+            sMatrix6 cov=smoothNet->calculateCov();
+            _isam->addPoseConstrain(prevKeyPoseIdx,currPoseIdx,tf,cov);
+            optimize();
+            reInit();
+            prevKeyPoseIdx=0;
+        }
     }
-//    if(optimized)
-//    {
-//        prevKeyPose=currPose;
-//    }
-
-    prevKeyPose=currPose;
     smoothNet->clear();
-
-
     return true;
 }
 
@@ -216,7 +206,6 @@ void CloseLoop::reInit()
     poses.push_back(initialPose);
 
     _isam->init(initialPose);
-    prevKeyPose=0;
 }
 
 void CloseLoop::clear()

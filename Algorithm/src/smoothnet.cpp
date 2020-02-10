@@ -135,7 +135,7 @@ bool SmoothNet::sendLrfToSoc()
     return true;
 }
 
-void SmoothNet::findKeyPts(int frame)
+bool SmoothNet::findKeyPts(int frame)
 {
     evaluation_points.clear();
 
@@ -152,6 +152,10 @@ void SmoothNet::findKeyPts(int frame)
             }
             idx++;
         }
+    }
+    if(idx<KEYPTS_SIZE)
+    {
+        return false;
     }
 
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
@@ -174,8 +178,7 @@ void SmoothNet::findKeyPts(int frame)
 
         tmp_points[idx]=-1;
     }
-
-    //std::cout<<"Key pts size:"<<evaluation_points.size()<<std::endl;
+    return true;
 }
 
 void SmoothNet::calculateLRF(int frame)
@@ -226,7 +229,34 @@ void SmoothNet::calculateLRF(int frame)
                              lrf);
 }
 
+bool SmoothNet::findDescriptors(int frame)
+{
+    bool b=findKeyPts(frame);
+    if(!b)
+        return false;
 
+    calculateLRF(frame);
+    sendLrfToSoc();
+    sendKeyVertex(frame);
+    if( receiveTf(last_tf,last_fitness,last_rmse) )
+        receiveCorresp();
+
+    return b;
+}
+
+sMatrix6 SmoothNet::calculateCov()
+{
+    return calculatePoint2PointCov(keyVert,
+                                KEYPTS_SIZE,
+                                prevKeyVert,
+                                KEYPTS_SIZE,
+                                corresp,
+                                correspSize,
+                                last_tf);
+
+}
+
+/*
 bool SmoothNet::findTf(sMatrix4 &tf,
                        float &fitness,
                        float &rmse,
@@ -257,6 +287,7 @@ bool SmoothNet::findTf(sMatrix4 &tf,
 
     return true;
 }
+*/
 
 bool SmoothNet::receiveCorresp()
 {
@@ -295,6 +326,7 @@ bool SmoothNet::receiveCorresp()
 
 bool SmoothNet::receiveTf(sMatrix4 &mat, float &fitness, float &rmse)
 {
+    fitness=-1;
     float fbuff[18];
     int totalSize=18*sizeof(float);
     int totalRec=0;

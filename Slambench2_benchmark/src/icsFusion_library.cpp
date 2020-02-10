@@ -446,7 +446,7 @@ sMatrix4 getGt(/*SLAMBenchLibraryHelper *lib*/ const slambench::TimeStamp &ts_p,
 
 
 //enable this for room dataset
-#if 0
+#if 1
      float tmp=ret.data[0].y;
      ret.data[0].y=-ret.data[1].x;
      ret.data[1].x=-tmp;
