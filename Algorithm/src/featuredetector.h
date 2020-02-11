@@ -17,6 +17,7 @@
 class FeatureDetector
 {
     public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam);
 //        FeatureDetector(kparams_t p, IcsFusion *f);
         void detectFeatures(int frame,

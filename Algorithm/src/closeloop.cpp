@@ -120,7 +120,10 @@ bool CloseLoop::processFrame()
 
 bool CloseLoop::processKeyFrame()
 {
-    smoothNet->loadFrameData(_frame);
+    //smoothNet->loadFrameData(_frame);
+    optimize();
+    return false;
+
     bool found=smoothNet->findDescriptors(_frame);
 
     if(found)
@@ -148,6 +151,7 @@ bool CloseLoop::processKeyFrame()
 bool CloseLoop::optimize()
 {
     double err=_isam->optimize(_frame);
+    return false;
     std::cout<<"Optimization error:"<<err<<std::endl;
     if(err<params.optim_thr )
     {

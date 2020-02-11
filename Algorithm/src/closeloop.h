@@ -18,6 +18,7 @@
 class CloseLoop
 {
     public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         CloseLoop(kparams_t p, sMatrix4 initPose);
         ~CloseLoop();
 

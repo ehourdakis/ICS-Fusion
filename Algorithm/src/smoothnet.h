@@ -4,11 +4,11 @@
 #include"utils.h"
 #include"icsFusion.h"
 #include<kparams.h>
-
+#include <Eigen/Dense>
 class SmoothNet
 {
     public:
-
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         struct descr_t
         {
             float data[32];

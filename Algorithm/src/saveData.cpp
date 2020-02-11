@@ -3,6 +3,7 @@
 #include<fstream>
 #include <Eigen/Dense>
 
+
 void saveVoxelsToFile(char *fileName,const Volume volume,const kparams_t &params)
 {
     //TODO this function needs cleanup and speedup

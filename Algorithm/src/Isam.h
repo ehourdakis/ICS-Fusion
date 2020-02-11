@@ -14,6 +14,7 @@
 class Isam :public PoseGraph
 {
     public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         //Isam(const sMatrix4 &initalPose);
         Isam();
         void addFrame(const sMatrix4 &pose,const sMatrix6 &cov);

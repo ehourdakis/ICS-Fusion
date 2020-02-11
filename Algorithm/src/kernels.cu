@@ -940,17 +940,6 @@ ret(5,0)    ret(5,1)    ret(5,2)   ret(5,3)   ret(5,4)   ret(5,5)
             (niy*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - nix*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)))*(2*nix*(piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - 2*niy*(piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + 2*niz*(piy*cos(b)*cos(c) - piz*cos(b)*sin(c))) + (2*nix*(piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + 2*niy*(piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))))*(nix*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + niy*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + niz*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)));
 
     
-    /*
-    Eigen::MatrixXd d2J_dX2_temp(6,6);
-
-    d2J_dX2_temp << ret(0,0),     ret(0,1),	  ret(0,2),   ret(0,3),   ret(0,4),     ret(0,2),
-                    ret(1,0),    ret(1,1),	  ret(1,2),   ret(1,3),   ret(1,4),     ret(1,5),
-                    ret(2,0),    ret(2,1),    ret(2,2),    ret(2,3),   ret(2,4),     ret(2,5),
-                    ret(3,0),    ret(3,1),    ret(3,2),   ret(3,3),	  ret(3,4),     ret(3,5),
-                    ret(4,0),    ret(4,1),    ret(4,2),   ret(4,3),   ret(4,4),      ret(4,5),
-                    ret(5,0),    ret(5,1),    ret(5,2),   ret(5,3),   ret(5,4),     ret(5,5);
-
-    */
      
     outData.el()=ret;    
 }

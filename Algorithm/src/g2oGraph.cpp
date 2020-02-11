@@ -1,7 +1,8 @@
-#include"g2oGraph.h"
-#include"g2o/types/slam3d/edge_se3_pointxyz_depth.h"
-#include"g2o/types/slam3d/edge_se3_pointxyz.h"
-#include"g2o/core/eigen_types.h"
+#include<g2oGraph.h>
+#include<g2o/types/slam3d/edge_se3_pointxyz_depth.h>
+#include<g2o/types/slam3d/edge_se3_pointxyz.h>
+#include<g2o/core/eigen_types.h>
+
 
 #define MIN_LANDMARK_ID 1000
 #define MIN_ODOM_ID 10000
@@ -14,6 +15,13 @@ G2oGraph::G2oGraph(kparams_t params)
     _params(params)
 {
     nIterations=50;
+}
+
+
+//TODO
+void G2oGraph::addPoseConstrain(int p1,int p2,const sMatrix4 &pose, const sMatrix6 &cov)
+{
+    return;
 }
 
 void G2oGraph::init(const sMatrix4 &initialPose)
@@ -84,7 +92,7 @@ void G2oGraph::addFrame(const sMatrix4 &pose,const sMatrix6 &cov)
     }
 
     odom->setInformation(eigenCov.inverse());
-    g2o::Isometry3 isom=toG2oIsometry(delta);
+    g2o::SE3Quat isom=toG2oPose(delta);
     odom->setMeasurement(isom);
 
     odom->setParameterId(0, 0);
@@ -252,6 +260,11 @@ uint G2oGraph::landmarksSize() const
     return landmarkId-MIN_LANDMARK_ID;
 }
 
+//TODO
+void G2oGraph::addFixPose(const sMatrix4 &fixPose) 
+{
+
+}
 
 g2o::SE3Quat G2oGraph::toG2oPose(const sMatrix4 &pose)
 {
@@ -273,9 +286,10 @@ g2o::SE3Quat G2oGraph::toG2oPose(const sMatrix4 &pose)
     
     return g2o::SE3Quat(rot,trans);
 }
-
-g2o::Isometry3 G2oGraph::toG2oIsometry(const sMatrix4 &pose)
+/*
+g2o::SE3Quat G2oGraph::toG2oIsometry(const sMatrix4 &pose)
 {
+    return 
     Eigen::Matrix4d mat;
 
     for(int i=0;i<4;i++)
@@ -286,9 +300,10 @@ g2o::Isometry3 G2oGraph::toG2oIsometry(const sMatrix4 &pose)
         }
     }
 
-    g2o::Isometry3 ret(mat);
+    g2o::SE3Quat ret(mat);
     return ret;
 }
+*/
 
 sMatrix4 G2oGraph::fromG2oPose(const g2o::SE3Quat &g2oPose)
 {
