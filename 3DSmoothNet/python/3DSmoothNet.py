@@ -46,13 +46,13 @@ def receiveLrf(conn):
     return keyptsSize, counterVoxel, x
 
 def do_execute_global_registration(source_down, target_down, reference_desc, target_desc, distance_threshold):
-    result = registration_ransac_based_on_feature_matching(
+    result = registration.registration_ransac_based_on_feature_matching(
             source_down, target_down, reference_desc, target_desc,
             distance_threshold,
-            TransformationEstimationPointToPoint(False), 4,
-            [CorrespondenceCheckerBasedOnEdgeLength(0.9),
-            CorrespondenceCheckerBasedOnDistance(distance_threshold)],
-            RANSACConvergenceCriteria(4000000, 500))
+            registration.TransformationEstimationPointToPoint(False), 4,
+            [registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
+            registration.CorrespondenceCheckerBasedOnDistance(distance_threshold)],
+            registration.RANSACConvergenceCriteria(4000000, 500))
     #print(result.fitness)
     #print(result.inlier_rmse)
     #print(result.correspondence_set)
@@ -65,7 +65,7 @@ def draw_registration_result(source, target, transformation):
     source_temp.paint_uniform_color([1, 0.706, 0])
     target_temp.paint_uniform_color([0, 0.651, 0.929])
     source_temp.transform(transformation)
-    draw_geometries([source_temp, target_temp])
+    visualization.draw_geometries([source_temp, target_temp])
 
 def receiveKeyVertex(connection, size):
     ultimate_buffer = bytearray()
@@ -83,11 +83,11 @@ def receiveKeyVertex(connection, size):
 def execute_global_registration(reference_pc_keypoints, test_pc_keypoints, reference_desc, test_desc):    
     
     # Save ad open3d point clouds
-    ref_key = PointCloud()
-    ref_key.points = Vector3dVector(reference_pc_keypoints)
+    ref_key = geometry.PointCloud()
+    ref_key.points = utility.Vector3dVector(reference_pc_keypoints)
 
-    test_key = PointCloud()
-    test_key.points = Vector3dVector(test_pc_keypoints)
+    test_key = geometry.PointCloud()
+    test_key.points = utility.Vector3dVector(test_pc_keypoints)
 
     # Save as open3d feature 
     ref = open3d.registration.Feature()
