@@ -19,7 +19,7 @@ CloseLoop::CloseLoop(kparams_t p,sMatrix4 initPose)
     _fusion = new IcsFusion(params,initPose);
 
 #ifdef USE_G2O
-    _isam=new G2oGraph(params);
+     _isam=new G2oGraph(params);
 #else
     _isam=new Isam();
 #endif
@@ -121,9 +121,10 @@ bool CloseLoop::processFrame()
 bool CloseLoop::processKeyFrame()
 {
     //smoothNet->loadFrameData(_frame);
-    optimize();
-    return false;
-
+//     optimize();
+//     return false;
+#if 1
+    smoothNet->loadFrameData(_frame);
     bool found=smoothNet->findDescriptors(_frame);
 
     if(found)
@@ -145,13 +146,14 @@ bool CloseLoop::processKeyFrame()
         }
     }
     smoothNet->clear();
+#endif
     return true;
 }
 
 bool CloseLoop::optimize()
 {
     double err=_isam->optimize(_frame);
-    return false;
+//     return false;
     std::cout<<"Optimization error:"<<err<<std::endl;
     if(err<params.optim_thr )
     {

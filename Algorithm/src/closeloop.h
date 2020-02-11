@@ -1,9 +1,6 @@
 #ifndef CLOSELOOP_H
 #define CLOSELOOP_H
 
-// #include<mrpt/poses/CPose3DPDFGaussian.h>
-// #include <mrpt/poses/CPose3D.h>
-
 #include"icsFusion.h"
 #include"kparams.h"
 #include"Isam.h"

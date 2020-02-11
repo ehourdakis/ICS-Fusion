@@ -27,7 +27,7 @@
 class G2oGraph :public PoseGraph
 {
     public:
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+//         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         G2oGraph(kparams_t params);
         virtual ~G2oGraph()
         {
@@ -63,10 +63,10 @@ class G2oGraph :public PoseGraph
         std::vector<g2o::VertexSE3 *> vertexes;
         g2o::VertexSE3 *prevVertex;
         
-        static g2o::SE3Quat toG2oPose(const sMatrix4 &pose);
+        g2o::SE3Quat toG2oPose(const sMatrix4 &pose);
         //static g2o::SE3Quat toG2oIsometry(const sMatrix4 &pose);
-        static Eigen::Matrix<double,3,1> toG2oPoint(const float3 &vec);
-        static sMatrix4 fromG2oPose(const g2o::SE3Quat &g2oPose);
+        Eigen::Matrix<double,3,1> toG2oPoint(const float3 &vec);
+        sMatrix4 fromG2oPose(const g2o::SE3Quat &g2oPose);
 
 
 };

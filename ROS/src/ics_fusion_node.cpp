@@ -361,7 +361,7 @@ void publishPoints()
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "ite_fusion_node",ros::init_options::AnonymousName);
+    ros::init(argc, argv, "ics_fusion_node",ros::init_options::AnonymousName);
     ros::NodeHandle n_p("~");
 
     std::string cam_info_topic,depth_topic,rgb_topic,gem_left_topic,gem_right_topic;

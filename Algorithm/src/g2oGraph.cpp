@@ -18,10 +18,41 @@ G2oGraph::G2oGraph(kparams_t params)
 }
 
 
-//TODO
 void G2oGraph::addPoseConstrain(int p1,int p2,const sMatrix4 &pose, const sMatrix6 &cov)
 {
-    return;
+    g2o::VertexSE3 *v1=vertexes[p1];
+    g2o::VertexSE3 *v2=vertexes[p2];
+
+
+    //add odometry edge
+    g2o::EdgeSE3 *odom=new g2o::EdgeSE3();
+    odom->setId(odomId);
+    odomId++;
+
+    odom->setVertex(0,v1);
+    odom->setVertex(1,v2);
+
+
+    Eigen::Matrix<double, 6, 6> eigenCov= Eigen::Matrix<double, 6, 6>::Identity();
+    for(int i=0;i<4;i++)
+    {
+        for(int j=0;j<4;j++)
+            eigenCov(i,j)=cov(i,j);
+    }
+
+    odom->setInformation(eigenCov.inverse());
+    g2o::SE3Quat isom=toG2oPose(pose);
+    odom->setMeasurement(isom);
+
+    odom->setParameterId(0, 0);
+    if(bRobust)
+    {
+        g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+        odom->setRobustKernel(rk);
+        const float thHuber2D = sqrt(5.99);
+        rk->setDelta(thHuber2D);
+    }
+    optimizer.addEdge(odom);
 }
 
 void G2oGraph::init(const sMatrix4 &initialPose)
