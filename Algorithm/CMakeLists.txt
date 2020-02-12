@@ -17,11 +17,12 @@ LIST(APPEND G2O_LIBS
 )
 
 
-set(TOON_INCLUDE_PATHS "$ENV{HOME}/src/TooN")
+#set(TOON_INCLUDE_PATHS "$ENV{HOME}/src/TooN")
+set(TOON_INCLUDE_PATHS "$/usr/local/src/TooN")
 set(EIGEN_INCLUDE_DIRS "/usr/local/include/eigen3")
 set(CUDA_INCLUDE_DIRS "/usr/local/cuda/include")
 set(SUITESPARSE_INCLUDE_DIR "/usr/include/suitesparse")
-set(PCL_INCLUDE_DIR "/usr/include/pcl-1.7")
+set(PCL_INCLUDE_DIRS "/usr/include/pcl-1.7")
 
 find_package( OpenCV REQUIRED )
  
@@ -32,7 +33,7 @@ include_directories(
     ${EIGEN_INCLUDE_DIRS}
     ${SUITESPARSE_INCLUDE_DIR}
     ${OpenCV_INCLUDE_DIRS}
-    ${PCL_INCLUDE_DIR}
+    ${PCL_INCLUDE_DIRS}
 )
 
 set(cuda_srcs
@@ -67,7 +68,7 @@ cuda_add_library(ics_fusion_cuda_lib   STATIC  ${cuda_srcs}  OPTIONS -std=c++11;
 SET_TARGET_PROPERTIES(ics_fusion_cuda_lib PROPERTIES COMPILE_FLAGS "-fPIC" )
 
 
-include_directories( ${PCL_INCLUDE_DIRS} )
+
 
 add_library(ics_fusion_lib 
     ${cpp_srcs}

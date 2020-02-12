@@ -39,11 +39,8 @@ catkin_package(CATKIN_DEPENDS
 
 include( ${CMAKE_CURRENT_LIST_DIR}/Algorithm/CMakeLists.txt)
 
-find_package(PCL 1.7 REQUIRED)
+#SET LD_LIBRARY_PATH ME TO PCL
 
-# set(TOON_INCLUDE_PATHS "$ENV{HOME}/src/TooN")
-# set(EIGEN_INCLUDE_DIRS "/usr/local/include/eigen3")
-# set(SUITESPARSE_INCLUDE_DIR "/usr/include/suitesparse")
 
 
 include_directories(
@@ -65,7 +62,7 @@ message(WARNING PCL: ${PCL_LIBRARIES})
 target_link_libraries(ics_fusion_node 
     ics_fusion_lib
     ${catkin_LIBRARIES}
-        
+    ${PCL_LIBARIES}    
     pcl_common    
     pcl_kdtree
     pcl_filters
