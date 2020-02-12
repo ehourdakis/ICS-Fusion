@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.3)
 project(ics_fusion_lib)
 
-find_package(CUDA)
-add_compile_options(-std=c++14)
 
+
+find_package(CUDA)
+add_compile_options(-std=c++11)
+#add_definitions(-DUSE_G2O)
 LIST(APPEND G2O_LIBS
   cxsparse
   cholmod
@@ -49,7 +51,8 @@ set(cpp_srcs
     ${CMAKE_CURRENT_LIST_DIR}/src/closeloop.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/featuredetector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/keyptsmap.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/g2oGraph.cpp    
+    #${CMAKE_CURRENT_LIST_DIR}/src/g2oGraph.cpp   
+    ${CMAKE_CURRENT_LIST_DIR}/src/Isam.cpp     
     ${CMAKE_CURRENT_LIST_DIR}/src/saveData.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/smoothnetcore.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/smoothnet.cpp
@@ -76,13 +79,14 @@ add_library(ics_fusion_lib
 
 add_compile_options(-ggdb)
 SET_TARGET_PROPERTIES(ics_fusion_lib PROPERTIES COMPILE_FLAGS "-fPIC" )
-add_definitions(-DUSE_G2O)
 
+
+#Comment ISAM if use G2O
 target_link_libraries(ics_fusion_lib 
     ${G2O_LIBS}
     ${OpenCV_LIBS} 
-#     ${PCL_LIBRARIES}
     ics_fusion_cuda_lib
+    isam
 )
 
 # add_dependencies(talker node_example_gencfg node_example_generate_messages_cpp)

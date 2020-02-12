@@ -120,10 +120,7 @@ bool CloseLoop::processFrame()
 
 bool CloseLoop::processKeyFrame()
 {
-    //smoothNet->loadFrameData(_frame);
-//     optimize();
-//     return false;
-#if 1
+
     smoothNet->loadFrameData(_frame);
     bool found=smoothNet->findDescriptors(_frame);
 
@@ -146,7 +143,6 @@ bool CloseLoop::processKeyFrame()
         }
     }
     smoothNet->clear();
-#endif
     return true;
 }
 
