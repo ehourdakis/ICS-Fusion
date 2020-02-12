@@ -24,8 +24,8 @@
 #define KEYPTS_SIZE 100
 #define SOCKET_PATH "/tmp/3dsmoothnet"
 
-SmoothNet::SmoothNet(IcsFusion *f,kparams_t params)
-    :_params(params),
+SmoothNet::SmoothNet(IcsFusion *f, const kparams_t &par)
+    :params(par),
       firstTime(true),
       corresp(0)
 {
@@ -252,7 +252,8 @@ sMatrix6 SmoothNet::calculateCov()
                                 KEYPTS_SIZE,
                                 corresp,
                                 correspSize,
-                                last_tf);
+                                last_tf,
+                                params);
 
 }
 

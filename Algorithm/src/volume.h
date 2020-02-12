@@ -289,10 +289,7 @@ class Volume
         __device__
         float3 rgb_interp(const float3 &p) const
         {
-            float3 pos=p;/*
-            pos.x=pos.x+_offset.x*voxelSize.x;
-            pos.y=pos.x+_offset.y*voxelSize.y;
-            pos.z=pos.x+_offset.z*voxelSize.z;*/
+            float3 pos=p;
 
             float3 rgb;
             const Fptr red_ptr = &Volume::red;
@@ -318,11 +315,10 @@ class Volume
             cudaMemcpy(color,other.color,s*sizeof(float3),cudaMemcpyDeviceToDevice);
         }
 
-        void init(uint3 s, float3 d, int3 sliceSize)
+        void init(uint3 s, float3 d)
         {
             _resolution = s;
             dim = d;
-            _sliceSize=sliceSize;
             cudaMalloc((void**)&data,_resolution.x * _resolution.y * _resolution.z * sizeof(short2));
             cudaMalloc(&color,_resolution.x * _resolution.y * _resolution.z * sizeof(float3));
             cudaMemset(data, 0, _resolution.x * _resolution.y * _resolution.z * sizeof(short2));
@@ -330,17 +326,6 @@ class Volume
 
             voxelSize=dim/_resolution;
 
-            /*
-            float3 offsetF=make_float3( (-4.f/voxelSize.x)+0.5f,
-                                        (-4.f/voxelSize.y)+0.5f,
-                                        (-4.f/voxelSize.z)+0.5f);
-            _offset=make_int3(int(offsetF.x),int(offsetF.y),int(offsetF.z));
-            */
-            float3 offsetF=make_float3(-0.5-float(_resolution.x)/2,
-                                       -0.5-float(_resolution.y)/2,
-                                       -0.5-float(_resolution.z)/2);
-
-//            _offset=make_int3(int(offsetF.x),int(offsetF.y),int(offsetF.z));
             _offset=make_int3(0,0,0);
         }
 
@@ -372,7 +357,6 @@ class Volume
 
         uint3 _resolution;
         float3 dim;
-        int3 _sliceSize;
         float3 voxelSize;
         int3 _offset;
 

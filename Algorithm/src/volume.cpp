@@ -14,49 +14,7 @@ struct out_data
 //    float value;
 //    char c;
 };
-/*
-void dumpVolume(const char *  filename,const Volume volume)
-{
-    std::ofstream fDumpFile;
-    if (filename == NULL)
-    {
-        return;
-    }
 
-    std::cout << "Dumping the volumetric representation on file: " << filename << std::endl;
-    fDumpFile.open(filename, std::ios::out | std::ios::binary);
-    if (fDumpFile.fail())
-    {
-        std::cerr << "Error opening file: " << filename << std::endl;
-        exit(1);
-    }
-
-    // Retrieve the volumetric representation data from the GPU
-    short2 *hostData = (short2 *) malloc(volume.size().x * volume.size().y * volume.size().z * sizeof(short2));
-
-    if (cudaMemcpy(hostData, volume.data,
-                   volume.size().x * volume.size().y * volume.size().z * sizeof(short2),
-                   cudaMemcpyDeviceToHost) != cudaSuccess)
-    {
-        std::cerr << "Error reading volumetric representation data from the GPU. "<< std::endl;
-        exit(1);
-    }
-
-    // Dump on file without the y component of the short2 variable
-    for (int i = 0; i < volume.size().x * volume.size().y * volume.size().z; i++)
-    {
-        fDumpFile.write((char *) (hostData + i), sizeof(short));
-    }
-
-    fDumpFile.close();
-
-    if (hostData)
-    {
-        free(hostData);
-        hostData = NULL;
-    }
-}
-*/
 void generateTriangles(std::vector<float3>& triangles,  const Volume volume, short2 *hostData)
 {
     int3 min=volume.minVoxel();

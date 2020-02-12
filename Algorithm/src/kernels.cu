@@ -655,7 +655,8 @@ __global__ void icpCovarianceFirstTerm( const Image<float3> inVertex,
                                         Image<sMatrix6> outData,
                                         const Matrix4 Ttrack,
                                         const Matrix4 view,
-                                        const Matrix4 delta)
+                                        const Matrix4 delta,
+                                        const float cov_big)
 {
     float Tx = delta(0,3);
     float Ty = delta(1,3);
@@ -664,11 +665,6 @@ __global__ void icpCovarianceFirstTerm( const Image<float3> inVertex,
     float  roll  = atan2f(delta(2,1), delta(2,2));
     float  pitch = asinf(-delta(2,0));
     float  yaw   = atan2f(delta(1,0), delta(0,0));
-
-//    float roll  = atan2f(delta(2,1), delta(2,2));
-//    float pitch = atan2f(-delta(2,0) ,sqrt( sq(delta(2,1))+sq(delta(2,2))) );
-//    float yaw   = atan2f(delta(1,0), delta(0,0));
-
 
     float  x, y, z, a, b, c;
     x = Tx; y = Ty; z = Tz;
@@ -953,7 +949,8 @@ __global__ void icpCovarianceSecondTerm( const Image<float3> inVertex,
                                         const Matrix4 Ttrack,
                                         const Matrix4 view,
                                         const Matrix4 delta,
-                                        float cov_z)
+                                        float cov_z,
+                                        const float cov_big)
 {
 
     float Tx = delta(0,3);
@@ -1266,7 +1263,8 @@ __global__ void point2PointCovFirstTerm(const float3 *vert,
                                         const int2 *corresp,
                                         int correspSize,
                                         sMatrix4 delta,
-                                        sMatrix6 *outData)
+                                        sMatrix6 *outData,
+                                        const float cov_big)
 {
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
     if(idx>=correspSize)
@@ -1434,7 +1432,8 @@ __global__ void point2PointCovSecondTerm(const float3 *vert,
                                         int correspSize,
                                         const sMatrix4 delta,
                                         float cov_z,
-                                        sMatrix6 *outData)
+                                        sMatrix6 *outData,
+                                        const float cov_big)
 {
     
     int idx = blockIdx.x*blockDim.x + threadIdx.x;

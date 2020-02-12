@@ -10,7 +10,8 @@ namespace isam
 }
 
 
-Isam::Isam()
+Isam::Isam(const kparams_t &par)
+    :params(par)
 {
 }
 
@@ -76,7 +77,7 @@ void Isam::connectLandmark(float3 pos,int landIdx,int poseIdx, sMatrix3 &cov)
 void Isam::addFixPose(const sMatrix4 &fixPose)
 {
     sMatrix6 cov;
-    cov=cov*cov_small;
+    cov=cov*params.cov_small;
     Eigen::MatrixXd eigenCov=toEigen(cov);
 
     sMatrix4 delta=fixPose;
@@ -152,26 +153,11 @@ void Isam::init(const sMatrix4 &initalP)
 
 
     Pose3d origin=toIsamPose(initalPose);
-    Noise noise =  isam::Covariance(Eigen::MatrixXd::Identity(6, 6)* cov_small );
+    Noise noise =  isam::Covariance(Eigen::MatrixXd::Identity(6, 6)*params.cov_small );
 
     Pose3d_Factor* prior = new Pose3d_Factor(initial_pose_node, origin, noise);
     factors.push_back(prior);
     slam->add_factor(prior);
-
-//    Point3d_Node *landmark=new Point3d_Node();
-//    landmarks.push_back(landmark);
-//    slam->add_node(landmark);
-
-//    Noise noise2 = isam::Covariance(Eigen::MatrixXd::Identity(3, 3) * SMALL_COV );
-//    sMatrix4 delta1=inverse(initalPose);
-
-
-//    float3 pos1=make_float3(delta1(0,3),delta1(1,3),delta1(2,3));
-//    Point3d p1=toIsamPoint(pos1);
-//    Pose3d_Point3d_Factor* f1=new Pose3d_Point3d_Factor(
-//                                           initial_pose_node,landmark,p1,noise2);
-
-//    slam->add_factor(f1);
 }
 
 sMatrix4 Isam::getPose(int i) 

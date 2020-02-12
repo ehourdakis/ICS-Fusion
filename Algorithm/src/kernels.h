@@ -151,7 +151,8 @@ __global__ void icpCovarianceFirstTerm(const Image<float3> inVertex,
                                         Image<sMatrix6> outData,
                                         const Matrix4 Ttrack,
                                         const Matrix4 view,
-                                        const Matrix4 delta);
+                                        const Matrix4 delta,
+                                        const float cov_big);
 
 
 __global__ void icpCovarianceSecondTerm(const Image<float3>  dataVertex,
@@ -162,7 +163,8 @@ __global__ void icpCovarianceSecondTerm(const Image<float3>  dataVertex,
                                          const Matrix4 Ttrack,
                                          const Matrix4 view,
                                          const Matrix4 delta,
-                                         float cov_z);
+                                         float cov_z,
+                                         const float cov_big);
 
 __global__ void point2PointCovFirstTerm(const float3 *vert,
                                         int vertSize,
@@ -171,7 +173,8 @@ __global__ void point2PointCovFirstTerm(const float3 *vert,
                                         const int2 *corresp,
                                         int correspSize,
                                         sMatrix4 delta,
-                                        sMatrix6 *outData);
+                                        sMatrix6 *outData,
+                                        const float cov_big);
 
 __global__ void point2PointCovSecondTerm(const float3 *vert,
                                         int vertSize,
@@ -181,5 +184,6 @@ __global__ void point2PointCovSecondTerm(const float3 *vert,
                                         int correspSize,
                                         const sMatrix4 delta,
                                         float cov_z,
-                                        sMatrix6 *outData);
+                                        sMatrix6 *outData,
+                                        const float cov_big);
 #endif // KERNEL_GLOBALS_H

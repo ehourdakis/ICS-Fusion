@@ -21,7 +21,7 @@ CloseLoop::CloseLoop(kparams_t p,sMatrix4 initPose)
 #ifdef USE_G2O
      _isam=new G2oGraph(params);
 #else
-    _isam=new Isam();
+    _isam=new Isam(params);
 #endif
     firstPose=initPose;
 

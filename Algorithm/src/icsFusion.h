@@ -9,8 +9,8 @@
 class IcsFusion
 {
     public:
-
-        IcsFusion(kparams_t par, float3 initPose)
+        /*
+        IcsFusion(const kparams_t &par, float3 initPose)
             :params(par)
         {
             pose = toMatrix4(TooN::SE3<float>(
@@ -32,9 +32,9 @@ class IcsFusion
             viewPose = &pose;
             this->languageSpecificConstructor();
         }        
-
+        */
         //Allow a kfusion object to be created with a pose which include orientation as well as position
-        IcsFusion(kparams_t par,Matrix4 initPose);
+        IcsFusion(const kparams_t &par,Matrix4 initPose);
 
         void restorePose()
         {
@@ -151,7 +151,7 @@ class IcsFusion
         float largestep;
         Volume newDataVol;
 
-        kparams_t params;
+        const kparams_t &params;
 
         sMatrix4 raycastPose;
 

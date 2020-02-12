@@ -1,22 +1,21 @@
 #ifndef ISAM_H
 #define ISAM_H
 
-// #include<mrpt/poses/CPose3DPDFGaussian.h>
-// #include <mrpt/poses/CPose3D.h>
 
 #include"utils.h"
 #include<isam/slam3d.h>
-#include <isam/Properties.h>
-#include <isam/isam.h>
+#include<isam/Properties.h>
+#include<isam/isam.h>
 #include<isam/Point3d.h>
 #include"PoseGraph.h"
 #include<isam/Pose3d.h>
+#include"kparams.h"
 class Isam :public PoseGraph
 {
     public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         //Isam(const sMatrix4 &initalPose);
-        Isam();
+        Isam(const kparams_t &params);
         void addFrame(const sMatrix4 &pose,const sMatrix6 &cov);
         //void addLandmark(float3 pos1,float3 pos2,double dist);
 
@@ -53,10 +52,9 @@ class Isam :public PoseGraph
         static isam::Point3d toIsamPoint(const float3 &f);
 
     private:
-
-//        void addLandmarks(std::vector<float3> &keypoints,descr_t &descriptors);
-
         isam::Slam *slam;
+        const kparams_t &params;
+
         std::vector<isam::Pose3d_Node*> pose_nodes;
         std::vector<isam::Factor*> factors;
         std::vector<isam::Point3d_Node*> landmarks;
@@ -65,11 +63,5 @@ class Isam :public PoseGraph
         static Eigen::MatrixXd toEigen(sMatrix6 mat);
         static Eigen::MatrixXd toEigen(sMatrix3 mat);
         sMatrix4 prevPose;
-
-        /*
-        void transformToFrame(sMatrix4 &delta,sMatrix6 &cov);
-        mrpt::poses::CPose3DPDFGaussian toCPose3DPDF(sMatrix4 pose,sMatrix6 cov);
-        mrpt::poses::CPose3D toCPose(sMatrix4 pose);
-        */
 };
 #endif

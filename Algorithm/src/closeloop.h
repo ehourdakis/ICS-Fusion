@@ -41,7 +41,7 @@ class CloseLoop
         PoseGraph *_isam;
         int prevKeyPoseIdx;
 
-        kparams_t params;
+        const kparams_t &params;
         int _frame;
         
         void fixMap();

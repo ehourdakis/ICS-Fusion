@@ -14,7 +14,7 @@ class SmoothNet
             float data[32];
         };
 
-        SmoothNet(IcsFusion *f,kparams_t params);
+        SmoothNet(IcsFusion *f,const kparams_t &params);
         ~SmoothNet();
 
         void clear();
@@ -59,7 +59,7 @@ class SmoothNet
         bool findKeyPts(int frame);
         void calculateLRF(int frame);
 
-        kparams_t _params;
+        const kparams_t &params;
         Image<float3, Host> vertices;
         Image<TrackData, Host> trackData;
         int prevFrame;

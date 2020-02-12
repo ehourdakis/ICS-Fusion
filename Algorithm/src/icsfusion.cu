@@ -13,7 +13,7 @@
 dim3 imageBlock = dim3(32, 16);
 dim3 raycastBlock = dim3(32, 8);
 
-IcsFusion::IcsFusion(kparams_t par,Matrix4 initPose)
+IcsFusion::IcsFusion(const kparams_t &par, Matrix4 initPose)
     :params(par),
     _tracked(false)
 {
@@ -25,13 +25,13 @@ IcsFusion::IcsFusion(kparams_t par,Matrix4 initPose)
                             params.volume_size.y,
                             params.volume_size.z);
 
-    volume.init(vr, vd,params.voxelSliceSize);
-    newDataVol.init(vr, vd,params.voxelSliceSize);
+    volume.init(vr,vd);
+    newDataVol.init(vr,vd);
 
     pose = initPose;
     oldPose=pose;
     this->iterations.clear();
-    for (std::vector<int>::iterator it = params.pyramid.begin();it != params.pyramid.end(); it++)
+    for(auto it = params.pyramid.begin();it != params.pyramid.end(); it++)
     {    
         this->iterations.push_back(*it);
     }
@@ -655,7 +655,8 @@ sMatrix6 IcsFusion::calculate_ICP_COV()
                                                 covData,
                                                 trackPose,
                                                 projectedReference,
-                                                delta);
+                                                delta,
+                                                params.cov_big);
     
     cudaDeviceSynchronize();    
     size_t size=covData.size.x*covData.size.y;
@@ -670,7 +671,8 @@ sMatrix6 IcsFusion::calculate_ICP_COV()
                                                   trackPose,
                                                   projectedReference,
                                                   delta,                                                  
-                                                  1.0);
+                                                  1.0,
+                                                  params.cov_big);
     cudaDeviceSynchronize();
     sMatrix6 covSecondTerm = thrust::reduce(cov_ptr, cov_ptr+size, initMat, thrust::plus<sMatrix6>());
 
@@ -689,11 +691,11 @@ sMatrix6 IcsFusion::calculate_ICP_COV()
             //eliminate NaN values
             if(icpCov(i,j)!=icpCov(i,j))
             {
-                icpCov(i,j)=cov_big;
+                icpCov(i,j)=params.cov_big;
             }
             if(icpCov(j,i)!=icpCov(j,i))
             {
-                icpCov(j,i)=cov_big;
+                icpCov(j,i)=params.cov_big;
             }
             float val=( icpCov(i,j) + icpCov(j,i))/2;
             ret(i,j)=val;
