@@ -1,14 +1,11 @@
 cmake_minimum_required(VERSION 3.3)
 project(ics_fusion_lib)
 
-
-
 find_package(CUDA)
 add_compile_options(-std=c++11)
 #add_definitions(-DUSE_G2O)
 LIST(APPEND G2O_LIBS
-  cxsparse
-  cholmod
+  cxsparse  
   g2o_cli g2o_ext_freeglut_minimal g2o_simulator
   g2o_solver_slam2d_linear g2o_types_icp g2o_types_slam2d
   g2o_core g2o_interface g2o_solver_csparse g2o_solver_structure_only
@@ -19,8 +16,8 @@ LIST(APPEND G2O_LIBS
 )
 
 
-#set(TOON_INCLUDE_PATHS "$ENV{HOME}/src/TooN")
-set(TOON_INCLUDE_PATHS "$/usr/local/src/TooN")
+set(TOON_INCLUDE_PATHS "$ENV{HOME}/src/TooN")
+# set(TOON_INCLUDE_PATHS "/usr/local/src/TooN")
 set(EIGEN_INCLUDE_DIRS "/usr/local/include/eigen3")
 set(CUDA_INCLUDE_DIRS "/usr/local/cuda/include")
 set(SUITESPARSE_INCLUDE_DIR "/usr/include/suitesparse")
@@ -85,8 +82,10 @@ SET_TARGET_PROPERTIES(ics_fusion_lib PROPERTIES COMPILE_FLAGS "-fPIC" )
 target_link_libraries(ics_fusion_lib 
     ${G2O_LIBS}
     ${OpenCV_LIBS} 
+    ${CUDA_LIBRARIES}
     ics_fusion_cuda_lib
     isam
+    cholmod
 )
 
 # add_dependencies(talker node_example_gencfg node_example_generate_messages_cpp)

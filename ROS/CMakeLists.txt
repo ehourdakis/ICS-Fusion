@@ -15,8 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
     tf2_ros
 )
 
-
-
 catkin_package(CATKIN_DEPENDS 
     message_runtime 
     roscpp rospy std_msgs    
@@ -27,8 +25,6 @@ catkin_package(CATKIN_DEPENDS
 include( ${CMAKE_CURRENT_LIST_DIR}/Algorithm/CMakeLists.txt)
 
 #SET LD_LIBRARY_PATH ME TO PCL
-
-
 
 include_directories(
     ${CMAKE_CURRENT_LIST_DIR}/include 
@@ -43,8 +39,6 @@ add_executable(ics_fusion_node
 
 #add_compile_options(-ggdb)
 # SET_TARGET_PROPERTIES(talker PROPERTIES COMPILE_FLAGS "-ggdb" )
-
-message(WARNING PCL: ${PCL_LIBRARIES})
 
 target_link_libraries(ics_fusion_node 
     ics_fusion_lib
