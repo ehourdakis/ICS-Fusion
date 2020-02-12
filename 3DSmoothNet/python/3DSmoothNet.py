@@ -4,6 +4,10 @@ import os
 import numpy as np
 
 import tensorflow as tf
+#from tensorflow.python.client import device_lib
+#print(device_lib.list_local_devices()) # list of DeviceAttributes
+#print('Is GPU Available: ',tf.test.is_gpu_available()) # True/False
+
 from core import config
 from core import network
 

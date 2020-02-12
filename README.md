@@ -26,3 +26,13 @@ ln -s ${icsFusion}/ROS .
 ## compile
 
 catkin_make
+
+## Smoothnet3d needs 3.7GB on GPU
+## CUDA 9.0 PCL 1.7 CUDNN 7.0.5
+# Get CUDNN 7.0.5 for CUDA 9.0
+https://developer.nvidia.com/rdp/cudnn-archive
+#follow the instructions 
+https://docs.nvidia.com/deeplearning/sdk/cudnn-install/index.html#installlinux-tar
+
+# install tensorflow-gpu 1.10
+pip install tensorflow-gpu==1.10
