@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>    
+    <arg name="num" default="100" />
+    <node pkg="smoothnet_3d" name="rand_keypts" type="rand_keypts_node.py" args="$(arg num)" output="screen">
+        <param name="depth_topic" type="str" value="/camera/depth_registered/sw_registered/image_rect" />
+    </node>
+</launch>
+
+ 
