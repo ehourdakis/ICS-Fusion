@@ -21,7 +21,6 @@
 
 #include"kernelscalls.h"
 
-#define KEYPTS_SIZE 100
 #define SOCKET_PATH "/tmp/3dsmoothnet"
 
 SmoothNet::SmoothNet(IcsFusion *f, const kparams_t &par)
@@ -32,24 +31,22 @@ SmoothNet::SmoothNet(IcsFusion *f, const kparams_t &par)
     _fusion=f;
 
     smoothing_kernel_width=1.75;
-    num_voxels=16;
-    radius=0.150;
 
-    grid_size = num_voxels * num_voxels * num_voxels;
-    voxel_step_size = (2 * radius) / num_voxels;
-    lrf_radius = sqrt(3)*radius; // Such that the circumscribed sphere is obtained
-    smoothing_factor = smoothing_kernel_width * (radius / num_voxels); // Equals half a voxel size so that 3X is 1.5 voxel
+    grid_size = params.num_voxels * params.num_voxels * params.num_voxels;
+    voxel_step_size = (2 * params.sm3d_radius) / params.num_voxels;
+    lrf_radius = sqrt(3)*params.sm3d_radius; // Such that the circumscribed sphere is obtained
+    smoothing_factor = smoothing_kernel_width * (params.sm3d_radius / params.num_voxels); // Equals half a voxel size so that 3X is 1.5 voxel
 
-    counter_voxel = num_voxels * num_voxels * num_voxels;
+    counter_voxel = params.num_voxels * params.num_voxels * params.num_voxels;
 
-    lrf=new float*[KEYPTS_SIZE];
-    vertBuff1=new float3[KEYPTS_SIZE];
-    vertBuff2=new float3[KEYPTS_SIZE];
+    lrf=new float*[params.keypts_num];
+    vertBuff1=new float3[params.keypts_num];
+    vertBuff2=new float3[params.keypts_num];
 
     keyVert=vertBuff1;
     prevKeyVert=vertBuff2;
 
-    for(int i=0;i<KEYPTS_SIZE;i++)
+    for(int i=0;i<params.keypts_num;i++)
     {
         lrf[i] = new float[counter_voxel];
     }
@@ -58,7 +55,7 @@ SmoothNet::SmoothNet(IcsFusion *f, const kparams_t &par)
 SmoothNet::~SmoothNet()
 {
     clear();
-    for(int i=0;i<KEYPTS_SIZE;i++)
+    for(int i=0;i<params.keypts_num;i++)
     {
         delete lrf[i];
     }
@@ -115,11 +112,11 @@ bool SmoothNet::socketConnect()
 bool SmoothNet::sendLrfToSoc()
 {
     int tmp[2];
-    tmp[0]=KEYPTS_SIZE;
+    tmp[0]=params.keypts_num;
     tmp[1]=counter_voxel;
     write(sock,tmp,sizeof(int)*2);
 
-    for (int i = 0; i < KEYPTS_SIZE; i++)
+    for (int i = 0; i < params.keypts_num; i++)
     {
         int totalSend=0;
         int totalSize=sizeof(float)*counter_voxel;
@@ -153,7 +150,7 @@ bool SmoothNet::findKeyPts(int frame)
             idx++;
         }
     }
-    if(idx<KEYPTS_SIZE)
+    if(idx<params.keypts_num)
     {
         return false;
     }
@@ -162,7 +159,7 @@ bool SmoothNet::findKeyPts(int frame)
     std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
     std::uniform_int_distribution<int> distr(0, tmp_points.size());
 
-    for(int i=0;i<KEYPTS_SIZE;i++)
+    for(int i=0;i<params.keypts_num;i++)
     {
         int idx=distr(gen);
         while(tmp_points[idx]==-1)
@@ -197,7 +194,7 @@ void SmoothNet::calculateLRF(int frame)
     }
 
     // Initialize the voxel grid
-    flann::Matrix<float> voxel_coordinates = initializeGridMatrix(num_voxels, voxel_step_size, voxel_step_size, voxel_step_size);
+    flann::Matrix<float> voxel_coordinates = initializeGridMatrix(params.num_voxels, voxel_step_size, voxel_step_size, voxel_step_size);
 
 
     // Initialize the variables for the NN search and LRF computation
@@ -222,7 +219,7 @@ void SmoothNet::calculateLRF(int frame)
                              evaluation_points,
                              nearest_neighbors,
                              cloud_lrf,
-                             radius,
+                             params.sm3d_radius,
                              voxel_coordinates,
                              counter_voxel,
                              smoothing_factor,                             
@@ -247,9 +244,9 @@ bool SmoothNet::findDescriptors(int frame)
 sMatrix6 SmoothNet::calculateCov()
 {
     return calculatePoint2PointCov(keyVert,
-                                KEYPTS_SIZE,
+                                params.keypts_num,
                                 prevKeyVert,
-                                KEYPTS_SIZE,
+                                params.keypts_num,
                                 corresp,
                                 correspSize,
                                 last_tf,
@@ -279,9 +276,9 @@ bool SmoothNet::findTf(sMatrix4 &tf,
             return false;
     }
     cov=calculatePoint2PointCov(keyVert,
-                                KEYPTS_SIZE,
+                                params.keypts_num,
                                 prevKeyVert,
-                                KEYPTS_SIZE,
+                                params.keypts_num,
                                 corresp,
                                 correspSize,
                                 tf);
@@ -318,11 +315,6 @@ bool SmoothNet::receiveCorresp()
     }
     correspSize=size;
     return true;
-
-    /*
-    for(int i=0;i<size;i++)
-        std::cout<<corresp[i].x<<","<<corresp[i].y<<std::endl;
-    */
 }
 
 bool SmoothNet::receiveTf(sMatrix4 &mat, float &fitness, float &rmse)
