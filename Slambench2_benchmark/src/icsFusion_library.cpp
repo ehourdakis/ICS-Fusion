@@ -19,7 +19,8 @@
 
 #define SLAMBENCH_CH
 
-static kparams_t params;
+kparams_t params;
+
 bool tracked ;
 bool integrated;
 

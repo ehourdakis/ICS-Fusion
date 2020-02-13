@@ -16,7 +16,7 @@ class CloseLoop
 {
     public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        CloseLoop(kparams_t p, sMatrix4 initPose);
+        CloseLoop(const kparams_t &p, sMatrix4 initPose);
         ~CloseLoop();
 
         bool preprocess(uint16_t *depth,uchar3 *rgb);

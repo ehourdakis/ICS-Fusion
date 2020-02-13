@@ -11,7 +11,7 @@
 
 #include"constant_parameters.h"
 #include <unistd.h>
-CloseLoop::CloseLoop(kparams_t p,sMatrix4 initPose)
+CloseLoop::CloseLoop(const kparams_t &p,sMatrix4 initPose)
     :params(p),
      _frame(-1),
      firstKeyFrame(true)

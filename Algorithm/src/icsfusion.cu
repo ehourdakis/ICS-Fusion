@@ -42,7 +42,7 @@ IcsFusion::IcsFusion(const kparams_t &par, Matrix4 initPose)
     viewPose = &pose;
 
     uint2 cs = make_uint2(params.computationSize.x, params.computationSize.y);
-    std::cout<<"CS:"<<cs.x<<" "<<cs.y<<std::endl;
+    std::cout<<"CS:"<<cs.x<<","<<cs.y<<std::endl;
 
     std::cout<<"KAM"<<std::endl;
     std::cout<<camMatrix<<std::endl;
@@ -64,9 +64,6 @@ IcsFusion::IcsFusion(const kparams_t &par, Matrix4 initPose)
         inputVertex[i].alloc(cs >> i);
         inputNormal[i].alloc(cs >> i);
     }
-
-    std::cout<<"Size:"<<params.computationSize.x;
-    std::cout<<"Size:"<<params.computationSize.y<<std::endl;
 
     gaussian.alloc(make_uint2(radius * 2 + 1, 1));
     output.alloc(make_uint2(32, 8));
@@ -457,9 +454,6 @@ void IcsFusion::getImageProjection(sMatrix4 p, uchar3 *out)
 
 float IcsFusion::getWrongNormalsSize()
 {
-
-    std::cout<<"getWrongNormalsSize"<<std::endl;
-
 
     dim3 grid=divup(make_uint2(params.computationSize.x,params.computationSize.y),raycastBlock );
 
