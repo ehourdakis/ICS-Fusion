@@ -329,7 +329,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
 
             sprintf(buf,"data/ply/f_%d_vertices.ply",frame);
             Image<float3, Host> vert=icsFusion->getAllVertex();
-            saveVertexPly(buf,vert);
+            saveVertexTxtPly(buf,vert);
             vert.release();
 #endif
             //sprintf(buf,"data/volume/frame%d_volume",frame);

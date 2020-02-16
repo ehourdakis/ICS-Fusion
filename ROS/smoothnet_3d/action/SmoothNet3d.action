@@ -1,11 +1,14 @@
 # Define the goal
-int32 image_seq
-time image_time
+float32[] vert_x
+float32[] vert_y
+float32[] vert_z
 int32[] pts
+int32 prev
+int32 seq
 ---
 # Define the result
 int32[] corresp
-int32 tf
+int32[] tf
 int32 rmse
 int32 fitness
 ---

@@ -10,14 +10,15 @@ import sys
 
 k = int(sys.argv[1])
 
-rospy.init_node('rand_keypts')
+rospy.init_node('file_keypts')
 
 client = actionlib.SimpleActionClient('smoothnet_3d', smoothnet_3d.msg.SmoothNet3dAction)
 client.wait_for_server()
 
-file_name = rospy.get_param("~file_name")
-print(file_name)
-f = open(file_name, "r")
+ply_file = rospy.get_param("~ply_file")
+keypts_file = rospy.get_param("~keypts_file")
+
+f = open(ply_file, "r")
 size = 0
 s_x = []
 s_y = []
@@ -52,11 +53,24 @@ f.close()
 goal.prev=0;
 goal.seq=1
 
-xlist = range(size)
-r=sample(xlist,k)
 
-goal.pts.extend(r)
-print(goal.vert_x)
+f = open(keypts_file, "r")
+
+while True:
+    line = f.readline()
+    if line:    
+        #print(line)
+        #print(int(line))
+        goal.pts.append( int(line) )
+    else:
+        break
+f.close()
+
+#xlist = range(size)
+#r=sample(xlist,k)
+
+#goal.pts.extend(r)
+#print(goal.vert_x)
 
 
 client.send_goal(goal)

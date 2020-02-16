@@ -121,6 +121,38 @@ void savePose(char *fileName,const sMatrix4 &pose)
     file.close();
 }
 
+void saveVertexTxtPly(char *fileName,const Image<float3, Host> &vert)
+{
+    std::ofstream out_file(fileName);
+    uint2 size=vert.size;
+
+    char buf[128];
+    sprintf(buf,"ply\n"
+                 "format ascii 1.0\n"
+                 "element vertex %d\n",
+                 size.x*size.y);
+
+    out_file.write(buf,strlen(buf));
+
+    sprintf(buf,"property float x\n"
+                "property float y\n"
+                "property float z\n"
+                "end_header\n");
+    out_file.write(buf,strlen(buf));
+
+    for(int x=0;x<size.x;x++)
+    {
+        for(int y=0;y<size.y;y++)
+        {
+            uint2 pos=make_uint2(x,y);
+            float3 val=vert[pos];
+            out_file<<val.x<<" "<<val.y<<" "<<val.z<<"\n";
+        }
+    }
+    out_file.close();
+}
+
+
 void saveVertexPly(char *fileName,const Image<float3, Host> &vert)
 {
     std::ofstream out_file(fileName,std::ofstream::binary);

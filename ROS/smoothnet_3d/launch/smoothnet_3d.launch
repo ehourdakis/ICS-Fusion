@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>    
     <node name="smoothnet_3d" pkg="smoothnet_3d" type="smoothnet_3d_server.py" output="screen" > 
-        <param name="depth_topic" type="str" value="/camera/depth_registered/sw_registered/image_rect" />
+<!--         <param name="depth_topic" type="str" value="/camera/depth_registered/sw_registered/image_rect" /> -->
     </node>
         <!--<rosparam file="$(find footstep_handler)/config/cost_params.yaml" command="load" />
         <rosparam file="$(find footstep_handler)/config/footsteps.yaml" command="load" />

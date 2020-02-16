@@ -6,39 +6,47 @@ import sys
 import actionlib
 import smoothnet_3d.msg
 from collections import deque
+import LrfWrapper
+import numpy as np
+lib_path = '/home/tavu/workspace/ICS-Fusion/3DSmoothNet/build/'
+lib_name = 'libsmoothnet_3d_lrf.so'
 
-class SmoothNet3DServer(object):
-    def __init__(self, name):
-        self._images = deque()
-        self._as = actionlib.SimpleActionServer(name, smoothnet_3d.msg.SmoothNet3dAction, execute_cb=self.execute_cb, auto_start = False)
-        self._as.start()
-        self._max_images = 5
+server = None
+lrf = None
 
-    def callSmoothNet3D(self, image, pts):
-        print('Success')
-        result = smoothnet_3d.msg.SmoothNet3dResult()
-        return result
-        
-        
-    def execute_cb(self, goal):
-        # helper variables
-        print(goal)
-        
-        for image in self._images:
-            if image.header.seq == goal.image_seq:
-                _result = self.callSmoothNet3D(image, goal.pts)
-                self._as.set_succeeded(_result)  
-                return
-        self._as.set_aborted(None)
-        
-    def addImage(self, image):
-        self._images.append(image)
-        if len(self._images) >= self._max_images:
-            self._images.popleft()
-        
+def execute_cb(goal):
+    global lrf, server
+    lrf.calculateLrf(goal)
+    #lrf.test()
+    data = lrf.getLrf()
+    np.savetxt('/tmp/data1.csv', data, delimiter=',',fmt='%1.8f')
+    #print(n)
+    #lrf.test()
+    #print(goal.pts)
+
+    #print(type( bytes(goal.pts)) )
+    #print(bytes(goal.pts))
+    
+    
+    server.set_aborted(None)
+
+
 
 rospy.init_node('smoothnet_3d')
-image_topic = rospy.get_param("~depth_topic")
-server = SmoothNet3DServer('smoothnet_3d')
-rospy.Subscriber(image_topic, Image, server.addImage)
+
+num_voxels = 16
+sm3d_radius = 0.15;
+max_size = 500
+smoothing_kernel_width = 1.75
+lrf = LrfWrapper.Lrf(lib_path+lib_name,
+                     num_voxels,
+                     sm3d_radius,
+                     smoothing_kernel_width,
+                     max_size )
+
+server = actionlib.SimpleActionServer('smoothnet_3d', smoothnet_3d.msg.SmoothNet3dAction, execute_cb=execute_cb, auto_start = False)
+server.start()
+
+#lib.test()
+
 rospy.spin()
