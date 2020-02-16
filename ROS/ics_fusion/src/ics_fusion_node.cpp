@@ -23,6 +23,9 @@
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
+#include <actionlib/client/simple_action_client.h>
+#include <smoothnet_3d/SmoothNet3dAction.h>
+
 #include<closeloop.h>
 #include<kparams.h>
 #include<icsFusion.h>
@@ -41,6 +44,7 @@
 #define PUB_IMAGE_TOPIC "/ics_fusion/volume_rgb"
 #define PUB_KEY_FRAME_TOPIC "/ics_fusion/key_frame"
 
+#define SMOOTHNET_SERVER "smoothnet_3d"
 
 #define DEPTH_FRAME "camera_rgb_optical_frame"
 #define VO_FRAME "visual_odom"
@@ -72,6 +76,7 @@ bool publish_points=true;
 bool publish_key_frame=true;
 int publish_points_rate;
 int key_frame_thr;
+int keypt_size;
 
 //ros publishers
 ros::Publisher volume_pub;
@@ -83,6 +88,7 @@ ros::Publisher key_frame_pub;
 //frames
 std::string depth_frame,vo_frame,base_link_frame,odom_frame;
 
+bool keyFrameProcessing=false;
 //functions
 void publishVolumeProjection();
 void publishOdom();
@@ -91,6 +97,8 @@ void publishPoints();
 int leftFeetValue=0;
 int rightFeetValue=0;
 int passedFromLastKeyFrame=0;
+
+actionlib::SimpleActionClient<smoothnet_3d::SmoothNet3dAction> *smoothnetServer=0;
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans);
 
@@ -138,13 +146,90 @@ void readIteFusionParams(ros::NodeHandle &n_p)
     params=par;
 }
 
+void smoothnetResultCb(const actionlib::SimpleClientGoalState &state,
+            const smoothnet_3d::SmoothNet3dResultConstPtr& results)
+{
+    ROS_INFO("Finished in state [%s]", state.toString().c_str());
+    keyFrameProcessing=false;
+
+    if(results->fitness>0)
+    {
+        sMatrix4 tf;
+        for(int i=0;i<4;i++)
+        {
+            for(int j=0;j<4;j++)
+            {
+                tf(i,j)=results->tf[4*i+j];
+            }
+        }
+    
+        std::cout<<tf<<std::endl;
+    }
+//   ROS_INFO("Answer: %i", result->sequence.back());
+//   ros::shutdown();
+}
+
+void processKeyFrame()
+{    
+    std::cout<<"processKeyFrame"<<std::endl;
+    smoothnet_3d::SmoothNet3dGoal goal;
+    if(!loopCl->findKeyPts(goal.pts,keypt_size) )
+        return ;
+    
+    //TODO spead up this with some direct memory copy
+    Image<float3, Host> vert=loopCl->getAllVertex();
+    uint2 px;
+    
+    for(px.x=0;px.x<vert.size.x;px.x++)
+    {
+        for(px.y=0;px.y<vert.size.y;px.y++)
+        {
+            float3 v=vert[px];
+            goal.vert_x.push_back(v.x);
+            goal.vert_y.push_back(v.y);
+            goal.vert_z.push_back(v.z);
+        }
+    }
+    
+    leftFeetValue=0;
+    rightFeetValue=0;
+    passedFromLastKeyFrame=0;
+    keyFrameProcessing=true;
+    
+//     std::vector<int>
+//     Image<float3, Host> CloseLoop::getAllVertex()
+       
+    smoothnetServer->sendGoal(goal,&smoothnetResultCb);
+}
+
+bool isKeyFrame()
+{
+    if(keyFrameProcessing)
+        return false;
+    
+    int leftFeetVal=leftFeetValue;
+    int rightFeetVal=rightFeetValue;
+
+    bool ret=false;
+    if(passedFromLastKeyFrame>KEY_FRAME_THR)
+    {
+        if( (rightFeetVal>2) && (leftFeetVal<-2) )
+            ret=true;
+        else if( (rightFeetVal<-2) && (leftFeetVal>2)) 
+            ret=true;  
+    }  
+    return ret;
+}
+
 void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_msgs::ImageConstPtr &depth)
-{        
+{     
+    /*
     int leftFeetVal=leftFeetValue;
     int rightFeetVal=rightFeetValue;
 
     leftFeetValue=0;
     rightFeetValue=0;
+    
     
     bool isKeyFrame=false;
     if(passedFromLastKeyFrame>KEY_FRAME_THR)
@@ -166,7 +251,8 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
         data.data=(float)isKeyFrame;        
         key_frame_pub.publish(data);
     }
-        
+    */
+    passedFromLastKeyFrame++;
     if(strcmp(rgb->encoding.c_str(), "rgb8")==0) //rgb8
     {
         memcpy(inputRGB,rgb->data.data(),params.inputSize.y*params.inputSize.x*sizeof(uchar)*3 );        
@@ -201,12 +287,13 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     
     loopCl->processFrame();
     
+    /*
     if(isKeyFrame)
     {
         ROS_INFO("Key frame");
         loopCl->processKeyFrame();
     }
-    
+    */
     
     
     publishOdom();
@@ -324,12 +411,43 @@ void gemLeftCallback(const std_msgs::Float32 f)
 {
     if(f.data>FEET_PROB_THR)
        leftFeetValue++;
+    else if(f.data<0.2)
+        leftFeetValue--;
+    else
+        leftFeetValue=0;
+    
+    bool b=isKeyFrame();
+    if(b)
+        processKeyFrame();
+    
+    if(publish_key_frame)
+    {    
+        std_msgs::Float32 data;
+        data.data=(float)b;
+        key_frame_pub.publish(data);
+    }
 }
 
 void gemRightCallback(const std_msgs::Float32 f)
 {
     if(f.data>FEET_PROB_THR)
        rightFeetValue++;
+    else if(f.data<0.2)
+        rightFeetValue--;
+    else
+        rightFeetValue=0;
+    
+    
+    bool b=isKeyFrame();
+    if(b)
+        processKeyFrame();
+    
+    if(publish_key_frame)
+    {    
+        std_msgs::Float32 data;
+        data.data=(float)b;
+        key_frame_pub.publish(data);
+    }
 }
 
 void publishPoints()
@@ -392,10 +510,9 @@ int main(int argc, char **argv)
     n_p.param("publish_points",publish_points,true);
     n_p.param("publish_points_rate",publish_points_rate,PUBLISH_POINT_RATE);
     n_p.param("key_frame_thr",key_frame_thr,KEY_FRAME_THR);
+    n_p.param("keypt_size",keypt_size,100);
     
 
-    
-    
     ROS_INFO("Depth Frame:%s",depth_frame.c_str());      
     //TODO read fusion param from yaml
     
@@ -416,6 +533,8 @@ int main(int argc, char **argv)
     ros::Subscriber gem_left_sub = n_p.subscribe(gem_left_topic, 1, gemLeftCallback);
     ros::Subscriber gem_right_sub = n_p.subscribe(gem_right_topic,1, gemRightCallback);
 
+    smoothnetServer=new actionlib::SimpleActionClient<smoothnet_3d::SmoothNet3dAction>(SMOOTHNET_SERVER,true);
+    smoothnetServer->waitForServer();
     
     ROS_INFO("Waiting camera info");
     while(ros::ok())

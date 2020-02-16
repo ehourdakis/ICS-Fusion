@@ -34,6 +34,9 @@ class CloseLoop
         sMatrix4 getPose() const;
         bool optimize();
         float findTransformation(sMatrix4 &tr);
+        
+        bool findKeyPts(std::vector<int> &evaluation_points,int size);
+        Image<float3, Host> getAllVertex() const;
     private:
         sMatrix4 firstPose;
         sMatrix4 prevPose;
@@ -52,6 +55,8 @@ class CloseLoop
         std::vector<sMatrix4> poses;
 
         bool firstKeyFrame;
+        
+        bool tracked;
 
         void clear();
         void reInit();

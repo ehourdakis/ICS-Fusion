@@ -25,8 +25,8 @@ CloseLoop::CloseLoop(const kparams_t &p,sMatrix4 initPose)
 #endif
     firstPose=initPose;
 
-    smoothNet=new SmoothNet(_fusion,params);
-    smoothNet->socketConnect();
+//     smoothNet=new SmoothNet(_fusion,params);
+//     smoothNet->socketConnect();
 }
 
 //For testing purposes only.
@@ -59,7 +59,7 @@ bool CloseLoop::processFrame()
     _frame++;
     std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
 
-    bool tracked=_fusion->tracking(_frame);
+    tracked=_fusion->tracking(_frame);
     bool integrated=_fusion->integration(_frame);
 
     if(!tracked)
@@ -116,6 +116,63 @@ bool CloseLoop::processFrame()
     }
 
     return tracked;
+}
+
+bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,int size)
+{
+    evaluation_points.clear();
+    
+    if(!tracked)
+        return false;
+    
+    Image<TrackData, Host> trackData=_fusion->getTrackData();
+
+    std::vector<int> tmp_points;
+    uint idx=0;
+    uint2 pix;
+    for(pix.x=0;pix.x<trackData.size.x;pix.x++)
+    {
+        for(pix.y=0;pix.y<trackData.size.y;pix.y++)
+        {
+            if(trackData[pix].result==-5)
+            {
+                tmp_points.push_back(idx);
+            }
+            idx++;
+        }
+    }
+    if(idx<size)
+    {
+        return false;
+    }
+
+    evaluation_points.reserve(size);
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<int> distr(0, tmp_points.size());
+
+    for(int i=0;i<size;i++)
+    {
+        int idx=distr(gen);
+        while(tmp_points[idx]==-1)
+        {
+            idx=distr(gen);
+        }
+        evaluation_points.push_back(tmp_points[idx]);
+
+//         uint2 pix;
+//         pix.x=tmp_points[idx]/vertices.size.y;
+//         pix.y=tmp_points[idx]%vertices.size.y;
+//         keyVert[i]=vertices[pix];
+
+        tmp_points[idx]=-1;
+    }
+    return true;
+}
+
+Image<float3, Host> CloseLoop::getAllVertex() const
+{
+    return _fusion->getAllVertex();
 }
 
 bool CloseLoop::processKeyFrame()

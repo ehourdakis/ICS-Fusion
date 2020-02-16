@@ -424,7 +424,8 @@ void computeLocalDepthFeature(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
 
             for (int voxel_idx = 0; voxel_idx < counter_voxel - 1; voxel_idx++)
             {
-                //cout << " thread: " << omp_get_thread_num() << endl;
+                if(omp_get_thread_num()!=0)
+                    std::cout << " thread: " << omp_get_thread_num() << std::endl;
                 // Extract all the distances
                 std::vector<float> point_distances = dists[voxel_idx];
                 if (!point_distances.empty())
@@ -486,5 +487,5 @@ void computeLocalDepthFeature(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
 
     // Write descriptor to CSV file
     //saveVector(saveFileName, DIMATCH_Descriptor,evaluation_points.size(),counter_voxel);
-    saveVector("/tmp/data2.csv", DIMATCH_Descriptor,pts_size,counter_voxel);
+    //saveVector("/tmp/data2.csv", DIMATCH_Descriptor,pts_size,counter_voxel);
 }

@@ -117,10 +117,19 @@ def draw_registration_result(source, target, transformation):
 def execute_cb(goal):
     global lrf, server, smooth_net, prevDescr, descr, keyVert, prevKeyVert, vert, prevVert
 
+    print("new goal")
+    
+    if len(goal.pts) < 10:
+        server.set_aborted(None, 'Too few keypoints')
+        return
+    print("calculateLrf")
     lrf.calculateLrf(goal.vert_x,
                      goal.vert_y,
                      goal.vert_z,
                      goal.pts )
+    
+    print("lrf calculated")
+    
     data = lrf.getLrf()
     prevDescr = descr
     prevKeyVert = keyVert
@@ -130,16 +139,19 @@ def execute_cb(goal):
         vert = extractVert(goal.vert_x, goal.vert_y, goal.vert_z)
     
     descr = smooth_net.test(data)
+    
+    print("descriptors found")
+    
     keyVert = extractKeyVert(goal.vert_x,
                    goal.vert_y,
                    goal.vert_z,
                    goal.pts )
-
     
     result = smoothnet_3d.msg.SmoothNet3dResult()
     
     if prevKeyVert is not None:
         fitness, rmse, tr, corr = execute_global_registration(prevKeyVert, keyVert, prevDescr, descr)
+        print("tf found")
         result.fitness = fitness
         result.rmse = rmse
         for i in range(0,4):
@@ -156,6 +168,9 @@ def execute_cb(goal):
     else:
         result.fitness = -1.0
         result.rmse = -1.0
+
+    print("done")
+        
 
     server.set_succeeded(result)
 
