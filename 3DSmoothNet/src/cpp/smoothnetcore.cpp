@@ -348,8 +348,8 @@ void computeLocalDepthFeature(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
     pcl::ExtractIndices<pcl::PointXYZ> extract;
 
     int threads_ = omp_get_max_threads();
-    std::cout << "Starting SDV computation!" << std::endl;
-    std::cout << threads_ << " threads will be used!!" << std::endl;
+//     std::cout << "Starting SDV computation!" << std::endl;
+//     std::cout << threads_ << " threads will be used!!" << std::endl;
 
     // Initialize the point to the descriptor for each thread used
     Eigen::VectorXf *descriptor = new Eigen::VectorXf[threads_];
@@ -424,8 +424,8 @@ void computeLocalDepthFeature(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
 
             for (int voxel_idx = 0; voxel_idx < counter_voxel - 1; voxel_idx++)
             {
-                if(omp_get_thread_num()!=0)
-                    std::cout << " thread: " << omp_get_thread_num() << std::endl;
+//                 if(omp_get_thread_num()!=0)
+//                     std::cout << " thread: " << omp_get_thread_num() << std::endl;
                 // Extract all the distances
                 std::vector<float> point_distances = dists[voxel_idx];
                 if (!point_distances.empty())
