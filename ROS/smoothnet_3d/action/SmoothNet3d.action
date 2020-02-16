@@ -7,9 +7,10 @@ int32 prev
 int32 seq
 ---
 # Define the result
-int32[] corresp
-int32[] tf
-int32 rmse
-int32 fitness
+int32[] source_corr
+int32[] target_corr
+float32[] tf
+float32 rmse
+float32 fitness
 ---
 

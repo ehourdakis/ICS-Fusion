@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>    
+    <arg name="frame1" default="40" />
+    <arg name="frame2" default="120" />
+    <arg name="data_dir" default="/home/tavu/workspace/slambench2/data" />
+    <arg name="num" default="100" />
+    
+    <node pkg="smoothnet_3d" name="test_registration" type="test_registration_node.py" args="$(arg num)" output="screen">
+        <param name="ply_file1" value="$(arg data_dir)/ply/f_$(arg frame1)_vertices.ply" />
+        <param name="ply_file2" value="$(arg data_dir)/ply/f_$(arg frame2)_vertices.ply" />
+    </node>
+</launch>

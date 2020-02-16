@@ -85,7 +85,6 @@ def receiveKeyVertex(connection, size):
     return x
 
 def execute_global_registration(reference_pc_keypoints, test_pc_keypoints, reference_desc, test_desc):    
-    
     # Save ad open3d point clouds
     ref_key = geometry.PointCloud()
     ref_key.points = utility.Vector3dVector(reference_pc_keypoints)
@@ -99,15 +98,14 @@ def execute_global_registration(reference_pc_keypoints, test_pc_keypoints, refer
 
     test = open3d.registration.Feature()
     test.data = test_desc.T
-    result_ransac = do_execute_global_registration(ref_key, test_key,ref, test, 0.05)
+    result_ransac = do_execute_global_registration(ref_key, test_key, ref, test, 0.05)
     
     """
     point_cloud_files = [ "./data/ply/f_" + str(prevFrame) + "_vertices.ply","./data/ply/f_" + str(frame) + "_vertices.ply" ]
     reference_pc = read_point_cloud(point_cloud_files[0])
     test_pc = read_point_cloud(point_cloud_files[1])
     draw_registration_result(test_pc,reference_pc,result_ransac.transformation)
-    """
-    
+    """    
     corr = np.asarray(result_ransac.correspondence_set, dtype=np.int32)
     return result_ransac.fitness, result_ransac.inlier_rmse, result_ransac.transformation, corr
     

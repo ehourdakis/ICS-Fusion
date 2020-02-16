@@ -1,12 +1,11 @@
 <?xml version="1.0"?>
 <launch>    
-    <node name="smoothnet_3d" pkg="smoothnet_3d" type="smoothnet_3d_server.py" output="screen" > 
-<!--         <param name="depth_topic" type="str" value="/camera/depth_registered/sw_registered/image_rect" /> -->
+    <node name="smoothnet_3d" pkg="smoothnet_3d" type="smoothnet_3d_server.py" output="screen" >     
+        <param name="kepts_size" type="int" value="100" />
+        <param name="num_voxels" type="int" value="16" /> 
+        <param name="smoothing_kernel_width" type="double" value="1.75" /> 
+        <param name="radius" type="double" value="0.15" /> 
+        <param name="draw_registration" type="bool" value="false" /> 
     </node>
-        <!--<rosparam file="$(find footstep_handler)/config/cost_params.yaml" command="load" />
-        <rosparam file="$(find footstep_handler)/config/footsteps.yaml" command="load" />
-        <rosparam file="$(find footstep_handler)/config/planning_params.yaml" command="load" />
-        <remap from="goal" to="goal_inactive"/>-->
-
 </launch> 
  

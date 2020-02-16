@@ -40,6 +40,7 @@ catkin_package(CATKIN_DEPENDS
 set( nodes 
     src/smoothnet_3d_server.py
     src/rand_keypts_node.py
+    src/test_registration_node.py
 )
 
 catkin_install_python(PROGRAMS
