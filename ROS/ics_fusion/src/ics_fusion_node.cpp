@@ -98,6 +98,15 @@ int leftFeetValue=0;
 int rightFeetValue=0;
 int passedFromLastKeyFrame=0;
 
+//keypts vertex
+float3 *keyVert;
+float3 *prevKeyVert;
+float3 *vertBuff1;
+float3 *vertBuff2;
+int keyFrameIdx=-1;
+int prevKeyFrameIdx=-1;
+smoothnet_3d::SmoothNet3dResult snResult;
+
 actionlib::SimpleActionClient<smoothnet_3d::SmoothNet3dAction> *smoothnetServer=0;
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans);
@@ -146,12 +155,10 @@ void readIteFusionParams(ros::NodeHandle &n_p)
     params=par;
 }
 
-void smoothnetResultCb(const actionlib::SimpleClientGoalState &state,
-            const smoothnet_3d::SmoothNet3dResultConstPtr& results)
+void doLoopClosure()
 {
-    ROS_INFO("Finished in state [%s]", state.toString().c_str());
-    keyFrameProcessing=false;
-
+    smoothnet_3d::SmoothNet3dResult *results=&snResult;
+    
     if(results->fitness>0)
     {
         sMatrix4 tf;
@@ -164,7 +171,40 @@ void smoothnetResultCb(const actionlib::SimpleClientGoalState &state,
         }
     
         std::cout<<tf<<std::endl;
+        loopCl->addTf(keyFrameIdx,prevKeyFrameIdx,tf,results->fitness,results->source_corr,results->target_corr,keyVert,prevKeyVert,keypt_size);
     }
+    
+    results->fitness=-1;
+    
+    
+    std::cout<<"KEY frame processed"<<std::endl;
+}
+
+void smoothnetResultCb(const actionlib::SimpleClientGoalState &state,
+            const smoothnet_3d::SmoothNet3dResultConstPtr& results)
+{
+    ROS_INFO("Finished in state [%s]", state.toString().c_str());
+    keyFrameProcessing=false;
+    snResult=*results;
+    return;
+    if(results->fitness>0)
+    {
+        sMatrix4 tf;
+        for(int i=0;i<4;i++)
+        {
+            for(int j=0;j<4;j++)
+            {
+                tf(i,j)=results->tf[4*i+j];
+            }
+        }
+    
+        std::cout<<tf<<std::endl;
+        loopCl->addTf(keyFrameIdx,prevKeyFrameIdx,tf,results->fitness,results->source_corr,results->target_corr,keyVert,prevKeyVert,keypt_size);
+    }
+    
+    
+    
+    std::cout<<"KEY frame processed"<<std::endl;
 //   ROS_INFO("Answer: %i", result->sequence.back());
 //   ros::shutdown();
 }
@@ -173,11 +213,28 @@ void processKeyFrame()
 {    
     std::cout<<"processKeyFrame"<<std::endl;
     smoothnet_3d::SmoothNet3dGoal goal;
-    if(!loopCl->findKeyPts(goal.pts,keypt_size) )
-        return ;
     
-    //TODO spead up this with some direct memory copy
+    //swap vertex buffers
+    float3 *tmp;
+    tmp=prevKeyVert;
+    prevKeyVert=keyVert;
+    keyVert=tmp;
+    
+    
     Image<float3, Host> vert=loopCl->getAllVertex();
+    if(!loopCl->findKeyPts(goal.pts,keypt_size,vert,keyVert ) )
+    {
+        //swap vertex buffers back
+        float3 *tmp;
+        tmp=prevKeyVert;
+        prevKeyVert=keyVert;
+        keyVert=tmp;
+        return ;
+    }
+    
+    prevKeyFrameIdx=keyFrameIdx;
+    keyFrameIdx=loopCl->getPoseGraphIdx();
+    //TODO speed up this with some direct memory copy
     uint2 px;
     
     for(px.x=0;px.x<vert.size.x;px.x++)
@@ -198,7 +255,7 @@ void processKeyFrame()
     
 //     std::vector<int>
 //     Image<float3, Host> CloseLoop::getAllVertex()
-       
+    snResult.fitness=-1;
     smoothnetServer->sendGoal(goal,&smoothnetResultCb);
 }
 
@@ -295,6 +352,8 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     }
     */
     
+    if(snResult.fitness>0)
+        doLoopClosure();
     
     publishOdom();
     
@@ -512,7 +571,6 @@ int main(int argc, char **argv)
     n_p.param("key_frame_thr",key_frame_thr,KEY_FRAME_THR);
     n_p.param("keypt_size",keypt_size,100);
     
-
     ROS_INFO("Depth Frame:%s",depth_frame.c_str());      
     //TODO read fusion param from yaml
     
@@ -528,6 +586,12 @@ int main(int argc, char **argv)
     }
 
     odom_pub = n_p.advertise<nav_msgs::Odometry>(PUB_ODOM_TOPIC, 50);
+    
+    vertBuff1=new float3[keypt_size];
+    vertBuff2=new float3[keypt_size];
+    
+    prevKeyVert=vertBuff1;
+    keyVert=vertBuff2;
     
     //subscribe to GEM
     ros::Subscriber gem_left_sub = n_p.subscribe(gem_left_topic, 1, gemLeftCallback);

@@ -1260,7 +1260,8 @@ __global__ void point2PointCovFirstTerm(const float3 *vert,
                                         int vertSize,
                                         const float3 *prevVert,
                                         int prevVertSize,
-                                        const int2 *corresp,
+                                        const int *sourceCorr,
+                                        const int *targetCorr,
                                         int correspSize,
                                         sMatrix4 delta,
                                         sMatrix6 *outData,
@@ -1284,6 +1285,7 @@ __global__ void point2PointCovFirstTerm(const float3 *vert,
     a = yaw; b = pitch; c = roll;// important // According to the rotation matrix I used and after verification, it is Yaw Pitch ROLL = [a,b,c]== [R] matrix used in the MatLab also :)
 
     sMatrix6 ret;
+    /*
     int2 pair=corresp[idx];
 
     if(pair.x<0 || pair.x>=vertSize)
@@ -1301,9 +1303,28 @@ __global__ void point2PointCovFirstTerm(const float3 *vert,
         outData[idx]=ret;
         return;
     }
-
-    float3 fp=vert[pair.x];
-    float3 fq=prevVert[pair.y];
+    */
+    int sourceIdx=sourceCorr[idx];
+    int targetIdx=targetCorr[idx];
+    
+    if(sourceIdx<0 || sourceIdx>=vertSize)
+    {
+        for(int i=0;i<36;i++)
+            ret.data[i]=cov_big;
+        outData[idx]=ret;
+        return;
+    }
+    
+    if(targetIdx<0 || targetIdx>=prevVertSize )
+    {
+        for(int i=0;i<36;i++)
+            ret.data[i]=cov_big;
+        outData[idx]=ret;
+        return;
+    }
+    
+    float3 fp=vert[sourceIdx];
+    float3 fq=prevVert[targetIdx];
 
     float pix=fp.x;
     float piy=fp.y;
@@ -1428,7 +1449,8 @@ __global__ void point2PointCovSecondTerm(const float3 *vert,
                                         int vertSize,
                                         const float3 *prevVert,
                                         int prevVertSize,
-                                        const int2 *corresp,
+                                        const int *sourceCorr,
+                                        const int *targetCorr,
                                         int correspSize,
                                         const sMatrix4 delta,
                                         float cov_z,
@@ -1454,7 +1476,7 @@ __global__ void point2PointCovSecondTerm(const float3 *vert,
     a = yaw; b = pitch; c = roll;// important // According to the rotation matrix I used and after verification, it is Yaw Pitch ROLL = [a,b,c]== [R] matrix used in the MatLab also :)
 
     sMatrix6 ret;
-    
+    /*
     int2 pair=corresp[idx];
     
     if(pair.x<0 || pair.x>=vertSize)
@@ -1475,7 +1497,31 @@ __global__ void point2PointCovSecondTerm(const float3 *vert,
     
     float3 fp=vert[pair.x];
     float3 fq=prevVert[pair.y];
-
+    */
+    
+    int sourceIdx=sourceCorr[idx];
+    int targetIdx=targetCorr[idx];
+    
+    if(sourceIdx<0 || sourceIdx>=vertSize)
+    {
+        for(int i=0;i<36;i++)
+            ret.data[i]=cov_big;
+        outData[idx]=ret;
+        return;
+    }
+    
+    if(targetIdx<0 || targetIdx>=prevVertSize )
+    {
+        for(int i=0;i<36;i++)
+            ret.data[i]=cov_big;
+        outData[idx]=ret;
+        return;
+    }
+    
+    float3 fp=vert[sourceIdx];
+    float3 fq=prevVert[targetIdx];
+    
+    
     float pix=fp.x;
     float piy=fp.y;
     float piz=fp.z;

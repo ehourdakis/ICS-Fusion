@@ -3,12 +3,13 @@
 
 #include"utils.h"
 #include"kparams.h"
+#include<vector>
 sMatrix6 calculatePoint2PointCov(const float3 *vert,
                                  int vertSize,
                                  const float3 *prevVert,
                                  int prevVertSize,
-                                 const int2 *corresp,
-                                 size_t correspSize,
+                                 const std::vector<int> &sourceCorr,
+                                 const std::vector<int> &targetCorr,
                                  const sMatrix4 &tf,
                                  const kparams_t &params);
 #endif

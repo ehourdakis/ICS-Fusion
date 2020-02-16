@@ -24,7 +24,7 @@ class Isam :public PoseGraph
         virtual int addLandmark(float3 pos) override;
         virtual void connectLandmark(float3 pos,int landIdx,int poseIdx, sMatrix3 &cov) override;
 
-        virtual void init(const sMatrix4 &initalPose) override;
+        virtual void init(const sMatrix4 &initalPose,const sMatrix6 &cov) override;
         virtual void clear() override;
 
         void addFixPose(const sMatrix4 &fixPose);

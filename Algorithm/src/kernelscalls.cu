@@ -8,8 +8,9 @@ sMatrix6 calculatePoint2PointCov(const float3 *vert,
                                  int vertSize,
                                  const float3 *prevVert,
                                  int prevVertSize,
-                                 const int2 *corresp,
-                                 size_t correspSize,
+                                 //const int2 *corresp,
+                                 const std::vector<int> &sourceCorr,
+                                 const std::vector<int> &targetCorr,
                                  const sMatrix4 &tf,
                                  const kparams_t &params)
 {
@@ -21,10 +22,15 @@ sMatrix6 calculatePoint2PointCov(const float3 *vert,
     cudaMalloc(&prevVertGpu,prevVertSize*sizeof(float3));
     cudaMemcpy(prevVertGpu,prevVert,prevVertSize*sizeof(float3),cudaMemcpyHostToDevice);
 
-    int2 *correspGpu;
-    int err=cudaMalloc(&correspGpu,correspSize*sizeof(int2));
-    cudaMemcpy(correspGpu,corresp,correspSize*sizeof(int2),cudaMemcpyHostToDevice);
+    size_t correspSize=sourceCorr.size();
+    int *sourceCorrGpu;
+    int err=cudaMalloc(&sourceCorrGpu,correspSize*sizeof(int));
+    cudaMemcpy(sourceCorrGpu,sourceCorr.data(),correspSize*sizeof(int),cudaMemcpyHostToDevice);
 
+    int *targetCorrGpu;
+    err=cudaMalloc(&targetCorrGpu,correspSize*sizeof(int));
+    cudaMemcpy(targetCorrGpu,targetCorr.data(),correspSize*sizeof(int),cudaMemcpyHostToDevice);
+    
     sMatrix6 *covData;
     cudaMalloc(&covData,correspSize*sizeof(sMatrix6));
     
@@ -32,7 +38,8 @@ sMatrix6 calculatePoint2PointCov(const float3 *vert,
                                                             vertSize,
                                                             prevVertGpu,
                                                             prevVertSize,
-                                                            correspGpu,
+                                                            sourceCorrGpu,
+                                                            targetCorrGpu,
                                                             correspSize,
                                                             tf,
                                                             covData,
@@ -53,7 +60,8 @@ sMatrix6 calculatePoint2PointCov(const float3 *vert,
                                                             vertSize,
                                                             prevVertGpu,
                                                             prevVertSize,
-                                                            correspGpu,
+                                                            sourceCorrGpu,
+                                                            targetCorrGpu,
                                                             correspSize,
                                                             tf,
                                                             cov_z,
@@ -92,7 +100,8 @@ sMatrix6 calculatePoint2PointCov(const float3 *vert,
     
     cudaFree(vertGpu);
     cudaFree(prevVertGpu);
-    cudaFree(correspGpu);
+    cudaFree(sourceCorrGpu);
+    cudaFree(targetCorrGpu);
     cudaFree(covData);
     
     return ret;

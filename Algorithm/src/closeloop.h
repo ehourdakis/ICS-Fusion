@@ -12,6 +12,7 @@
 
 #include"PoseGraph.h"
 #include"smoothnet.h"
+#include<list>
 class CloseLoop
 {
     public:
@@ -23,7 +24,7 @@ class CloseLoop
         bool preprocess(float *depth,uchar3 *rgb);
 
         bool processFrame();
-        bool processKeyFrame();
+//         bool processKeyFrame();
         bool addFrameWithPose(uint16_t *depth,uchar3 *rgb,sMatrix4 gt);
 
         IcsFusion* fusion() const
@@ -35,8 +36,19 @@ class CloseLoop
         bool optimize();
         float findTransformation(sMatrix4 &tr);
         
-        bool findKeyPts(std::vector<int> &evaluation_points,int size);
+        bool findKeyPts(std::vector<int> &evaluation_points,int size,Image<float3, Host> vertices,float3 *keyVert);
         Image<float3, Host> getAllVertex() const;
+        
+        int getPoseGraphIdx() const;
+        bool addTf(int idx,
+                   int prevIdx,
+                   const sMatrix4 &tf, 
+                   float fitness, 
+                   const std::vector<int> &source_corr, 
+                   const std::vector<int> &target_corr,
+                   float3 *keyVert,
+                   float3 *prevKeyVert,
+                   int size);
     private:
         sMatrix4 firstPose;
         sMatrix4 prevPose;
@@ -48,11 +60,13 @@ class CloseLoop
         int _frame;
         
         void fixMap();
+        void reInit(int idx);
 
         //save data for de-integration
-        std::vector<DepthHost> depths;
-        std::vector<RgbHost> rgbs;
-        std::vector<sMatrix4> poses;
+        std::list<DepthHost> depths;
+        std::list<RgbHost> rgbs;
+        std::list<sMatrix4> poses;
+        std::list<sMatrix6> covars;
 
         bool firstKeyFrame;
         
@@ -61,7 +75,7 @@ class CloseLoop
         void clear();
         void reInit();
 
-        SmoothNet *smoothNet;
+//         SmoothNet *smoothNet;
 
 };
 

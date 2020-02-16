@@ -11,6 +11,8 @@
 
 #include"constant_parameters.h"
 #include <unistd.h>
+#include"kernelscalls.h"
+
 CloseLoop::CloseLoop(const kparams_t &p,sMatrix4 initPose)
     :params(p),
      _frame(-1),
@@ -39,6 +41,36 @@ bool CloseLoop::addFrameWithPose(uint16_t *depth,uchar3 *rgb,sMatrix4 gt)
   _fusion->raycasting(_frame);
   _frame++;
   return true;
+}
+
+int CloseLoop::getPoseGraphIdx() const
+{
+    return _isam->poseSize()-1;
+}
+
+
+bool CloseLoop::addTf(int idx,
+                      int prevIdx,
+                      const sMatrix4 &tf, 
+                      float fitness, 
+                      const std::vector<int> &source_corr, 
+                      const std::vector<int> &target_corr,
+                      float3 *keyVert,
+                      float3 *prevKeyVert,
+                      int size)
+{
+    sMatrix6 cov=calculatePoint2PointCov(keyVert,
+                                         size,
+                                         prevKeyVert,
+                                         size,
+                                         source_corr,
+                                         target_corr,
+                                         tf,
+                                         params);
+    
+    
+    _isam->addPoseConstrain(prevIdx,idx,tf,cov);
+     optimize();
 }
 
 bool CloseLoop::preprocess(uint16_t *depth,uchar3 *rgb)
@@ -75,7 +107,9 @@ bool CloseLoop::processFrame()
     if(_frame==3)
     {
         sMatrix4 pose=_fusion->getPose();
-        _isam->init(pose);
+        sMatrix6 cov;
+        cov=cov*params.cov_small;
+        _isam->init(pose,cov);
         prevPose=_fusion->getPose();
          
         DepthHost rawDepth;
@@ -86,6 +120,7 @@ bool CloseLoop::processFrame()
         _fusion->getImageRaw(rawRgb);
         rgbs.push_back(rawRgb);
 
+        covars.push_back(cov);
         poses.push_back(pose);
     }
     else if(_frame>3 && tracked)
@@ -100,12 +135,14 @@ bool CloseLoop::processFrame()
         rgbs.push_back(rawRgb);
 
         poses.push_back(pose);
+                
         //calculate covariance before raycast
         sMatrix6 icpCov =_fusion->calculate_ICP_COV();
         float icpFitness=_fusion->getFitness();
         //std::cout<<"ICP Fitness:"<<icpFitness<<std::endl;
         //std::cout<<"ICP Fitness:"<<icpCov<<std::endl;
         //icpCov=icpCov*1000;
+        covars.push_back(icpCov);
         _isam->addFrame(pose,icpCov);
     }
 
@@ -118,7 +155,7 @@ bool CloseLoop::processFrame()
     return tracked;
 }
 
-bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,int size)
+bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,int size,Image<float3, Host> vertices,float3 *keyVert)
 {
     evaluation_points.clear();
     
@@ -140,6 +177,7 @@ bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,int size)
             }
             idx++;
         }
+        
     }
     if(idx<size)
     {
@@ -160,10 +198,10 @@ bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,int size)
         }
         evaluation_points.push_back(tmp_points[idx]);
 
-//         uint2 pix;
-//         pix.x=tmp_points[idx]/vertices.size.y;
-//         pix.y=tmp_points[idx]%vertices.size.y;
-//         keyVert[i]=vertices[pix];
+        uint2 pix;
+        pix.x=tmp_points[idx]/vertices.size.y;
+        pix.y=tmp_points[idx]%vertices.size.y;
+        keyVert[i]=vertices[pix];
 
         tmp_points[idx]=-1;
     }
@@ -174,7 +212,7 @@ Image<float3, Host> CloseLoop::getAllVertex() const
 {
     return _fusion->getAllVertex();
 }
-
+/*
 bool CloseLoop::processKeyFrame()
 {
 
@@ -202,7 +240,7 @@ bool CloseLoop::processKeyFrame()
     smoothNet->clear();
     return true;
 }
-
+*/
 bool CloseLoop::optimize()
 {
     double err=_isam->optimize(_frame);
@@ -210,14 +248,48 @@ bool CloseLoop::optimize()
     std::cout<<"Optimization error:"<<err<<std::endl;
     if(err<params.optim_thr )
     {
-        fixMap();
-        bool raycast=_fusion->raycasting(_frame);
+        return false;
     }
+     
+    fixMap();
+    _fusion->raycasting(_frame);
+    
     return true;
 }
 
 void CloseLoop::fixMap()
 {
+    auto rdepthIt=depths.rbegin();
+    auto rrgbIt=rgbs.rbegin();
+    auto rcovIt=covars.rbegin();
+    auto rposeIt=poses.rbegin();
+    
+    while(rposeIt!=poses.rend() )
+    {
+        _fusion->deIntegration(*rposeIt,*rdepthIt,*rrgbIt);
+        rposeIt++;
+        rdepthIt++;
+        rrgbIt++;
+    }
+    
+    auto depthIt=depths.begin();
+    auto rgbIt=rgbs.begin();
+//     auto covIt=covars.begin();
+//     auto poseIt=poses.begin();
+    poses.clear();
+    int i=0;
+    while(depthIt!=depths.end() )
+    {
+        sMatrix4 newPose=_isam->getPose(i);
+        _fusion->reIntegration(newPose,*depthIt,*rgbIt);
+        poses.push_back(newPose);  
+        depthIt++;
+        rgbIt++;        
+        i++;
+    }
+    
+    
+#if 0    
     for(int i=(int)poses.size()-1; i>=0; i--)
     {
         _fusion->deIntegration(poses[i],depths[i],rgbs[i]);
@@ -232,6 +304,7 @@ void CloseLoop::fixMap()
     }
     sMatrix4 finalPose=_isam->getPose(poses.size()-1);
     _fusion->setPose(finalPose);
+#endif
 }
 
 sMatrix4 CloseLoop::getPose() const
@@ -239,8 +312,15 @@ sMatrix4 CloseLoop::getPose() const
     return _fusion->getPose();
 }
 
+void CloseLoop::reInit(int idx)
+{
+    
+}
+
+
 void CloseLoop::reInit()
 {
+    /*
     int size=poses.size()-1;
     for(uint i=0; i<size;i++ )
     {
@@ -264,24 +344,32 @@ void CloseLoop::reInit()
     rgbs.push_back(initialRgb);
     poses.push_back(initialPose);
 
-    _isam->init(initialPose);
+    sMatrix6 cov;
+    cov=cov*params.cov_small;
+        
+    _isam->init(initialPose,cov);
+    covars.push_back(cov);
+    */
 }
 
 void CloseLoop::clear()
 {        
-    int size=poses.size();
-    for(uint i=0; i<size;i++ )
+    auto depthIt=depths.begin();
+    auto rgbIt=rgbs.begin();
+//     auto covIt=covars.begin();
+//     auto poseIt=poses.poses();
+    
+    while(depthIt!=depths.end() )
     {
-        DepthHost depth=depths[i];
-        RgbHost rgb=rgbs[i];
-
-        depth.release();
-        rgb.release();
+        depthIt->release();
+        rgbIt->release();
     }
+    
 
     depths.clear();
     rgbs.clear();
     poses.clear();
+    covars.clear();
     _isam->clear();
 }
 

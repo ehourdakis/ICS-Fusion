@@ -44,9 +44,9 @@ add_executable(ics_fusion_node
 target_link_libraries(ics_fusion_node 
     ics_fusion_lib
     ${catkin_LIBRARIES}
-    ${PCL_LIBARIES}    
-    pcl_common    
-    pcl_kdtree
-    pcl_filters
+#     ${PCL_LIBARIES}    
+#     pcl_common    
+#     pcl_kdtree
+#     pcl_filters
 )
 

@@ -7,7 +7,7 @@ class PoseGraph
     public:
         PoseGraph(){}
         virtual ~PoseGraph() {}
-        virtual void init(const sMatrix4 &initalPose) = 0;
+        virtual void init(const sMatrix4 &initalPose, const sMatrix6 &cov) = 0;
         virtual void addFrame(const sMatrix4 &pose,const sMatrix6 &cov) = 0;
         virtual int addLandmark(float3 pos) = 0;
         virtual void connectLandmark(float3 pos,int landIdx,int poseIdx, sMatrix3 &cov) = 0;

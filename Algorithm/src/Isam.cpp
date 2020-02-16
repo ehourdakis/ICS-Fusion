@@ -132,7 +132,7 @@ double Isam::optimize(int frame)
     return error;
 }
 
-void Isam::init(const sMatrix4 &initalP)
+void Isam::init(const sMatrix4 &initalP,const sMatrix6 &covar)
 {
     sMatrix4 initalPose=initalP;
     slam=new Slam();
@@ -140,7 +140,7 @@ void Isam::init(const sMatrix4 &initalP)
 
     //Disable isam prints
     isam::Properties props=slam->properties();
-    props.max_iterations=50;
+    props.max_iterations=10;
     props.quiet=true;
     //props.method = DOG_LEG;
     props.method=LEVENBERG_MARQUARDT;
@@ -150,10 +150,11 @@ void Isam::init(const sMatrix4 &initalP)
     pose_nodes.push_back(initial_pose_node);
     slam->add_node(initial_pose_node);
 
-
+    Eigen::MatrixXd eigenCov=toEigen(covar);
+    Noise noise = isam::Covariance(eigenCov);
 
     Pose3d origin=toIsamPose(initalPose);
-    Noise noise =  isam::Covariance(Eigen::MatrixXd::Identity(6, 6)*params.cov_small );
+//     Noise noise =  isam::Covariance(Eigen::MatrixXd::Identity(6, 6)*params.cov_small );
 
     Pose3d_Factor* prior = new Pose3d_Factor(initial_pose_node, origin, noise);
     factors.push_back(prior);
