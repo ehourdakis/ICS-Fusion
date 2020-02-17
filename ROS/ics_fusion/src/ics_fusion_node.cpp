@@ -187,25 +187,25 @@ void smoothnetResultCb(const actionlib::SimpleClientGoalState &state,
     keyFrameProcessing=false;
     snResult=*results;
     return;
-    if(results->fitness>0)
-    {
-        sMatrix4 tf;
-        for(int i=0;i<4;i++)
-        {
-            for(int j=0;j<4;j++)
-            {
-                tf(i,j)=results->tf[4*i+j];
-            }
-        }
+//     if(results->fitness>0)
+//     {
+//         sMatrix4 tf;
+//         for(int i=0;i<4;i++)
+//         {
+//             for(int j=0;j<4;j++)
+//             {
+//                 tf(i,j)=results->tf[4*i+j];
+//             }
+//         }
     
-        std::cout<<tf<<std::endl;
-        loopCl->addTf(keyFrameIdx,prevKeyFrameIdx,tf,results->fitness,results->source_corr,results->target_corr,keyVert,prevKeyVert,keypt_size);
-    }
+//         std::cout<<tf<<std::endl;
+//         loopCl->addTf(keyFrameIdx,prevKeyFrameIdx,tf,results->fitness,results->source_corr,results->target_corr,keyVert,prevKeyVert,keypt_size);
+//     }
     
     
     
-    std::cout<<"KEY frame processed"<<std::endl;
-//   ROS_INFO("Answer: %i", result->sequence.back());
+//     std::cout<<"KEY frame processed"<<std::endl;
+// //   ROS_INFO("Answer: %i", result->sequence.back());
 //   ros::shutdown();
 }
 

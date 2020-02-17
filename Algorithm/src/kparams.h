@@ -12,7 +12,7 @@ typedef struct
     int rendering_rate = 1;
     int tracking_rate=1;
 
-    float optim_thr=10;
+    float optim_thr=100000000000;
     float cov_small=1e-10;
     float cov_big=100;
 
