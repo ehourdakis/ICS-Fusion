@@ -32,6 +32,8 @@
 #include<icsFusion.h>
 #include<volume.h>
 
+#include<defs.h>
+
 #define CAM_INFO_TOPIC "/camera/depth/camera_info"
 #define RGB_TOPIC "/camera/rgb/image_rect_color"
 #define DEPTH_TOPIC "/camera/depth/image_rect"
@@ -60,7 +62,9 @@
 
 #define KEY_FRAME_THR 30
 
-nav_msgs::Path path;
+#ifdef PUBLISH_ODOM_PATH
+nav_msgs::Path odomPath;
+#endif
 
 typedef unsigned char uchar;
 
@@ -116,8 +120,9 @@ smoothnet_3d::SmoothNet3dResult snResult;
 actionlib::SimpleActionClient<smoothnet_3d::SmoothNet3dAction> *smoothnetServer=0;
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans);
+#ifdef PUBLISH_ODOM_PATH
 void publishOdomPath(geometry_msgs::Pose &p);
-
+#endif
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans)
 {
@@ -271,6 +276,10 @@ void processKeyFrame()
 
 bool isKeyFrame()
 {
+#ifdef DISABLE_KEY_FRAMES
+    return false;
+#endif
+    
     if(keyFrameProcessing)
         return false;
     
@@ -289,36 +298,7 @@ bool isKeyFrame()
 }
 
 void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_msgs::ImageConstPtr &depth)
-{     
-    /*
-    int leftFeetVal=leftFeetValue;
-    int rightFeetVal=rightFeetValue;
-
-    leftFeetValue=0;
-    rightFeetValue=0;
-    
-    
-    bool isKeyFrame=false;
-    if(passedFromLastKeyFrame>KEY_FRAME_THR)
-    {
-        if( (rightFeetVal>2) && (leftFeetVal==0) )
-            isKeyFrame=true;
-        else if( (rightFeetVal==0) && (leftFeetVal>2)) 
-            isKeyFrame=true;  
-    }  
-    
-    if(isKeyFrame)
-        passedFromLastKeyFrame=0;
-    else
-        passedFromLastKeyFrame++;
-    
-    if(publish_key_frame)
-    {    
-        std_msgs::Float32 data;
-        data.data=(float)isKeyFrame;        
-        key_frame_pub.publish(data);
-    }
-    */
+{
     passedFromLastKeyFrame++;
     if(strcmp(rgb->encoding.c_str(), "rgb8")==0) //rgb8
     {
@@ -354,22 +334,21 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     
     loopCl->processFrame();
     
-    if(!keyFrameProcessing && (frame %150) ==0 )
+
+#ifndef DISABLE_LOOP_CLOSURE
+    #ifndef LOOP_CLOSURE_RATE
+    if(snResult.fitness>0)
+         doLoopClosure();
+    
+    #else
+    
+    if(!keyFrameProcessing && (frame %LOOP_CLOSURE_RATE) ==0 )
     {
         processKeyFrame();
     }
     
-    /*
-    if(isKeyFrame)
-    {
-        ROS_INFO("Key frame");
-        loopCl->processKeyFrame();
-    }
-    */
-    
-    if(snResult.fitness>0)
-         doLoopClosure();
-    
+    #endif
+#endif
     publishOdom();
     
     if(publish_volume)
@@ -481,9 +460,13 @@ void publishOdom()
 
     odom.pose.pose=odom_pose;
     odom_pub.publish(odom);
-    
+
+#ifdef PUBLISH_ODOM_PATH
     publishOdomPath(odom_pose);    
+#endif
 }
+
+#ifdef PUBLISH_ODOM_PATH
 
 void publishOdomPath(geometry_msgs::Pose &p)
 {
@@ -493,14 +476,16 @@ void publishOdomPath(geometry_msgs::Pose &p)
     ps.header.stamp = ros::Time::now();
     ps.header.frame_id = VO_FRAME;
     ps.pose=p;
-    path.poses.push_back(ps);
+    odomPath.poses.push_back(ps);
     
-    nav_msgs::Path newPath=path;
+    nav_msgs::Path newPath=odomPath;
     newPath.header.stamp = ros::Time::now();
     newPath.header.frame_id = VO_FRAME;
     
     odom_path_pub.publish(newPath);
 }
+
+#endif
 
 void gemLeftCallback(const std_msgs::Float32 f)
 {
@@ -622,7 +607,9 @@ int main(int argc, char **argv)
     }
 
     odom_pub = n_p.advertise<nav_msgs::Odometry>(PUB_ODOM_TOPIC, 50);
+#ifdef PUBLISH_ODOM_PATH
     odom_path_pub = n_p.advertise<nav_msgs::Path>(PUB_ODOM_PATH_TOPIC, 50);
+#endif
     vertBuff1=new float3[keypt_size];
     vertBuff2=new float3[keypt_size];
     
