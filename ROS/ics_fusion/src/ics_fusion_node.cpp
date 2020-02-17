@@ -9,6 +9,7 @@
 
 #include <image_transport/image_transport.h>
 #include <nav_msgs/Odometry.h>
+#include <nav_msgs/Path.h>
 #include <string.h>
 #include <kernels.h>
 
@@ -40,6 +41,7 @@
 
 #define PUB_VOLUME_TOPIC "/ics_fusion/volume_rendered"
 #define PUB_ODOM_TOPIC "/ics_fusion/odom"
+#define PUB_ODOM_PATH_TOPIC "/ics_fusion/odom_path"
 #define PUB_POINTS_TOPIC "/ics_fusion/pointCloud"
 #define PUB_IMAGE_TOPIC "/ics_fusion/volume_rgb"
 #define PUB_KEY_FRAME_TOPIC "/ics_fusion/key_frame"
@@ -58,7 +60,10 @@
 
 #define KEY_FRAME_THR 30
 
+nav_msgs::Path path;
+
 typedef unsigned char uchar;
+
 
 kparams_t params;
 CloseLoop *loopCl=nullptr;
@@ -81,6 +86,7 @@ int keypt_size;
 //ros publishers
 ros::Publisher volume_pub;
 ros::Publisher odom_pub ;
+ros::Publisher odom_path_pub ;
 ros::Publisher points_pub;
 ros::Publisher key_frame_pub;
 
@@ -110,6 +116,8 @@ smoothnet_3d::SmoothNet3dResult snResult;
 actionlib::SimpleActionClient<smoothnet_3d::SmoothNet3dAction> *smoothnetServer=0;
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans);
+void publishOdomPath(geometry_msgs::Pose &p);
+
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans)
 {
@@ -232,6 +240,8 @@ void processKeyFrame()
         return ;
     }
     
+    std::cout<<"Key pts size:"<<goal.pts.size()<<std::endl;
+    
     prevKeyFrameIdx=keyFrameIdx;
     keyFrameIdx=loopCl->getPoseGraphIdx();
     //TODO speed up this with some direct memory copy
@@ -344,6 +354,11 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     
     loopCl->processFrame();
     
+    if(!keyFrameProcessing && (frame %150) ==0 )
+    {
+        processKeyFrame();
+    }
+    
     /*
     if(isKeyFrame)
     {
@@ -353,7 +368,7 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     */
     
     if(snResult.fitness>0)
-        doLoopClosure();
+         doLoopClosure();
     
     publishOdom();
     
@@ -424,6 +439,7 @@ void publishOdom()
 {
     sMatrix4 pose = loopCl->getPose();
 
+    pose=fromVisionCord(pose);
     /*
     tf::Vector3 vec[3];
     for(int i=0;i<3;i++)
@@ -458,12 +474,32 @@ void publishOdom()
     odom.twist.twist.angular.z = 0;
     
     odom.header.stamp = ros::Time::now();    
-    odom.header.frame_id = odom_frame;
-    odom.child_frame_id = "visual_link";
+    odom.header.frame_id = VO_FRAME;
+    //odom.child_frame_id = "visual_link";
+    odom.child_frame_id = DEPTH_FRAME;
 
 
     odom.pose.pose=odom_pose;
     odom_pub.publish(odom);
+    
+    publishOdomPath(odom_pose);    
+}
+
+void publishOdomPath(geometry_msgs::Pose &p)
+{
+//     nav_msgs::Path path;
+    
+    geometry_msgs::PoseStamped ps;
+    ps.header.stamp = ros::Time::now();
+    ps.header.frame_id = VO_FRAME;
+    ps.pose=p;
+    path.poses.push_back(ps);
+    
+    nav_msgs::Path newPath=path;
+    newPath.header.stamp = ros::Time::now();
+    newPath.header.frame_id = VO_FRAME;
+    
+    odom_path_pub.publish(newPath);
 }
 
 void gemLeftCallback(const std_msgs::Float32 f)
@@ -586,7 +622,7 @@ int main(int argc, char **argv)
     }
 
     odom_pub = n_p.advertise<nav_msgs::Odometry>(PUB_ODOM_TOPIC, 50);
-    
+    odom_path_pub = n_p.advertise<nav_msgs::Path>(PUB_ODOM_PATH_TOPIC, 50);
     vertBuff1=new float3[keypt_size];
     vertBuff2=new float3[keypt_size];
     

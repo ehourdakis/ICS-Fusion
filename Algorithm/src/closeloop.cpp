@@ -59,6 +59,8 @@ bool CloseLoop::addTf(int idx,
                       float3 *prevKeyVert,
                       int size)
 {
+    if(fitness<0.1)
+        return false;
     sMatrix6 cov=calculatePoint2PointCov(keyVert,
                                          size,
                                          prevKeyVert,
@@ -68,11 +70,13 @@ bool CloseLoop::addTf(int idx,
                                          tf,
                                          params);
     
-    
+    cov=cov*fitness;
+    std::cout<<"FITNESS:"<<fitness<<std::endl;
     //_isam->addPoseConstrain(prevIdx,idx,tf,cov);
     _isam->addPoseConstrain(0,idx,tf,cov);
      optimize();
      removeOldNodes(idx);
+     return true;
 }
 
 bool CloseLoop::preprocess(uint16_t *depth,uchar3 *rgb)
@@ -91,7 +95,7 @@ bool CloseLoop::preprocess(float *depth,uchar3 *rgb)
 bool CloseLoop::processFrame()
 {
     _frame++;
-    std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
+//    std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
 
     tracked=_fusion->tracking(_frame);
     bool integrated=_fusion->integration(_frame);
@@ -143,7 +147,7 @@ bool CloseLoop::processFrame()
         float icpFitness=_fusion->getFitness();
         //std::cout<<"ICP Fitness:"<<icpFitness<<std::endl;
         //std::cout<<"ICP Fitness:"<<icpCov<<std::endl;
-        //icpCov=icpCov*1000;
+        icpCov=icpCov*1000*icpFitness;
         covars.push_back(icpCov);
         _isam->addFrame(pose,icpCov);
     }

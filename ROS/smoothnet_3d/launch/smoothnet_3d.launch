@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>    
     <node name="smoothnet_3d" pkg="smoothnet_3d" type="smoothnet_3d_server.py" output="screen" >     
-        <param name="kepts_size" type="int" value="100" />
+        <param name="kepts_size" type="int" value="1000" />
         <param name="num_voxels" type="int" value="16" /> 
         <param name="smoothing_kernel_width" type="double" value="1.75" /> 
         <param name="radius" type="double" value="0.15" /> 
