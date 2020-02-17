@@ -43,7 +43,6 @@
 
 #define PUB_VOLUME_TOPIC "/ics_fusion/volume_rendered"
 #define PUB_ODOM_TOPIC "/ics_fusion/odom"
-#define PUB_ODOM_PATH_TOPIC "/ics_fusion/odom_path"
 #define PUB_POINTS_TOPIC "/ics_fusion/pointCloud"
 #define PUB_IMAGE_TOPIC "/ics_fusion/volume_rgb"
 #define PUB_KEY_FRAME_TOPIC "/ics_fusion/key_frame"
@@ -62,9 +61,6 @@
 
 #define KEY_FRAME_THR 30
 
-#ifdef PUBLISH_ODOM_PATH
-nav_msgs::Path odomPath;
-#endif
 
 typedef unsigned char uchar;
 
@@ -90,7 +86,6 @@ int keypt_size;
 //ros publishers
 ros::Publisher volume_pub;
 ros::Publisher odom_pub ;
-ros::Publisher odom_path_pub ;
 ros::Publisher points_pub;
 ros::Publisher key_frame_pub;
 
@@ -120,8 +115,22 @@ smoothnet_3d::SmoothNet3dResult snResult;
 actionlib::SimpleActionClient<smoothnet_3d::SmoothNet3dAction> *smoothnetServer=0;
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans);
+
 #ifdef PUBLISH_ODOM_PATH
+
+#define PUB_ODOM_PATH_TOPIC "/ics_fusion/odom_path"
+nav_msgs::Path odomPath;
+ros::Publisher odom_path_pub ;
 void publishOdomPath(geometry_msgs::Pose &p);
+
+#endif
+
+#ifdef PUBLISH_ISAM_PATH
+
+#define PUB_ISAM_PATH_TOPIC "/ics_fusion/isam_path"
+ros::Publisher isam_path_pub;
+void publishIsamPath();
+
 #endif
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans)
@@ -188,9 +197,10 @@ void doLoopClosure()
     }
     
     results->fitness=-1;
-    
-    
+
     std::cout<<"KEY frame processed"<<std::endl;
+    
+
 }
 
 void smoothnetResultCb(const actionlib::SimpleClientGoalState &state,
@@ -351,6 +361,10 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
 #endif
     publishOdom();
     
+#ifdef PUBLISH_ISAM_PATH
+    publishIsamPath();
+#endif
+    
     if(publish_volume)
     {
         publishVolumeProjection();
@@ -424,11 +438,7 @@ void publishOdom()
     for(int i=0;i<3;i++)
     {
         vec[i]=tf::Vector3(pose.data[i].x,pose.data[i].y,pose.data[i].z);
-    }
-    
-    tf::Matrix3x3 rot_matrix(vec[0].getX(),vec[0].getY(),vec[0].getZ(),
-                             vec[1].getX(),vec[1].getY(),vec[1].getZ(),
-                             vec[2].getX(),vec[2].getY(),vec[2].getZ() );
+    }    
     */
     tf::Matrix3x3 rot_matrix( pose(0,0),pose(0,1),pose(0,2),
                               pose(1,0),pose(1,1),pose(1,2),
@@ -485,6 +495,47 @@ void publishOdomPath(geometry_msgs::Pose &p)
     odom_path_pub.publish(newPath);
 }
 
+#endif
+
+#ifdef PUBLISH_ISAM_PATH
+void publishIsamPath()
+{
+    std::vector<sMatrix4> vec;
+    loopCl->getIsamPoses(vec);
+    nav_msgs::Path isamPath;
+    for(int i=0;i<vec.size();i++)
+    {
+        geometry_msgs::PoseStamped ps;
+        int odomPosesIdx=odomPath.poses.size()-i-1;
+        ps.header.stamp=odomPath.poses[odomPosesIdx].header.stamp;
+        sMatrix4 pose=fromVisionCord(vec[i]);
+        tf::Matrix3x3 rot_matrix( pose(0,0),pose(0,1),pose(0,2),
+                              pose(1,0),pose(1,1),pose(1,2),
+                              pose(2,0),pose(2,1),pose(2,2) );
+        
+        tf::Quaternion q;
+        rot_matrix.getRotation(q);
+        geometry_msgs::Pose odom_pose;
+        odom_pose.position.x=pose(0,3);
+        odom_pose.position.y=pose(1,3);
+        odom_pose.position.z=pose(2,3);
+        odom_pose.orientation.x=q.getX();
+        odom_pose.orientation.y=q.getY();
+        odom_pose.orientation.z=q.getZ();
+        odom_pose.orientation.w=q.getW();
+        
+        ps.header.stamp = ros::Time::now();
+        ps.header.frame_id = VO_FRAME;
+        ps.pose=odom_pose;
+        
+        isamPath.poses.push_back(ps);
+    }
+            
+    isamPath.header.stamp = ros::Time::now();
+    isamPath.header.frame_id = VO_FRAME;
+    
+    isam_path_pub.publish(isamPath);
+}
 #endif
 
 void gemLeftCallback(const std_msgs::Float32 f)
@@ -607,8 +658,13 @@ int main(int argc, char **argv)
     }
 
     odom_pub = n_p.advertise<nav_msgs::Odometry>(PUB_ODOM_TOPIC, 50);
+    
 #ifdef PUBLISH_ODOM_PATH
     odom_path_pub = n_p.advertise<nav_msgs::Path>(PUB_ODOM_PATH_TOPIC, 50);
+#endif
+    
+#ifdef PUBLISH_ISAM_PATH
+    isam_path_pub = n_p.advertise<nav_msgs::Path>(PUB_ISAM_PATH_TOPIC, 50);
 #endif
     vertBuff1=new float3[keypt_size];
     vertBuff2=new float3[keypt_size];

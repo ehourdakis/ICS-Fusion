@@ -2,9 +2,11 @@
 #include<iostream>
 #include"utils.h"
 
-//#define SAVE_VOXEL_GRID
+#include"defs.h"
 
 //#define USE_G2O
+
+
 #ifdef USE_G2O
 #include"g2oGraph.h"
 #endif
@@ -26,9 +28,6 @@ CloseLoop::CloseLoop(const kparams_t &p,sMatrix4 initPose)
     _isam=new Isam(params);
 #endif
     firstPose=initPose;
-
-//     smoothNet=new SmoothNet(_fusion,params);
-//     smoothNet->socketConnect();
 }
 
 //For testing purposes only.
@@ -72,7 +71,6 @@ bool CloseLoop::addTf(int idx,
     
     cov=cov*fitness;
     std::cout<<"FITNESS:"<<fitness<<std::endl;
-    //_isam->addPoseConstrain(prevIdx,idx,tf,cov);
     _isam->addPoseConstrain(0,idx,tf,cov);
      optimize();
      removeOldNodes(idx);
@@ -256,10 +254,11 @@ bool CloseLoop::optimize()
     {
         return false;
     }
-     
+
+#ifndef DISABLE_MAP_FIXES
     fixMap();
     _fusion->raycasting(_frame);
-    
+#endif
     return true;
 }
 
@@ -283,15 +282,22 @@ void CloseLoop::removeOldNodes(int idx)
 
         _isam->popFront();
     }
+}
 
-
+void CloseLoop::getIsamPoses(std::vector<sMatrix4> &vec)
+{
+    vec.clear();
+    vec.reserve(_isam->poseSize());
+    for(int i=0;i<_isam->poseSize();i++)
+    {
+        vec.push_back(_isam->getPose(i));
+    }
 }
 
 void CloseLoop::fixMap()
 {
     auto rdepthIt=depths.rbegin();
     auto rrgbIt=rgbs.rbegin();
-//    auto rcovIt=covars.rbegin();
     auto rposeIt=poses.rbegin();
     
     while(rposeIt!=poses.rend() )
@@ -304,8 +310,6 @@ void CloseLoop::fixMap()
     
     auto depthIt=depths.begin();
     auto rgbIt=rgbs.begin();
-//     auto covIt=covars.begin();
-//     auto poseIt=poses.begin();
     poses.clear();
     int i=0;
     while(depthIt!=depths.end() )
@@ -317,24 +321,6 @@ void CloseLoop::fixMap()
         rgbIt++;        
         i++;
     }
-    
-    
-#if 0    
-    for(int i=(int)poses.size()-1; i>=0; i--)
-    {
-        _fusion->deIntegration(poses[i],depths[i],rgbs[i]);
-    }
-    poses.clear();
-    
-    for(int i=0;i<_isam->poseSize();i++)
-    {
-        sMatrix4 newPose=_isam->getPose(i);
-        _fusion->reIntegration(newPose,depths[i],rgbs[i]);
-        poses.push_back(newPose);        
-    }
-    sMatrix4 finalPose=_isam->getPose(poses.size()-1);
-    _fusion->setPose(finalPose);
-#endif
 }
 
 sMatrix4 CloseLoop::getPose() const

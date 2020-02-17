@@ -31,9 +31,6 @@ void Isam::popFront()
         delete poseConstrainFactor;
         poseConstrainFactor=0;
     }
-
-
-
 }
 
 void Isam::addFrame(const sMatrix4 &pose,const sMatrix6 &covar)

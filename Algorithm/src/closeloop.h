@@ -49,6 +49,8 @@ class CloseLoop
                    float3 *keyVert,
                    float3 *prevKeyVert,
                    int size);
+
+        void getIsamPoses(std::vector<sMatrix4> &vec);
     private:
         sMatrix4 firstPose;
         sMatrix4 prevPose;
