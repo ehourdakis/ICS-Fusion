@@ -62,6 +62,8 @@ class CloseLoop
         void fixMap();
         void reInit(int idx);
 
+        void removeOldNodes(int idx);
+
         //save data for de-integration
         std::list<DepthHost> depths;
         std::list<RgbHost> rgbs;

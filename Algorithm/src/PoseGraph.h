@@ -14,6 +14,7 @@ class PoseGraph
         virtual void connectLandmark(float2 pos, int lid, double Sigma2){}
         
         virtual void clear() = 0;
+        virtual void popFront()=0;
         virtual double optimize(int frame) = 0;
         
         virtual sMatrix4 getPose(int i)  = 0;

@@ -33,6 +33,7 @@ class Isam :public PoseGraph
         //void convertCovariance(sMatrix4 pose,sMatrix6 cov) override;
 
 
+        void popFront() override;
         virtual sMatrix4 getPose(int i)  override;
 
         virtual uint poseSize() const override
@@ -57,6 +58,7 @@ class Isam :public PoseGraph
 
         std::vector<isam::Pose3d_Node*> pose_nodes;
         std::vector<isam::Factor*> factors;
+        isam::Factor *poseConstrainFactor;
         std::vector<isam::Point3d_Node*> landmarks;
 
         static Eigen::MatrixXd toEigen(sMatrix4 mat);

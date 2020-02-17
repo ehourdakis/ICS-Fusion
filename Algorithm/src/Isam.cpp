@@ -15,6 +15,27 @@ Isam::Isam(const kparams_t &par)
 {
 }
 
+void Isam::popFront()
+{
+    Pose3d_Node *node=pose_nodes[0];
+    isam::Factor *factor=factors[0];
+    pose_nodes.erase(pose_nodes.begin() );
+    factors.erase(factors.begin() );
+
+    slam->remove_node(node);
+    delete factor;
+    delete node;
+
+    if(poseConstrainFactor!=0)
+    {
+        delete poseConstrainFactor;
+        poseConstrainFactor=0;
+    }
+
+
+
+}
+
 void Isam::addFrame(const sMatrix4 &pose,const sMatrix6 &covar)
 {
     sMatrix6 cov=covar;
@@ -104,8 +125,8 @@ void Isam::addPoseConstrain(int p1,int p2,const sMatrix4 &delta, const sMatrix6 
                                                             vo,
                                                             noise);
 
-
-    factors.push_back(factor);
+    poseConstrainFactor=factor;
+    //factors.push_back(factor);
 
     slam->add_factor(factor);
 }

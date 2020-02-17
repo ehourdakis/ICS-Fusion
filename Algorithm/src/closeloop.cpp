@@ -69,8 +69,10 @@ bool CloseLoop::addTf(int idx,
                                          params);
     
     
-    _isam->addPoseConstrain(prevIdx,idx,tf,cov);
+    //_isam->addPoseConstrain(prevIdx,idx,tf,cov);
+    _isam->addPoseConstrain(0,idx,tf,cov);
      optimize();
+     removeOldNodes(idx);
 }
 
 bool CloseLoop::preprocess(uint16_t *depth,uchar3 *rgb)
@@ -244,7 +246,7 @@ bool CloseLoop::processKeyFrame()
 bool CloseLoop::optimize()
 {
     double err=_isam->optimize(_frame);
-//     return false;
+
     std::cout<<"Optimization error:"<<err<<std::endl;
     if(err<params.optim_thr )
     {
@@ -257,11 +259,35 @@ bool CloseLoop::optimize()
     return true;
 }
 
+void CloseLoop::removeOldNodes(int idx)
+{
+    auto depthIt=depths.begin();
+    auto rgbIt=rgbs.begin();
+
+    for(int i=0;i<idx;i++)
+    {
+        depthIt->release();
+        rgbIt->release();
+
+        depthIt++;
+        rgbIt++;
+
+        covars.pop_front();
+        poses.pop_front();
+        depths.pop_front();
+        rgbs.pop_front();
+
+        _isam->popFront();
+    }
+
+
+}
+
 void CloseLoop::fixMap()
 {
     auto rdepthIt=depths.rbegin();
     auto rrgbIt=rgbs.rbegin();
-    auto rcovIt=covars.rbegin();
+//    auto rcovIt=covars.rbegin();
     auto rposeIt=poses.rbegin();
     
     while(rposeIt!=poses.rend() )
