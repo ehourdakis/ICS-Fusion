@@ -69,7 +69,7 @@ bool CloseLoop::addTf(int idx,
                                          tf,
                                          params);
     
-    cov=cov*fitness;
+    cov=cov*(1/fitness);
     std::cout<<"FITNESS:"<<fitness<<std::endl;
     _isam->addPoseConstrain(0,idx,tf,cov);
      optimize();
@@ -143,9 +143,9 @@ bool CloseLoop::processFrame()
         //calculate covariance before raycast
         sMatrix6 icpCov =_fusion->calculate_ICP_COV();
         float icpFitness=_fusion->getFitness();
-        //std::cout<<"ICP Fitness:"<<icpFitness<<std::endl;
-        //std::cout<<"ICP Fitness:"<<icpCov<<std::endl;
-        icpCov=icpCov*1000*icpFitness;
+        std::cout<<"ICP Fitness:"<<icpFitness<<std::endl;
+        std::cout<<"ICP Fitness:"<<icpCov<<std::endl;
+        icpCov=icpCov*1000*(1/icpFitness);
         covars.push_back(icpCov);
         _isam->addFrame(pose,icpCov);
     }
@@ -321,6 +321,9 @@ void CloseLoop::fixMap()
         rgbIt++;        
         i++;
     }
+
+    rposeIt=poses.rbegin();
+    _fusion->setPose(*rposeIt);
 }
 
 sMatrix4 CloseLoop::getPose() const
