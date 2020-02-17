@@ -32,32 +32,35 @@ class Lrf(object):
         self._num_voxels = num_voxels
         self._radius = sm3d_radius
         self._smoothing_factor = self._smoothing_kernel_width * (sm3d_radius / num_voxels) # Equals         
-        counter_voxel = num_voxels*num_voxels*num_voxels
-        self.max_size = max_size
-        self.lrf_size = counter_voxel * max_size
-        max_size = 100
-        n = np.empty((max_size,counter_voxel),dtype=np.float32 )
+        self._counter_voxel = num_voxels*num_voxels*num_voxels
+        self._max_size = max_size
+        n = np.empty((self._max_size, self._counter_voxel),dtype=np.float32 )
         self._n = np.ascontiguousarray(n, dtype=np.float32)        
 
     def getLrf(self):
         return self._n
         
-    def calculateLrf(self,goal):
+    def calculateLrf(self, vert_x, vert_y, vert_z, pts):
         global lib
-        pts_arr = (c_int * len(goal.pts))(*goal.pts)
-        vert_x_arr = (c_float * len(goal.vert_x))(*goal.vert_x)
-        vert_y_arr = (c_float * len(goal.vert_y))(*goal.vert_y)
-        vert_z_arr = (c_float * len(goal.vert_z))(*goal.vert_z)
+        pts_arr = (c_int * len(pts))(*pts)
+        vert_x_arr = (c_float * len(vert_x))(*vert_x)
+        vert_y_arr = (c_float * len(vert_y))(*vert_y)
+        vert_z_arr = (c_float * len(vert_z))(*vert_z)
+        
+        if len(pts) != self._max_size:
+            self._max_size = len(pts)
+            n = np.empty( (self._max_size, self._counter_voxel), dtype=np.float32 )
+            self._n = np.ascontiguousarray(n, dtype=np.float32)
+            print()
  
         self._calc(c_int(self._num_voxels),
                  c_float(self._radius),
                  c_float(self._smoothing_factor),
                  pts_arr,
-                 c_int( len(goal.pts) ),
+                 c_int( len(pts) ),
                  vert_x_arr,
                  vert_y_arr,
                  vert_z_arr,
-                 c_int( len(goal.vert_x) ),
+                 c_int( len(vert_x) ),
                  #self.lrf
-                 self._n)        
-        print("done")
+                 self._n)
