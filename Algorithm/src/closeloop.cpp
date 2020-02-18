@@ -59,8 +59,13 @@ bool CloseLoop::addTf(int idx,
                       float3 *prevKeyVert,
                       int size)
 {
+<<<<<<< HEAD
 //     if(fitness<0.1)
 //         return false;
+=======
+    //if(fitness<0.1)
+    //    return false;
+>>>>>>> 01caa4411e0e1adc3dd7c986381e3dce917e1247
     sMatrix6 cov=calculatePoint2PointCov(keyVert,
                                          size,
                                          prevKeyVert,
@@ -96,7 +101,7 @@ bool CloseLoop::preprocess(float *depth,uchar3 *rgb)
 bool CloseLoop::processFrame()
 {
     _frame++;
-    //std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
+//    std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
 
     tracked=_fusion->tracking(_frame);
     bool integrated=_fusion->integration(_frame);

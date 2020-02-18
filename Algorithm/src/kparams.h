@@ -32,10 +32,7 @@ typedef struct
     uint2 computationSize;
     float4 camera;
 
-    //3dsmoothnet
-    uint num_voxels=16;
-    float sm3d_radius=0.15;
-    uint keypts_num=100;
+
 
 } kparams_t;
 
