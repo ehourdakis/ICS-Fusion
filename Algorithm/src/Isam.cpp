@@ -9,6 +9,44 @@ namespace isam
     const int Pose3d::dim;
 }
 
+inline Eigen::MatrixXd toEigen(const sMatrix4 &mat)
+{
+    Eigen::MatrixXd ret(4,4);
+    for(int i=0;i<4;i++)
+    {
+        for(int j=0;j<4;j++)
+        {
+            ret(i,j)=mat(i,j);
+        }
+    }
+    return ret;
+}
+
+inline Eigen::MatrixXd toEigen(const sMatrix3 &mat)
+{
+    Eigen::MatrixXd ret(3,3);
+    for(int i=0;i<3;i++)
+    {
+        for(int j=0;j<3;j++)
+        {
+            ret(i,j)=mat(i,j);
+        }
+    }
+    return ret;
+}
+
+inline Eigen::MatrixXd toEigen(const sMatrix6 &mat)
+{
+    Eigen::MatrixXd ret(6,6);
+    for(int i=0;i<6;i++)
+    {
+        for(int j=0;j<6;j++)
+        {
+            ret(i,j)=mat(i,j);
+        }
+    }
+    return ret;
+}
 
 Isam::Isam(const kparams_t &par)
     :params(par)

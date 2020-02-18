@@ -13,7 +13,7 @@
 dim3 imageBlock = dim3(32, 16);
 dim3 raycastBlock = dim3(32, 8);
 
-IcsFusion::IcsFusion(const kparams_t &par, Matrix4 initPose)
+IcsFusion::IcsFusion(const kparams_t &par, sMatrix4 initPose)
     :params(par),
     _tracked(false)
 {
@@ -198,7 +198,7 @@ bool IcsFusion::tracking(uint frame)
     }
 
     oldPose = pose;
-    const Matrix4 projectReference = camMatrix*inverse(Matrix4(&raycastPose));
+    const sMatrix4 projectReference = camMatrix*inverse(sMatrix4(&raycastPose));
 
     for (int level = iterations.size() - 1; level >= 0; --level)
     {
@@ -211,7 +211,7 @@ bool IcsFusion::tracking(uint frame)
                                                        inputNormal[level],
                                                        vertex,
                                                        normal,
-                                                       Matrix4( & pose ),
+                                                       sMatrix4( & pose ),
                                                        projectReference,
                                                        dist_threshold,
                                                        normal_threshold);
@@ -241,7 +241,7 @@ bool IcsFusion::raycasting(uint frame)
         raycastPose = pose;
         dim3 grid=divup(make_uint2(params.computationSize.x,params.computationSize.y),raycastBlock );
         TICK("raycast");
-        raycastKernel<<<grid, raycastBlock>>>(vertex, normal, volume, Matrix4(&raycastPose) * inverseCam,
+        raycastKernel<<<grid, raycastBlock>>>(vertex, normal, volume, sMatrix4(&raycastPose) * inverseCam,
                                               nearPlane,
                                               farPlane,
                                               step,
@@ -308,7 +308,7 @@ bool IcsFusion::deIntegration(sMatrix4 p,const Host &depth,const Host &rgb)
     deIntegrateKernel<<<divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock), imageBlock>>>(volume,
                                                                                            rawDepth,
                                                                                            rawRgb,
-                                                                                           inverse(Matrix4(&p)),
+                                                                                           inverse(sMatrix4(&p)),
                                                                                            camMatrix,
                                                                                            params.mu,
                                                                                            maxweight);    
@@ -325,7 +325,7 @@ bool IcsFusion::reIntegration(sMatrix4 p,const Host &depth,const Host &rgb)
     integrateKernel<<<divup(dim3(volume.getResolution().x, volume.getResolution().y), imageBlock), imageBlock>>>(volume,
                                                                                            rawDepth,
                                                                                            rawRgb,
-                                                                                           inverse(Matrix4(&p)),
+                                                                                           inverse(sMatrix4(&p)),
                                                                                            camMatrix,
                                                                                            params.mu,
                                                                                            maxweight );
@@ -525,8 +525,8 @@ bool IcsFusion::updatePoseKernel(sMatrix4 & pose, const float * output,float icp
     TooN::Matrix<8, 32, const float, TooN::Reference::RowMajor> values(output);
     TooN::Vector<6> x = solve(values[0].slice<1, 27>());
     TooN::SE3<> delta(x);
-    Matrix4 deltaMat=toMatrix4(delta);
-    Matrix4 delta4 = deltaMat * Matrix4(&pose);
+    sMatrix4 deltaMat=tosMatrix4(delta);
+    sMatrix4 delta4 = deltaMat * sMatrix4(&pose);
 
     pose.data[0].x = delta4.data[0].x;
     pose.data[0].y = delta4.data[0].y;
@@ -634,7 +634,7 @@ sMatrix6 IcsFusion::calculate_ICP_COV()
     sMatrix4 invPrevPose=inverse(oldPose);
     sMatrix4 delta=invPrevPose*currPose;
 
-    Matrix4 projectedReference = camMatrix*inverse(Matrix4(&raycastPose));
+    sMatrix4 projectedReference = camMatrix*inverse(sMatrix4(&raycastPose));
     dim3 grid=divup(make_uint2(params.inputSize.x,params.inputSize.y),imageBlock );
 
     sMatrix6 initMat;

@@ -1,10 +1,42 @@
 #ifndef DEVICE_CODE_H
 #define DEVICE_CODE_H
 
+#include"volume.h"
+__forceinline__ __host__  __device__  void eulerFromHomo(const sMatrix4 &pose,float &roll,float &pitch,float &yaw)
+{
+    roll  = atan2f(pose(2,1), pose(2,2));
+    pitch = asinf(-pose(2,0));
+    yaw   = atan2f(pose(1,0), pose(0,0));
+}
+
+__forceinline__ __host__ __device__ int  signf(const float a)
+{
+    return a>0?1:-1;
+}
+
+
+__forceinline__ __host__ __device__ int  sign(const int a)
+{
+    return a>0?1:-1;
+}
+
+__forceinline__ __host__ __device__ void  swapf(float &f1,float &f2)
+{
+    float tmp=f2;
+    f2=f1;
+    f1=tmp;
+}
+
+
+__forceinline__ __host__ __device__ float sq(const float x)
+{
+    return x * x;
+}
+
 
 __device__ __forceinline__ float4 raycast(const Volume volume,
                                           const uint2 pos,
-                                          const Matrix4 view,
+                                          const sMatrix4 view,
                                           const float nearPlane,
                                           const float farPlane,
                                           const float step,

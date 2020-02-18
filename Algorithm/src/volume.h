@@ -2,12 +2,11 @@
 #define VOLUME_H
 
 #include"cutil_math.h"
-#include"utils.h"
+//#include"utils.h"
 #include"kparams.h"
-
+#include<iostream>
+#include"sMatrix.h"
 //#define IDX(a,b,c) a + b * _size.x + c * _size.x * _size.y
-
-
 
 class Volume
 {

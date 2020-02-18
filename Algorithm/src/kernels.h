@@ -8,21 +8,21 @@ __global__ void initVolume(Volume volume, const float2 val);
 
 __global__ void integrate(Volume vol,
                           const Image<float> depth,
-                          const Matrix4 view,
+                          const sMatrix4 view,
                           const float mu,
                           const float maxweight);
 
 
 __global__ void depth2vertex(Image<float3> vertex,
                              const Image<float> depth,
-                             const Matrix4 invK);
+                             const sMatrix4 invK);
 
 __global__ void vertex2normal(Image<float3> normal,
                               const Image<float3> vertex);
 
 __global__ void vertex2depthKernel(Image<float> render,
                                    Image<float3> vertex,
-                                   const Matrix4 K);
+                                   const sMatrix4 K);
 
 __global__ void bilateral_filter(Image<float> out,
                                  const Image<float> in,
@@ -35,8 +35,8 @@ __global__ void track(Image<TrackData> output,
                       const Image<float3> inNormal,
                       const Image<float3> refVertex,
                       const Image<float3> refNormal,
-                      const Matrix4 Ttrack,
-                      const Matrix4 view,
+                      const sMatrix4 Ttrack,
+                      const sMatrix4 view,
                       const float dist_threshold,
                       const float normal_threshold);
 
@@ -47,8 +47,8 @@ __global__ void trackAndReduce(float * out,
                                const Image<float3> inNormal,
                                const Image<float3> refVertex,
                                const Image<float3> refNormal,
-                               const Matrix4 Ttrack,
-                               const Matrix4 view,
+                               const sMatrix4 Ttrack,
+                               const sMatrix4 view,
                                const float dist_threshold,
                                const float normal_threshold);
 
@@ -78,7 +78,7 @@ __global__ void halfSampleRobustImageKernel(Image<float> out,
                                             const float e_d,
                                             const int r);
 
-__global__ void depth2vertexKernel(Image<float3> vertex,const Image<float> depth, const Matrix4 invK);
+__global__ void depth2vertexKernel(Image<float3> vertex,const Image<float> depth, const sMatrix4 invK);
 __global__ void vertex2normalKernel(Image<float3> normal,const Image<float3> vertex);
 __global__ void reduceKernel(float * out, const Image<TrackData> J,const uint2 size);
 __global__ void trackKernel(Image<TrackData> output,
@@ -86,15 +86,15 @@ __global__ void trackKernel(Image<TrackData> output,
                             const Image<float3> inNormal,
                             const Image<float3> refVertex,
                             const Image<float3> refNormal,
-                            const Matrix4 Ttrack,
-                            const Matrix4 view,
+                            const sMatrix4 Ttrack,
+                            const sMatrix4 view,
                             const float dist_threshold,
                             const float normal_threshold);
 
 __global__ void raycastKernel(Image<float3> pos3D,
                               Image<float3> normal,
                               const Volume volume,
-                              const Matrix4 view,
+                              const sMatrix4 view,
                               const float nearPlane,
                               const float farPlane,
                               const float step,
@@ -102,16 +102,16 @@ __global__ void raycastKernel(Image<float3> pos3D,
 
 __global__ void integrateKernel(Volume vol, const Image<float> depth,
                                 const Image<uchar3> rgb,
-                                const Matrix4 invTrack,
-                                const Matrix4 K,
+                                const sMatrix4 invTrack,
+                                const sMatrix4 K,
                                 const float mu,
                                 const float maxweight);
 
 __global__ void deIntegrateKernel(Volume vol,
                                   const Image<float> depth,
                                   const Image<uchar3> rgb,
-                                  const Matrix4 invTrack,
-                                  const Matrix4 K,
+                                  const sMatrix4 invTrack,
+                                  const sMatrix4 K,
                                   const float mu,
                                   const float maxweight);
 
@@ -149,9 +149,9 @@ __global__ void icpCovarianceFirstTerm(const Image<float3> inVertex,
                                         const Image<float3> refNormal,
                                         const Image<TrackData> trackData,
                                         Image<sMatrix6> outData,
-                                        const Matrix4 Ttrack,
-                                        const Matrix4 view,
-                                        const Matrix4 delta,
+                                        const sMatrix4 Ttrack,
+                                        const sMatrix4 view,
+                                        const sMatrix4 delta,
                                         const float cov_big);
 
 
@@ -160,9 +160,9 @@ __global__ void icpCovarianceSecondTerm(const Image<float3>  dataVertex,
                                          const Image<float3> modelNormals,
                                          const Image<TrackData>  trackData,
                                          Image<sMatrix6> outData,
-                                         const Matrix4 Ttrack,
-                                         const Matrix4 view,
-                                         const Matrix4 delta,
+                                         const sMatrix4 Ttrack,
+                                         const sMatrix4 view,
+                                         const sMatrix4 delta,
                                          float cov_z,
                                          const float cov_big);
 

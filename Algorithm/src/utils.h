@@ -26,7 +26,8 @@
 #include <cuda_runtime.h>
 #include"image.h"
 
-#include<eigen3/Eigen/Dense>
+#include"sMatrix.h"
+
 
 
 #define INVALID -2   // this is used to mark invalid entries in normal or vertex maps
@@ -45,31 +46,7 @@ extern bool print_kernel_timing;
 extern struct timespec tick_clockData;
 extern struct timespec tock_clockData;
 
-
-
-__forceinline__ __host__ __device__ int  signf(const float a)
-{
-    return a>0?1:-1;
-}
-
-
-__forceinline__ __host__ __device__ int  sign(const int a)
-{
-    return a>0?1:-1;
-}
-
-__forceinline__ __host__ __device__ void  swapf(float &f1,float &f2)
-{
-    float tmp=f2;
-    f2=f1;
-    f1=tmp;
-}
-
-
-__forceinline__ __host__ __device__ float sq(const float x)
-{
-    return x * x;
-}
+#include"device_code.h"
 
 inline int printCUDAError()
 {
@@ -93,215 +70,11 @@ inline dim3 divup(dim3 a, dim3 b)
     return dim3(divup(a.x, b.x), divup(a.y, b.y), divup(a.z, b.z));
 }
 
-struct Matrix4
-{
-    float4 data[4];
-    //Identity matrix
-    __host__  __device__ Matrix4()
-    {
-        this->data[0] = make_float4(1,0,0,0);
-        this->data[1] = make_float4(0,1,0,0);
-        this->data[2] = make_float4(0,0,1,0);
-        this->data[3] = make_float4(0,0,0,1);
-    }
-    
-    __host__  __device__ Matrix4(float x1,float y1,float z1,float w1,
-            float x2,float y2,float z2,float w2,
-            float x3,float y3,float z3,float w3,
-            float x4,float y4,float z4,float w4
-    )
-    {
-        data[0]=make_float4(x1,y1,z1,w1);
-        data[1]=make_float4(x2,y2,z2,w2);
-        data[2]=make_float4(x3,y3,z3,w3);
-        data[3]=make_float4(x4,y4,z4,w4);
-    }
-
-    /*This is stupid. Just use two dimensions array*/
-    float& __host__  __device__ operator () (int i,int j)
-    {
-        if(j==0)
-            return this->data[i].x;
-        else if(j==1)
-            return this->data[i].y;
-        else if(j==2)
-            return this->data[i].z;
-        else //if(j==3)
-            return this->data[i].w;
-    }
-
-
-    /*This is also stupid.*/
-    const float& __host__  __device__ operator () (int i,int j) const
-    {
-        if(j==0)
-            return this->data[i].x;
-        else if(j==1)
-            return this->data[i].y;
-        else if(j==2)
-            return this->data[i].z;
-        else //if(j==3)
-            return this->data[i].w;
-    }
-
-    __host__ __device__ Matrix4(Matrix4 * src)
-    {
-        this->data[0] = make_float4(src->data[0].x, src->data[0].y,
-                src->data[0].z, src->data[0].w);
-        this->data[1] = make_float4(src->data[1].x, src->data[1].y,
-                src->data[1].z, src->data[1].w);
-        this->data[2] = make_float4(src->data[2].x, src->data[2].y,
-                src->data[2].z, src->data[2].w);
-        this->data[3] = make_float4(src->data[3].x, src->data[3].y,
-                src->data[3].z, src->data[3].w);
-    }
-
-    inline __host__  __device__ float3 get_translation() const
-    {
-        return make_float3(data[0].w, data[1].w, data[2].w);
-    }
-};
-typedef Matrix4 sMatrix4;
-
 extern sMatrix4 T_B_P;
 extern sMatrix4 invT_B_P;
 
-struct sMatrix6
-{
-    float data[6*6];
-
-    __host__ __device__ sMatrix6()
-    {
-        for(int i=0;i<6;i++)
-        {
-            for(int j=0;j<6;j++)
-            {
-                int idx=6*i+j;
-                if(i==j)
-                    data[idx]=1.0;
-                else
-                    data[idx]=0.0;
-            }
-        }
-    }
-
-    static __host__ __device__ sMatrix6 zeros()
-    {
-        sMatrix6 ret;
-        for(int i=0;i<6*6;i++)
-            ret.data[i]=0.0;
-        return ret;
-    }
-
-    inline __host__  __device__ float& operator () (int i,int j)
-    {
-        int idx=6*i+j;
-        return data[idx];
-    }
-    
-    inline __host__  __device__ const float& operator () (int i,int j) const
-    {
-        int idx=6*i+j;
-        return data[idx];
-    }
-};
-
-class sMatrix3
-{
-    public:
-    float data[3*3];
-    __host__ __device__ sMatrix3()
-    {
-        for(int i=0;i<3;i++)
-        {
-            for(int j=0;j<3;j++)
-            {
-                int idx=3*i+j;
-                if(i==j)
-                    data[idx]=1.0;
-                else
-                    data[idx]=0.0;
-            }
-        }
-    }
-
-    inline __host__  __device__ float& operator () (int i,int j)
-    {
-        int idx=3*i+j;
-        return data[idx];
-    }
-
-    inline __host__  __device__ const float& operator () (int i,int j) const
-    {
-        int idx=3*i+j;
-        return data[idx];
-    }
-
-    static sMatrix3 zeros()
-    {
-        sMatrix3 mat;
-        for(int i=0;i<3*3;i++)
-            mat.data[i]=0.0;
-        return mat;
-    }
-};
-
-inline __host__  __device__ sMatrix6 operator+(const sMatrix6 &c1, const sMatrix6 &c2)
-{ 
-    sMatrix6 ret;
-    for(int i=0;i<36;i++)
-    {
-        ret.data[i]=c1.data[i]+c2.data[i];
-    }   
-    return ret;
-}
-
-inline __host__  __device__ sMatrix4 operator-(const sMatrix4 &c1, const sMatrix4 &c2)
-{ 
-    sMatrix4 ret;
-    for(int i=0;i<4;i++)
-        for(int j=0;j<4;j++)
-            ret(i,j)=c1(i,j)-c2(i,j);
-    return ret;
-}
-
-inline __host__  __device__ sMatrix3 operator-(const sMatrix3 &c1, const sMatrix3 &c2)
-{
-    sMatrix3 ret;
-    for(int i=0;i<3;i++)
-        for(int j=0;j<3;j++)
-            ret(i,j)=c1(i,j)-c2(i,j);
-    return ret;
-}
-
-
-
-std::ostream & operator<<(std::ostream & out, const Matrix4 & m);
-Matrix4 operator*(const Matrix4 & A, const Matrix4 & B);
-Matrix4 inverse(const Matrix4 & A);
-
-inline __host__  __device__ float4 operator*(const Matrix4 & M,const float4 & v)
-{
-    return make_float4(dot(M.data[0], v), dot(M.data[1], v), dot(M.data[2], v),
-            dot(M.data[3], v));
-}
-
-inline __host__  __device__ float3 operator*(const Matrix4 & M,const float3 & v)
-{
-    return make_float3(dot(make_float3(M.data[0]), v) + M.data[0].w,
-            dot(make_float3(M.data[1]), v) + M.data[1].w,
-            dot(make_float3(M.data[2]), v) + M.data[2].w);
-}
-
-inline __host__  __device__ float3 rotate(const Matrix4 & M, const float3 & v)
-{
-    return make_float3(dot(make_float3(M.data[0]), v),
-                       dot(make_float3(M.data[1]), v),
-                       dot(make_float3(M.data[2]), v));
-}
-
-inline Matrix4 getCameraMatrix(const float4 & k) {
-    Matrix4 K;
+inline sMatrix4 getCameraMatrix(const float4 & k) {
+    sMatrix4 K;
     K.data[0] = make_float4(k.x, 0, k.z, 0);
     K.data[1] = make_float4(0, k.y, k.w, 0);
     K.data[2] = make_float4(0, 0, 1, 0);
@@ -309,22 +82,15 @@ inline Matrix4 getCameraMatrix(const float4 & k) {
     return K;
 }
 
-inline Matrix4 getInverseCameraMatrix(const float4 & k)
+inline sMatrix4 getInverseCameraMatrix(const float4 & k)
 {
-    Matrix4 invK;
+    sMatrix4 invK;
     invK.data[0] = make_float4(1.0f / k.x, 0, -k.z / k.x, 0);
     invK.data[1] = make_float4(0, 1.0f / k.y, -k.w / k.y, 0);
     invK.data[2] = make_float4(0, 0, 1, 0);
     invK.data[3] = make_float4(0, 0, 0, 1);
     return invK;
 }
-
-
-
-
-
-
-
 
 template<typename OTHER>
 inline void image_copy(Ref & to, const OTHER & from, uint size) {
@@ -385,15 +151,6 @@ bool __forceinline__ __host__ __device__ operator==(const TrackData &d1,const Tr
 
 
 template<typename P>
-inline Matrix4 toMatrix4(const TooN::SE3<P> & p)
-{
-    const TooN::Matrix<4, 4, float> I = TooN::Identity;
-    Matrix4 R;
-    TooN::wrapMatrix<4, 4>(&R.data[0].x) = p * I;
-    return R;
-}
-
-template<typename P>
 inline sMatrix4 tosMatrix4(const TooN::SE3<P> & p)
 {
     const TooN::Matrix<4, 4, float> I = TooN::Identity;
@@ -438,9 +195,9 @@ class Timestamp
         Timestamp(uint32_t s,uint32_t ns) :sec(s),nsec(ns){}
 };
 
-inline Matrix4 operator*(const sMatrix4 & A, const sMatrix4 & B)
+inline sMatrix4 operator*(const sMatrix4 & A, const sMatrix4 & B)
 {
-    Matrix4 R;
+    sMatrix4 R;
     TooN::wrapMatrix<4, 4>(&R.data[0].x) = TooN::wrapMatrix<4, 4>(&A.data[0].x)
             * TooN::wrapMatrix<4, 4>(&B.data[0].x);
     return R;
@@ -505,7 +262,7 @@ inline sMatrix3 transpose( const sMatrix3 &mat)
     return ret;
 }
 
-inline std::ostream & operator<<(std::ostream & out, const Matrix4 & m)
+inline std::ostream & operator<<(std::ostream & out, const sMatrix4 & m)
 {
     for (unsigned i = 0; i < 4; ++i)
         out << m.data[i].x << "  " << m.data[i].y << "  " << m.data[i].z << "  "
@@ -709,120 +466,10 @@ inline float dist(const float3 &p1,const float3 &p2)
     return l2(p);
 }
 
-inline __host__  __device__  void eulerFromHomo(const sMatrix4 &pose,float &roll,float &pitch,float &yaw)
-{
-    roll  = atan2f(pose(2,1), pose(2,2));
-    pitch = asinf(-pose(2,0));
-    yaw   = atan2f(pose(1,0), pose(0,0));
-}
 
+sMatrix4 inverse(const sMatrix4 & A);
 
-inline Eigen::MatrixXd toEigen(const sMatrix4 &mat)
-{
-    Eigen::MatrixXd ret(4,4);
-    for(int i=0;i<4;i++)
-    {
-        for(int j=0;j<4;j++)
-        {
-            ret(i,j)=mat(i,j);
-        }
-    }
-    return ret;
-}
-
-inline Eigen::MatrixXd toEigen(const sMatrix3 &mat)
-{
-    Eigen::MatrixXd ret(3,3);
-    for(int i=0;i<3;i++)
-    {
-        for(int j=0;j<3;j++)
-        {
-            ret(i,j)=mat(i,j);
-        }
-    }
-    return ret;
-}
-
-inline Eigen::MatrixXd toEigen(const sMatrix6 &mat)
-{
-    Eigen::MatrixXd ret(6,6);
-    for(int i=0;i<6;i++)
-    {
-        for(int j=0;j<6;j++)
-        {
-            ret(i,j)=mat(i,j);
-        }
-    }
-    return ret;
-}
-
-inline sMatrix4 fromEigen4(const Eigen::MatrixXd &mat)
-{
-    sMatrix4 ret;
-    for(int i=0;i<4;i++)
-    {
-        for(int j=0;j<4;j++)
-        {
-            ret(i,j)=mat(i,j);
-        }
-    }
-    return ret;
-}
-
-inline sMatrix6 fromEigen6(const Eigen::MatrixXd &mat)
-{
-    sMatrix6 ret;
-    for(int i=0;i<6;i++)
-    {
-        for(int j=0;j<6;j++)
-        {
-            ret(i,j)=mat(i,j);
-        }
-    }
-    return ret;
-}
-
-inline sMatrix3 fromEigen3(const Eigen::MatrixXd &mat)
-{
-    sMatrix3 ret;
-    for(int i=0;i<3;i++)
-    {
-        for(int j=0;j<3;j++)
-        {
-            ret(i,j)=mat(i,j);
-        }
-    }
-    return ret;
-}
-
-
-inline sMatrix4 inverse(const sMatrix4 & A)
-{
-    Eigen::MatrixXd mat=toEigen(A);
-    mat=mat.inverse();
-    return fromEigen4(mat);
-    /*
-    static TooN::Matrix<4, 4, float> I = TooN::Identity;
-    TooN::Matrix<4, 4, float> temp = TooN::wrapMatrix<4, 4>(&A.data[0].x);
-    Matrix4 R;
-    TooN::wrapMatrix<4, 4>(&R.data[0].x) = TooN::gaussian_elimination(temp, I);
-    return R;
-    */
-}
-
-inline sMatrix6 inverse(const sMatrix6 & A)
-{
-    Eigen::MatrixXd mat=toEigen(A);
-    mat=mat.inverse();
-    return fromEigen6(mat);
-    /*
-    static TooN::Matrix<6, 6, float> I = TooN::Identity;
-    TooN::Matrix<6, 6, float> temp = TooN::wrapMatrix<6, 6>(&A.data[0]);
-    sMatrix6 R;
-    TooN::wrapMatrix<6, 6>(&R.data[0]) = TooN::gaussian_elimination(temp, I);
-    return R;
-    */
-}
+sMatrix6 inverse(const sMatrix6 & A);
 
 float2 checkPoseErr(sMatrix4 p1,sMatrix4 p2);
 #endif // UTILS_H

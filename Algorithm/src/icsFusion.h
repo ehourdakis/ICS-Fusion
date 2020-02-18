@@ -13,7 +13,7 @@ class IcsFusion
         IcsFusion(const kparams_t &par, float3 initPose)
             :params(par)
         {
-            pose = toMatrix4(TooN::SE3<float>(
+            pose = tosMatrix4(TooN::SE3<float>(
                        TooN::makeVector(initPose.x, initPose.y, initPose.z, 0, 0, 0)) );
             oldPose=pose;
             this->iterations.clear();
@@ -34,7 +34,7 @@ class IcsFusion
         }        
         */
         //Allow a kfusion object to be created with a pose which include orientation as well as position
-        IcsFusion(const kparams_t &par,Matrix4 initPose);
+        IcsFusion(const kparams_t &par,sMatrix4 initPose);
 
         void restorePose()
         {

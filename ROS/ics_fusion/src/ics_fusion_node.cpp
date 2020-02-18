@@ -410,7 +410,7 @@ void camInfoCallback(sensor_msgs::CameraInfoConstPtr msg)
              params.camera.z,
              params.camera.w);
     
-    Matrix4 poseMatrix;  
+    sMatrix4 poseMatrix;  
     poseMatrix(0,3)=params.volume_direction.x;
     poseMatrix(1,3)=params.volume_direction.y;
     poseMatrix(2,3)=params.volume_direction.z;
