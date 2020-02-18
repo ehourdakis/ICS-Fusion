@@ -59,13 +59,10 @@ bool CloseLoop::addTf(int idx,
                       float3 *prevKeyVert,
                       int size)
 {
-<<<<<<< HEAD
+
 //     if(fitness<0.1)
 //         return false;
-=======
-    //if(fitness<0.1)
-    //    return false;
->>>>>>> 01caa4411e0e1adc3dd7c986381e3dce917e1247
+
     sMatrix6 cov=calculatePoint2PointCov(keyVert,
                                          size,
                                          prevKeyVert,
