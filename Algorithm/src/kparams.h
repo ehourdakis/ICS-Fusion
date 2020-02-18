@@ -13,8 +13,8 @@ typedef struct
     int tracking_rate=1;
 
     float optim_thr=100000000000;
-    float cov_small=1e-10;
-    float cov_big=100;
+    float cov_small=1e-4;
+    float cov_big=1e-2;
 
     uint3 volume_resolution = make_uint3(256,256,256);
     //uint3 volume_resolution = make_uint3(512,512,512);    

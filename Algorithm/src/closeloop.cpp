@@ -52,14 +52,15 @@ bool CloseLoop::addTf(int idx,
                       int prevIdx,
                       const sMatrix4 &tf, 
                       float fitness, 
+                      float rmse,
                       const std::vector<int> &source_corr, 
                       const std::vector<int> &target_corr,
                       float3 *keyVert,
                       float3 *prevKeyVert,
                       int size)
 {
-    if(fitness<0.1)
-        return false;
+//     if(fitness<0.1)
+//         return false;
     sMatrix6 cov=calculatePoint2PointCov(keyVert,
                                          size,
                                          prevKeyVert,
@@ -71,7 +72,8 @@ bool CloseLoop::addTf(int idx,
     
     //cov=cov*(1/fitness);
     std::cout<<"FITNESS:"<<fitness<<std::endl;
-    std::cout<<"COV:"<<cov<<std::endl;
+    std::cout<<"RMSE:"<<rmse<<std::endl;
+    std::cout<<"COV:\n"<<cov<<std::endl;
     _isam->addPoseConstrain(0,idx,tf,cov);
      optimize();
      removeOldNodes(idx);

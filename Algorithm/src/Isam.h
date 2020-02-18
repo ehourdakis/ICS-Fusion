@@ -61,9 +61,9 @@ class Isam :public PoseGraph
         isam::Factor *poseConstrainFactor;
         std::vector<isam::Point3d_Node*> landmarks;
 
-        static Eigen::MatrixXd toEigen(sMatrix4 mat);
-        static Eigen::MatrixXd toEigen(sMatrix6 mat);
-        static Eigen::MatrixXd toEigen(sMatrix3 mat);
+//        static Eigen::MatrixXd toEigen(sMatrix4 mat);
+//        static Eigen::MatrixXd toEigen(sMatrix6 mat);
+//        static Eigen::MatrixXd toEigen(sMatrix3 mat);
         sMatrix4 prevPose;
 };
 #endif

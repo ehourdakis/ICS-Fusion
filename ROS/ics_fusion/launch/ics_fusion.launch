@@ -17,7 +17,7 @@
         <param name="depth_topic"    type="str"    value="/camera/depth_registered/image_raw" />
         <param name="rgb_topic"      type="str" value="/camera/rgb/image_rect_color" />
         
-        <param name="keypt_size"     type="int" value="100" />
+        <param name="keypt_size"     type="int" value="2000" />
         
         <param name="gem_left_prob" type="str" value="/gem/LLegContactProbability" />
         <param name="gem_right_prob" type="str" value="/gem/RLegContactProbability" />

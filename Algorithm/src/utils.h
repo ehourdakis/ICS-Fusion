@@ -26,6 +26,9 @@
 #include <cuda_runtime.h>
 #include"image.h"
 
+#include<eigen3/Eigen/Dense>
+
+
 #define INVALID -2   // this is used to mark invalid entries in normal or vertex maps
 
 #define TICK(str)    {static const std::string str_tick = str; \
@@ -41,6 +44,8 @@ extern bool print_kernel_timing;
 
 extern struct timespec tick_clockData;
 extern struct timespec tock_clockData;
+
+
 
 __forceinline__ __host__ __device__ int  signf(const float a)
 {
@@ -473,24 +478,6 @@ inline sMatrix3 operator*(const sMatrix3 & A, const float f)
     return R;
 }
 
-inline sMatrix4 inverse(const sMatrix4 & A)
-{
-    static TooN::Matrix<4, 4, float> I = TooN::Identity;
-    TooN::Matrix<4, 4, float> temp = TooN::wrapMatrix<4, 4>(&A.data[0].x);
-    Matrix4 R;
-    TooN::wrapMatrix<4, 4>(&R.data[0].x) = TooN::gaussian_elimination(temp, I);
-    return R;
-}
-
-inline sMatrix6 inverse(const sMatrix6 & A)
-{
-    static TooN::Matrix<6, 6, float> I = TooN::Identity;
-    TooN::Matrix<6, 6, float> temp = TooN::wrapMatrix<6, 6>(&A.data[0]);
-    sMatrix6 R;
-    TooN::wrapMatrix<6, 6>(&R.data[0]) = TooN::gaussian_elimination(temp, I);
-    return R;
-}
-
 inline sMatrix3 wedge(float *v)
 {
     sMatrix3 skew;
@@ -728,5 +715,114 @@ inline __host__  __device__  void eulerFromHomo(const sMatrix4 &pose,float &roll
     pitch = asinf(-pose(2,0));
     yaw   = atan2f(pose(1,0), pose(0,0));
 }
+
+
+inline Eigen::MatrixXd toEigen(const sMatrix4 &mat)
+{
+    Eigen::MatrixXd ret(4,4);
+    for(int i=0;i<4;i++)
+    {
+        for(int j=0;j<4;j++)
+        {
+            ret(i,j)=mat(i,j);
+        }
+    }
+    return ret;
+}
+
+inline Eigen::MatrixXd toEigen(const sMatrix3 &mat)
+{
+    Eigen::MatrixXd ret(3,3);
+    for(int i=0;i<3;i++)
+    {
+        for(int j=0;j<3;j++)
+        {
+            ret(i,j)=mat(i,j);
+        }
+    }
+    return ret;
+}
+
+inline Eigen::MatrixXd toEigen(const sMatrix6 &mat)
+{
+    Eigen::MatrixXd ret(6,6);
+    for(int i=0;i<6;i++)
+    {
+        for(int j=0;j<6;j++)
+        {
+            ret(i,j)=mat(i,j);
+        }
+    }
+    return ret;
+}
+
+inline sMatrix4 fromEigen4(const Eigen::MatrixXd &mat)
+{
+    sMatrix4 ret;
+    for(int i=0;i<4;i++)
+    {
+        for(int j=0;j<4;j++)
+        {
+            ret(i,j)=mat(i,j);
+        }
+    }
+    return ret;
+}
+
+inline sMatrix6 fromEigen6(const Eigen::MatrixXd &mat)
+{
+    sMatrix6 ret;
+    for(int i=0;i<6;i++)
+    {
+        for(int j=0;j<6;j++)
+        {
+            ret(i,j)=mat(i,j);
+        }
+    }
+    return ret;
+}
+
+inline sMatrix3 fromEigen3(const Eigen::MatrixXd &mat)
+{
+    sMatrix3 ret;
+    for(int i=0;i<3;i++)
+    {
+        for(int j=0;j<3;j++)
+        {
+            ret(i,j)=mat(i,j);
+        }
+    }
+    return ret;
+}
+
+
+inline sMatrix4 inverse(const sMatrix4 & A)
+{
+    Eigen::MatrixXd mat=toEigen(A);
+    mat=mat.inverse();
+    return fromEigen4(mat);
+    /*
+    static TooN::Matrix<4, 4, float> I = TooN::Identity;
+    TooN::Matrix<4, 4, float> temp = TooN::wrapMatrix<4, 4>(&A.data[0].x);
+    Matrix4 R;
+    TooN::wrapMatrix<4, 4>(&R.data[0].x) = TooN::gaussian_elimination(temp, I);
+    return R;
+    */
+}
+
+inline sMatrix6 inverse(const sMatrix6 & A)
+{
+    Eigen::MatrixXd mat=toEigen(A);
+    mat=mat.inverse();
+    return fromEigen6(mat);
+    /*
+    static TooN::Matrix<6, 6, float> I = TooN::Identity;
+    TooN::Matrix<6, 6, float> temp = TooN::wrapMatrix<6, 6>(&A.data[0]);
+    sMatrix6 R;
+    TooN::wrapMatrix<6, 6>(&R.data[0]) = TooN::gaussian_elimination(temp, I);
+    return R;
+    */
+}
+
 float2 checkPoseErr(sMatrix4 p1,sMatrix4 p2);
 #endif // UTILS_H

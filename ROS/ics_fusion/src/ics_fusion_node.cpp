@@ -193,7 +193,16 @@ void doLoopClosure()
         }
     
         std::cout<<tf<<std::endl;
-        loopCl->addTf(keyFrameIdx,prevKeyFrameIdx,tf,results->fitness,results->source_corr,results->target_corr,keyVert,prevKeyVert,keypt_size);
+        loopCl->addTf(keyFrameIdx,
+                      prevKeyFrameIdx,
+                      tf,
+                      results->fitness,
+                      results->rmse,
+                      results->source_corr,
+                      results->target_corr,
+                      keyVert,
+                      prevKeyVert,
+                      keypt_size);
     }
     
     results->fitness=-1;

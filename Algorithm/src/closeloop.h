@@ -44,6 +44,7 @@ class CloseLoop
                    int prevIdx,
                    const sMatrix4 &tf, 
                    float fitness, 
+                   float rmse,
                    const std::vector<int> &source_corr, 
                    const std::vector<int> &target_corr,
                    float3 *keyVert,

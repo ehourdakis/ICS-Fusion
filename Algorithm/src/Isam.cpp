@@ -254,7 +254,7 @@ sMatrix4 Isam::fromIsamNode(Pose3d_Node *node)
 //     ret=toVisionCord(ret);
     return ret;
 }
-
+#if 0
 Eigen::MatrixXd Isam::toEigen(sMatrix4 mat)
 {
     Eigen::MatrixXd ret(4,4);
@@ -293,6 +293,8 @@ Eigen::MatrixXd Isam::toEigen(sMatrix6 mat)
     }
     return ret;
 }
+#endif
+
 /*
 mrpt::poses::CPose3DPDFGaussian Isam::toCPose3DPDF(sMatrix4 pose,sMatrix6 cov)
 {
