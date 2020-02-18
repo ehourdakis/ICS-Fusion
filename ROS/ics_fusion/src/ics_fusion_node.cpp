@@ -316,7 +316,7 @@ bool isKeyFrame()
 }
 
 void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_msgs::ImageConstPtr &depth)
-{
+{    
     passedFromLastKeyFrame++;
     if(strcmp(rgb->encoding.c_str(), "rgb8")==0) //rgb8
     {
@@ -350,8 +350,8 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
         return;
     }
     
-    if(hasStableContact())
-        loopCl->processFrame();
+
+    loopCl->processFrame();
     
 
 #ifndef DISABLE_LOOP_CLOSURE

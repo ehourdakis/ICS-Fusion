@@ -7,7 +7,7 @@
 // #define DISABLE_SMOOTHNET3D
 // #define DISABLE_KEY_FRAMES
 // #define DISABLE_LOOP_CLOSURE
-// #define LOOP_CLOSURE_RATE 150
+#define LOOP_CLOSURE_RATE 150
 // #define DISABLE_MAP_FIXES
 
 #endif
