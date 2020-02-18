@@ -5,6 +5,36 @@
 struct sMatrix4
 {
     float4 data[4];
+
+//    __host__ __device__ sMatrix4(float a00,float a01,float a02,float a03,
+//                                 float a10,float a11,float a12,float a13,
+//                                 float a20,float a21,float a22,float a23,
+//                                 float a30,float a31,float a32,float a33)
+//    {
+//        data[0].x=a00;
+//        data[0].y=a01;
+//        data[0].z=a02;
+//        data[0].w=a03;
+
+//        data[1].x=a10;
+//        data[1].y=a11;
+//        data[1].z=a12;
+//        data[1].w=a13;
+
+//        data[2].x=a20;
+//        data[2].y=a21;
+//        data[2].z=a22;
+//        data[2].w=a23;
+
+
+//        data[3].x=a30;
+//        data[3].y=a31;
+//        data[3].z=a32;
+//        data[3].w=a33;
+
+//    }
+
+
     //Identity matrix
     __host__  __device__ sMatrix4()
     {
@@ -75,6 +105,56 @@ struct sMatrix4
 struct sMatrix6
 {
     float data[6*6];
+
+    __host__ __device__ sMatrix6(float a00,float a01,float a02,float a03,float a04,float a05,
+                                 float a10,float a11,float a12,float a13,float a14,float a15,
+                                 float a20,float a21,float a22,float a23,float a24,float a25,
+                                 float a30,float a31,float a32,float a33,float a34,float a35,
+                                 float a40,float a41,float a42,float a43,float a44,float a45,
+                                 float a50,float a51,float a52,float a53,float a54,float a55)
+    {
+        data[0]=a00;
+        data[1]=a01;
+        data[2]=a02;
+        data[3]=a03;
+        data[4]=a04;
+        data[5]=a05;
+
+        data[6] =a10;
+        data[7] =a11;
+        data[8] =a12;
+        data[9] =a13;
+        data[10]=a14;
+        data[11]=a15;
+
+        data[12]=a20;
+        data[13]=a21;
+        data[14]=a22;
+        data[15]=a23;
+        data[16]=a24;
+        data[17]=a25;
+
+        data[18]=a30;
+        data[19]=a31;
+        data[20]=a32;
+        data[21]=a33;
+        data[22]=a34;
+        data[23]=a35;
+
+        data[24]=a40;
+        data[25]=a41;
+        data[26]=a42;
+        data[27]=a43;
+        data[28]=a44;
+        data[29]=a45;
+
+        data[30]=a50;
+        data[31]=a51;
+        data[32]=a52;
+        data[33]=a53;
+        data[34]=a54;
+        data[35]=a55;
+    }
 
     __host__ __device__ sMatrix6()
     {

@@ -1345,103 +1345,194 @@ __global__ void point2PointCovFirstTerm(const float3 *vert,
     d2J_dxdb,    d2J_dydb,    d2J_dzdb,   d2J_dadb,   d2J_db2,      d2J_dcdb,
     d2J_dxdc,    d2J_dydc,    d2J_dzdc,   d2J_dadc,   d2J_dbdc,     d2J_dc2;
     */
-    //d2J_dx2
-    ret(0,0)=2;
-    //d2J_dy2
-    ret(1,1)=2; 
-    //d2J_dz2
-    ret(2,2)=2;
-    //d2J_dydx
-    ret(0,1)=0;
-    //d2J_dxdy
-    ret(1,0)=0;
-    //d2J_dzdx
-    ret(0,2)=0;    
-    //d2J_dxdz 
-    ret(2,0)=0; 
-    //d2J_dydz
-    ret(2,1)=0; 
-    //d2J_dzdy
-    ret(1,2)=0;  
-    //d2J_da2
-    ret(3,3) = 
-        (piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b))*(2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b)) - (2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + (piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a))*(2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a)) - (2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b));
-    //d2J_db2 
-    ret(4,4) =
-        (pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c))*(2*pix*cos(b) + 2*piz*cos(c)*sin(b) + 2*piy*sin(b)*sin(c)) - (2*piz*cos(b)*cos(c) - 2*pix*sin(b) + 2*piy*cos(b)*sin(c))*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) - (2*pix*cos(a)*cos(b) + 2*piz*cos(a)*cos(c)*sin(b) + 2*piy*cos(a)*sin(b)*sin(c))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + (piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c))*(2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c)) - (2*pix*cos(b)*sin(a) + 2*piz*cos(c)*sin(a)*sin(b) + 2*piy*sin(a)*sin(b)*sin(c))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + (piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c))*(2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c));
-    //d2J_dc2 
-    ret(5,5)=
-        (piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) + (piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)))*(2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) - (2*piz*cos(b)*cos(c) + 2*piy*cos(b)*sin(c))*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) + (2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) - 2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + (piy*cos(b)*cos(c) - piz*cos(b)*sin(c))*(2*piy*cos(b)*cos(c) - 2*piz*cos(b)*sin(c)) - (2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
-    //d2J_dxda 
-    ret(3,0)=
-        2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) - 2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*pix*cos(b)*sin(a);
-    //d2J_dadx 
-    ret(0,3)=
-        2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) - 2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*pix*cos(b)*sin(a);
-    //d2J_dyda 
-    ret(3,1)=
-        2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b);
-    //d2J_dady 
-    ret(1,3)=
-        2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b);
-    //d2J_dzda 
-    ret(3,2)=0;
-    //d2J_dadz 
-    ret(2,3)=0;
-    //d2J_dxdb 
-    ret(4,0)=
-        2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c);
-    //d2J_dbdx 
-    ret(0,4)=
-        2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c);
-    //d2J_dydb 
-    ret(4,1)=
-        2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c);
-    //d2J_dbdy 
-    ret(1,4)=
-        2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c);
-    //d2J_dzdb
-    ret(4,2)=
-        - 2*pix*cos(b) - 2*piz*cos(c)*sin(b) - 2*piy*sin(b)*sin(c);
-    //d2J_dbdz 
-    ret(2,4)=
-        - 2*pix*cos(b) - 2*piz*cos(c)*sin(b) - 2*piy*sin(b)*sin(c);
-    //d2J_dxdc
-    ret(5,0)=
-        2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c));
-    //d2J_dcdx 
-    ret(0,5)=
-        2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c));
-    //d2J_dydc
-    ret(5,1)=
-        - 2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) - 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c));
-    //d2J_dcdy
-    ret(1,5)=
-        - 2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) - 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c));
-    //d2J_dzdc 
-    ret(5,2)=
-        2*piy*cos(b)*cos(c) - 2*piz*cos(b)*sin(c);
-    //d2J_dcdz 
-    ret(2,5)=
-        2*piy*cos(b)*cos(c) - 2*piz*cos(b)*sin(c);
-    //d2J_dadb 
-    ret(4,3)=
-        (2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c))*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - (2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c))*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + (2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) - (2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b));
-    //d2J_dbda 
-    ret(3,4)=
+    float d2J_dx2 =
+
+    2;
+
+
+    float d2J_dy2 =
+
+    2;
+
+
+    float d2J_dz2 =
+
+    2;
+
+
+    float d2J_dydx =
+
+    0;
+
+
+    float d2J_dxdy =
+
+    0;
+
+
+    float d2J_dzdx =
+
+    0;
+
+
+    float d2J_dxdz =
+
+    0;
+
+
+    float d2J_dydz =
+
+    0;
+
+
+    float d2J_dzdy =
+
+    0;
+
+
+    float d2J_da2 =
+
+    (piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b))*(2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b)) - (2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + (piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a))*(2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a)) - (2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b));
+
+
+    float d2J_db2 =
+
+    (pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c))*(2*pix*cos(b) + 2*piz*cos(c)*sin(b) + 2*piy*sin(b)*sin(c)) - (2*piz*cos(b)*cos(c) - 2*pix*sin(b) + 2*piy*cos(b)*sin(c))*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) - (2*pix*cos(a)*cos(b) + 2*piz*cos(a)*cos(c)*sin(b) + 2*piy*cos(a)*sin(b)*sin(c))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + (piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c))*(2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c)) - (2*pix*cos(b)*sin(a) + 2*piz*cos(c)*sin(a)*sin(b) + 2*piy*sin(a)*sin(b)*sin(c))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + (piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c))*(2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c));
+
+
+    float d2J_dc2 =
+
+    (piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) + (piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)))*(2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) - (2*piz*cos(b)*cos(c) + 2*piy*cos(b)*sin(c))*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) + (2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) - 2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + (piy*cos(b)*cos(c) - piz*cos(b)*sin(c))*(2*piy*cos(b)*cos(c) - 2*piz*cos(b)*sin(c)) - (2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
+
+
+    float d2J_dxda =
+
+    2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) - 2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*pix*cos(b)*sin(a);
+
+
+    float d2J_dadx =
+
+    2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) - 2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*pix*cos(b)*sin(a);
+
+
+    float d2J_dyda =
+
+    2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b);
+
+
+    float d2J_dady =
+
+    2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b);
+
+
+    float d2J_dzda =
+
+    0;
+
+
+    float d2J_dadz =
+
+    0;
+
+
+    float d2J_dxdb =
+
+    2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c);
+
+
+    float d2J_dbdx =
+
+    2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c);
+
+
+    float d2J_dydb =
+
+    2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c);
+
+
+    float d2J_dbdy =
+
+    2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c);
+
+
+    float d2J_dzdb =
+
+    - 2*pix*cos(b) - 2*piz*cos(c)*sin(b) - 2*piy*sin(b)*sin(c);
+
+
+    float d2J_dbdz =
+
+    - 2*pix*cos(b) - 2*piz*cos(c)*sin(b) - 2*piy*sin(b)*sin(c);
+
+
+    float d2J_dxdc =
+
+    2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c));
+
+
+    float d2J_dcdx =
+
+    2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c));
+
+
+    float d2J_dydc =
+
+    - 2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) - 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c));
+
+
+    float d2J_dcdy =
+
+    - 2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) - 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c));
+
+
+    float d2J_dzdc =
+
+    2*piy*cos(b)*cos(c) - 2*piz*cos(b)*sin(c);
+
+
+    float d2J_dcdz =
+
+    2*piy*cos(b)*cos(c) - 2*piz*cos(b)*sin(c);
+
+
+    float d2J_dadb =
+
+    (2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c))*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) - (2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c))*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + (2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) - (2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b));
+
+
+    float d2J_dbda =
+
     (piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c))*(2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b)) - (piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c))*(2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a)) + (2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) - (2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b));
-    //d2J_dbdc 
-    ret(5,4)=
-        (2*piy*cos(a)*cos(b)*cos(c) - 2*piz*cos(a)*cos(b)*sin(c))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + (2*piy*cos(b)*cos(c)*sin(a) - 2*piz*cos(b)*sin(a)*sin(c))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) - (2*piy*cos(b)*cos(c) - 2*piz*cos(b)*sin(c))*(pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c)) - (2*piy*cos(c)*sin(b) - 2*piz*sin(b)*sin(c))*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) + (2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c)) - (2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)))*(piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c));
-    //d2J_dcdb
-    ret(4,5)=
-        (2*piy*cos(a)*cos(b)*cos(c) - 2*piz*cos(a)*cos(b)*sin(c))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + (2*piy*cos(b)*cos(c)*sin(a) - 2*piz*cos(b)*sin(a)*sin(c))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) - (piy*cos(b)*cos(c) - piz*cos(b)*sin(c))*(2*pix*cos(b) + 2*piz*cos(c)*sin(b) + 2*piy*sin(b)*sin(c)) - (2*piy*cos(c)*sin(b) - 2*piz*sin(b)*sin(c))*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) + (piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c)) - (piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)))*(2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c));
-    //d2J_dcda 
-    ret(3,5)=
-        (2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) - (piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a)) - (piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)))*(2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b)) + (2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
-    //d2J_dadc
-    ret(5,3)=
-        (2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) - (2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) - (2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)))*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) + (2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
+
+
+    float d2J_dbdc =
+
+    (2*piy*cos(a)*cos(b)*cos(c) - 2*piz*cos(a)*cos(b)*sin(c))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + (2*piy*cos(b)*cos(c)*sin(a) - 2*piz*cos(b)*sin(a)*sin(c))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) - (2*piy*cos(b)*cos(c) - 2*piz*cos(b)*sin(c))*(pix*cos(b) + piz*cos(c)*sin(b) + piy*sin(b)*sin(c)) - (2*piy*cos(c)*sin(b) - 2*piz*sin(b)*sin(c))*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) + (2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(piz*cos(a)*cos(b)*cos(c) - pix*cos(a)*sin(b) + piy*cos(a)*cos(b)*sin(c)) - (2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)))*(piz*cos(b)*cos(c)*sin(a) - pix*sin(a)*sin(b) + piy*cos(b)*sin(a)*sin(c));
+
+
+    float d2J_dcdb =
+
+    (2*piy*cos(a)*cos(b)*cos(c) - 2*piz*cos(a)*cos(b)*sin(c))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + (2*piy*cos(b)*cos(c)*sin(a) - 2*piz*cos(b)*sin(a)*sin(c))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) - (piy*cos(b)*cos(c) - piz*cos(b)*sin(c))*(2*pix*cos(b) + 2*piz*cos(c)*sin(b) + 2*piy*sin(b)*sin(c)) - (2*piy*cos(c)*sin(b) - 2*piz*sin(b)*sin(c))*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) + (piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c)) - (piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)))*(2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c));
+
+
+    float d2J_dcda =
+
+    (2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) - (piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a)) - (piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)))*(2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b)) + (2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
+
+
+    float d2J_dadc =
+
+    (2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) - (2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) - (2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)))*(piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + pix*cos(a)*cos(b)) + (2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
+
+
+    ret=sMatrix6( d2J_dx2,     d2J_dydx,  d2J_dzdx,   d2J_dadx,   d2J_dbdx,     d2J_dcdx,
+                  d2J_dxdy,    d2J_dy2,	  d2J_dzdy,   d2J_dady,   d2J_dbdy,     d2J_dcdy,
+                  d2J_dxdz,    d2J_dydz,  d2J_dz2,    d2J_dadz,   d2J_dbdz,     d2J_dcdz,
+                  d2J_dxda,    d2J_dyda,  d2J_dzda,   d2J_da2,	  d2J_dbda,     d2J_dcda,
+                  d2J_dxdb,    d2J_dydb,  d2J_dzdb,   d2J_dadb,   d2J_db2,      d2J_dcdb,
+                  d2J_dxdc,    d2J_dydc,  d2J_dzdc,   d2J_dadc,   d2J_dbdc,     d2J_dc2 );
+
+
 
     outData[idx]=ret;
 }
@@ -1541,95 +1632,192 @@ __global__ void point2PointCovSecondTerm(const float3 *vert,
     */
 
     sMatrix6 tmp;
-    //d2J_dpix_dx 
-    tmp(0,0)=2*cos(a)*cos(b);
-    //d2J_dpix_dy 
-    tmp(1,0)=2*cos(b)*sin(a);
-    //d2J_dpix_dz
-    tmp(2,0)=-2*sin(b);
-    //d2J_dpix_da 
-    tmp(3,0)=
-        cos(b)*sin(a)*(2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b)) - cos(a)*cos(b)*(2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a)) - 2*cos(b)*sin(a)*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + 2*cos(a)*cos(b)*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
-    //d2J_dpix_db
-    tmp(4,0)=
-        sin(b)*(2*pix*cos(b) + 2*piz*cos(c)*sin(b) + 2*piy*sin(b)*sin(c)) - 2*cos(b)*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) + cos(a)*cos(b)*(2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c)) - 2*sin(a)*sin(b)*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + cos(b)*sin(a)*(2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c)) - 2*cos(a)*sin(b)*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b));
-    //d2J_dpix_dc 
-    tmp(5,0)=
-        cos(a)*cos(b)*(2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - sin(b)*(2*piy*cos(b)*cos(c) - 2*piz*cos(b)*sin(c)) - cos(b)*sin(a)*(2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)));
-    //d2J_dpiy_dx 
-    tmp(0,1)=2*cos(a)*sin(b)*sin(c) - 2*cos(c)*sin(a);
-    //d2J_dpiy_dy 
-    tmp(1,1)=2*cos(a)*cos(c) + 2*sin(a)*sin(b)*sin(c);
-    //d2J_dpiy_dz 
-    tmp(2,1)=2*cos(b)*sin(c);
-    //d2J_dpiy_da 
-    tmp(3,1)=
-        (cos(a)*cos(c) + sin(a)*sin(b)*sin(c))*(2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b)) + (cos(c)*sin(a) - cos(a)*sin(b)*sin(c))*(2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a)) - (2*cos(a)*cos(c) + 2*sin(a)*sin(b)*sin(c))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) - (2*cos(c)*sin(a) - 2*cos(a)*sin(b)*sin(c))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
-    //d2J_dpiy_db
-    tmp(4,1)=
-        (cos(a)*cos(c) + sin(a)*sin(b)*sin(c))*(2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c)) - (cos(c)*sin(a) - cos(a)*sin(b)*sin(c))*(2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c)) - 2*sin(b)*sin(c)*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) - cos(b)*sin(c)*(2*pix*cos(b) + 2*piz*cos(c)*sin(b) + 2*piy*sin(b)*sin(c)) + 2*cos(a)*cos(b)*sin(c)*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + 2*cos(b)*sin(a)*sin(c)*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
-    //d2J_dpiy_dc 
-    tmp(5,1)=
-        (2*sin(a)*sin(c) + 2*cos(a)*cos(c)*sin(b))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) - (2*cos(a)*sin(c) - 2*cos(c)*sin(a)*sin(b))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) - (cos(a)*cos(c) + sin(a)*sin(b)*sin(c))*(2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) - (cos(c)*sin(a) - cos(a)*sin(b)*sin(c))*(2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) + 2*cos(b)*cos(c)*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) + cos(b)*sin(c)*(2*piy*cos(b)*cos(c) - 2*piz*cos(b)*sin(c));
-    //d2J_dpiz_dx
-    tmp(0,2)=2*sin(a)*sin(c) + 2*cos(a)*cos(c)*sin(b);
-    //d2J_dpiz_dy 
-    tmp(1,2)=2*cos(c)*sin(a)*sin(b) - 2*cos(a)*sin(c);
-    //d2J_dpiz_dz 
-    tmp(2,2)=2*cos(b)*cos(c);    
-    //d2J_dpiz_da
-    tmp(3,2)=
-        (2*cos(a)*sin(c) - 2*cos(c)*sin(a)*sin(b))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) - (sin(a)*sin(c) + cos(a)*cos(c)*sin(b))*(2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a)) - (cos(a)*sin(c) - cos(c)*sin(a)*sin(b))*(2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b)) + (2*sin(a)*sin(c) + 2*cos(a)*cos(c)*sin(b))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
-    //d2J_dpiz_db
-    tmp(4,2)=
-        (sin(a)*sin(c) + cos(a)*cos(c)*sin(b))*(2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c)) - (cos(a)*sin(c) - cos(c)*sin(a)*sin(b))*(2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c)) - 2*cos(c)*sin(b)*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) - cos(b)*cos(c)*(2*pix*cos(b) + 2*piz*cos(c)*sin(b) + 2*piy*sin(b)*sin(c)) + 2*cos(a)*cos(b)*cos(c)*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + 2*cos(b)*cos(c)*sin(a)*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
-    //d2J_dpiz_dc
-    tmp(5,2)=
-        (2*cos(c)*sin(a) - 2*cos(a)*sin(b)*sin(c))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) - (2*cos(a)*cos(c) + 2*sin(a)*sin(b)*sin(c))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + (sin(a)*sin(c) + cos(a)*cos(c)*sin(b))*(2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) + (cos(a)*sin(c) - cos(c)*sin(a)*sin(b))*(2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + cos(b)*cos(c)*(2*piy*cos(b)*cos(c) - 2*piz*cos(b)*sin(c)) - 2*cos(b)*sin(c)*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c));
-    //d2J_dqix_dx
-    tmp(0,3)=-2;
-    //d2J_dqix_dy 
-    tmp(1,3)=0;
-    //d2J_dqix_dz =
-    tmp(2,3)=0;
-    //d2J_dqix_da
-    tmp(3,2)=
-        2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a);
-    //d2J_dqix_db
-    tmp(4,3)=
-        2*pix*cos(a)*sin(b) - 2*piz*cos(a)*cos(b)*cos(c) - 2*piy*cos(a)*cos(b)*sin(c);
-    //d2J_dqix_dc
-    tmp(5,3)=
-        - 2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c));
-    //d2J_dqiy_dx
-    tmp(0,4)=0;
-    //d2J_dqiy_dy
-    tmp(1,4)=
-    //d2J_dqiy_dz
-    tmp(2,4)=0;
-    //d2J_dqiy_da
-    tmp(3,4)=
-        2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) - 2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*pix*cos(a)*cos(b);
-    //d2J_dqiy_db
-    tmp(4,4)=
-        2*pix*sin(a)*sin(b) - 2*piz*cos(b)*cos(c)*sin(a) - 2*piy*cos(b)*sin(a)*sin(c);
-    //d2J_dqiy_dc
-    tmp(5,4)=
-        2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c));
-    //d2J_dqiz_dx
-    tmp(0,5)=0;
-    //d2J_dqiz_dy
-    tmp(1,5)=0;
-    //d2J_dqiz_dz
-    tmp(2,5)=-2;
-    //d2J_dqiz_da
-    tmp(3,5)=0;
-    //d2J_dqiz_db
-    tmp(4,5)=
-        2*pix*cos(b) + 2*piz*cos(c)*sin(b) + 2*piy*sin(b)*sin(c);
-    //d2J_dqiz_dc
-    tmp(5,5)=
-        2*piz*cos(b)*sin(c) - 2*piy*cos(b)*cos(c);
+    float d2J_dpix_dx =
+
+    2*cos(a)*cos(b);
+
+
+    float d2J_dpix_dy =
+
+    2*cos(b)*sin(a);
+
+
+    float d2J_dpix_dz =
+
+    -2*sin(b);
+
+
+    float d2J_dpix_da =
+
+    cos(b)*sin(a)*(2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b)) - cos(a)*cos(b)*(2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a)) - 2*cos(b)*sin(a)*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + 2*cos(a)*cos(b)*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
+
+
+    float d2J_dpix_db =
+
+    sin(b)*(2*pix*cos(b) + 2*piz*cos(c)*sin(b) + 2*piy*sin(b)*sin(c)) - 2*cos(b)*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) + cos(a)*cos(b)*(2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c)) - 2*sin(a)*sin(b)*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + cos(b)*sin(a)*(2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c)) - 2*cos(a)*sin(b)*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b));
+
+
+    float d2J_dpix_dc =
+
+    cos(a)*cos(b)*(2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) - sin(b)*(2*piy*cos(b)*cos(c) - 2*piz*cos(b)*sin(c)) - cos(b)*sin(a)*(2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)));
+
+
+    float d2J_dpiy_dx =
+
+    2*cos(a)*sin(b)*sin(c) - 2*cos(c)*sin(a);
+
+
+    float d2J_dpiy_dy =
+
+    2*cos(a)*cos(c) + 2*sin(a)*sin(b)*sin(c);
+
+
+    float d2J_dpiy_dz =
+
+    2*cos(b)*sin(c);
+
+
+    float d2J_dpiy_da =
+
+    (cos(a)*cos(c) + sin(a)*sin(b)*sin(c))*(2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b)) + (cos(c)*sin(a) - cos(a)*sin(b)*sin(c))*(2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a)) - (2*cos(a)*cos(c) + 2*sin(a)*sin(b)*sin(c))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) - (2*cos(c)*sin(a) - 2*cos(a)*sin(b)*sin(c))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
+
+
+    float d2J_dpiy_db =
+
+    (cos(a)*cos(c) + sin(a)*sin(b)*sin(c))*(2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c)) - (cos(c)*sin(a) - cos(a)*sin(b)*sin(c))*(2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c)) - 2*sin(b)*sin(c)*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) - cos(b)*sin(c)*(2*pix*cos(b) + 2*piz*cos(c)*sin(b) + 2*piy*sin(b)*sin(c)) + 2*cos(a)*cos(b)*sin(c)*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + 2*cos(b)*sin(a)*sin(c)*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
+
+
+    float d2J_dpiy_dc =
+
+    (2*sin(a)*sin(c) + 2*cos(a)*cos(c)*sin(b))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) - (2*cos(a)*sin(c) - 2*cos(c)*sin(a)*sin(b))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) - (cos(a)*cos(c) + sin(a)*sin(b)*sin(c))*(2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) - (cos(c)*sin(a) - cos(a)*sin(b)*sin(c))*(2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) + 2*cos(b)*cos(c)*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) + cos(b)*sin(c)*(2*piy*cos(b)*cos(c) - 2*piz*cos(b)*sin(c));
+
+
+    float d2J_dpiz_dx =
+
+    2*sin(a)*sin(c) + 2*cos(a)*cos(c)*sin(b);
+
+
+    float d2J_dpiz_dy =
+
+    2*cos(c)*sin(a)*sin(b) - 2*cos(a)*sin(c);
+
+
+    float d2J_dpiz_dz =
+
+    2*cos(b)*cos(c);
+
+
+    float d2J_dpiz_da =
+
+    (2*cos(a)*sin(c) - 2*cos(c)*sin(a)*sin(b))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) - (sin(a)*sin(c) + cos(a)*cos(c)*sin(b))*(2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a)) - (cos(a)*sin(c) - cos(c)*sin(a)*sin(b))*(2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + 2*pix*cos(a)*cos(b)) + (2*sin(a)*sin(c) + 2*cos(a)*cos(c)*sin(b))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
+
+
+    float d2J_dpiz_db =
+
+    (sin(a)*sin(c) + cos(a)*cos(c)*sin(b))*(2*piz*cos(a)*cos(b)*cos(c) - 2*pix*cos(a)*sin(b) + 2*piy*cos(a)*cos(b)*sin(c)) - (cos(a)*sin(c) - cos(c)*sin(a)*sin(b))*(2*piz*cos(b)*cos(c)*sin(a) - 2*pix*sin(a)*sin(b) + 2*piy*cos(b)*sin(a)*sin(c)) - 2*cos(c)*sin(b)*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c)) - cos(b)*cos(c)*(2*pix*cos(b) + 2*piz*cos(c)*sin(b) + 2*piy*sin(b)*sin(c)) + 2*cos(a)*cos(b)*cos(c)*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) + 2*cos(b)*cos(c)*sin(a)*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a));
+
+
+    float d2J_dpiz_dc =
+
+    (2*cos(c)*sin(a) - 2*cos(a)*sin(b)*sin(c))*(x - qix - piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) + piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + pix*cos(a)*cos(b)) - (2*cos(a)*cos(c) + 2*sin(a)*sin(b)*sin(c))*(y - qiy + piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + pix*cos(b)*sin(a)) + (sin(a)*sin(c) + cos(a)*cos(c)*sin(b))*(2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) + 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c))) + (cos(a)*sin(c) - cos(c)*sin(a)*sin(b))*(2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c))) + cos(b)*cos(c)*(2*piy*cos(b)*cos(c) - 2*piz*cos(b)*sin(c)) - 2*cos(b)*sin(c)*(z - qiz - pix*sin(b) + piz*cos(b)*cos(c) + piy*cos(b)*sin(c));
+
+
+    float d2J_dqix_dx =
+
+    -2;
+
+
+    float d2J_dqix_dy =
+
+    0;
+
+
+    float d2J_dqix_dz =
+
+    0;
+
+
+    float d2J_dqix_da =
+
+    2*piy*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c)) - 2*piz*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*pix*cos(b)*sin(a);
+
+
+    float d2J_dqix_db =
+
+    2*pix*cos(a)*sin(b) - 2*piz*cos(a)*cos(b)*cos(c) - 2*piy*cos(a)*cos(b)*sin(c);
+
+
+    float d2J_dqix_dc =
+
+    - 2*piy*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*piz*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c));
+
+
+    float d2J_dqiy_dx =
+
+    0;
+
+
+    float d2J_dqiy_dy =
+
+    -2;
+
+
+    float d2J_dqiy_dz =
+
+    0;
+
+
+    float d2J_dqiy_da =
+
+    2*piy*(cos(c)*sin(a) - cos(a)*sin(b)*sin(c)) - 2*piz*(sin(a)*sin(c) + cos(a)*cos(c)*sin(b)) - 2*pix*cos(a)*cos(b);
+
+
+    float d2J_dqiy_db =
+
+    2*pix*sin(a)*sin(b) - 2*piz*cos(b)*cos(c)*sin(a) - 2*piy*cos(b)*sin(a)*sin(c);
+
+
+    float d2J_dqiy_dc =
+
+    2*piy*(cos(a)*sin(c) - cos(c)*sin(a)*sin(b)) + 2*piz*(cos(a)*cos(c) + sin(a)*sin(b)*sin(c));
+
+
+    float d2J_dqiz_dx =
+
+    0;
+
+
+    float d2J_dqiz_dy =
+
+    0;
+
+
+    float d2J_dqiz_dz =
+
+    -2;
+
+
+    float d2J_dqiz_da =
+
+    0;
+
+
+    float d2J_dqiz_db =
+
+    2*pix*cos(b) + 2*piz*cos(c)*sin(b) + 2*piy*sin(b)*sin(c);
+
+
+    float d2J_dqiz_dc =
+
+    2*piz*cos(b)*sin(c) - 2*piy*cos(b)*cos(c);
+
+    tmp=sMatrix6(
+            d2J_dpix_dx,    d2J_dpiy_dx,	d2J_dpiz_dx,  	   d2J_dqix_dx,    d2J_dqiy_dx,	   d2J_dqiz_dx,
+            d2J_dpix_dy,    d2J_dpiy_dy,	d2J_dpiz_dy,   	   d2J_dqix_dy,    d2J_dqiy_dy,	   d2J_dqiz_dy,
+            d2J_dpix_dz,    d2J_dpiy_dz,    d2J_dpiz_dz,       d2J_dqix_dz,    d2J_dqiy_dz,    d2J_dqiz_dz,
+            d2J_dpix_da,    d2J_dpiy_da,    d2J_dpiz_da,       d2J_dqix_da,    d2J_dqiy_da,    d2J_dqiz_da,
+            d2J_dpix_db,    d2J_dpiy_db,    d2J_dpiz_db,       d2J_dqix_db,    d2J_dqiy_db,    d2J_dqiz_db,
+            d2J_dpix_dc,    d2J_dpiy_dc,    d2J_dpiz_dc,       d2J_dqix_dc,    d2J_dqiy_dc,    d2J_dqiz_dc);
 
     sMatrix6 mat;
     for(int i=0;i<36;i++)
