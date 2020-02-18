@@ -233,7 +233,10 @@ void smoothnetResultCb(const actionlib::SimpleClientGoalState &state,
 }
 
 void processKeyFrame()
-{    
+{
+#ifdef DISABLE_SMOOTHNET3D
+    return;
+#endif
     std::cout<<"processKeyFrame"<<std::endl;
     smoothnet_3d::SmoothNet3dGoal goal;
     
@@ -284,6 +287,22 @@ void processKeyFrame()
     smoothnetServer->sendGoal(goal,&smoothnetResultCb);
 }
 
+bool hasStableContact()
+{
+    int leftFeetVal=leftFeetValue;
+    int rightFeetVal=rightFeetValue;
+    
+    bool ret=false;
+    if(passedFromLastKeyFrame>key_frame_thr)
+    {
+        if( (rightFeetVal>2) && (leftFeetVal<-2) )
+            ret=true;
+        else if( (rightFeetVal<-2) && (leftFeetVal>2)) 
+            ret=true;  
+    }  
+    return ret;
+}
+
 bool isKeyFrame()
 {
 #ifdef DISABLE_KEY_FRAMES
@@ -293,18 +312,7 @@ bool isKeyFrame()
     if(keyFrameProcessing)
         return false;
     
-    int leftFeetVal=leftFeetValue;
-    int rightFeetVal=rightFeetValue;
-
-    bool ret=false;
-    if(passedFromLastKeyFrame>KEY_FRAME_THR)
-    {
-        if( (rightFeetVal>2) && (leftFeetVal<-2) )
-            ret=true;
-        else if( (rightFeetVal<-2) && (leftFeetVal>2)) 
-            ret=true;  
-    }  
-    return ret;
+    return hasStableContact();
 }
 
 void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_msgs::ImageConstPtr &depth)
@@ -342,23 +350,22 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
         return;
     }
     
-    loopCl->processFrame();
+    if(hasStableContact())
+        loopCl->processFrame();
     
 
 #ifndef DISABLE_LOOP_CLOSURE
-    #ifndef LOOP_CLOSURE_RATE
     if(snResult.fitness>0)
          doLoopClosure();
+#endif
     
-    #else
-    
+#ifdef LOOP_CLOSURE_RATE
     if(!keyFrameProcessing && (frame %LOOP_CLOSURE_RATE) ==0 )
     {
         processKeyFrame();
-    }
-    
-    #endif
+    }    
 #endif
+
     publishOdom();
     
 #ifdef PUBLISH_ISAM_PATH
