@@ -1323,9 +1323,13 @@ __global__ void point2PointCovFirstTerm(const float3 *vert,
         return;
     }
     
-
+    /*
     float3 fp=vert[sourceIdx];
     float3 fq=prevVert[targetIdx];
+    */
+
+    float3 fq=vert[sourceIdx];
+    float3 fp=prevVert[targetIdx];
 
     float pix=fp.x;
     float piy=fp.y;
@@ -1610,9 +1614,14 @@ __global__ void point2PointCovSecondTerm(const float3 *vert,
         return;
     }
 
+    /*
     float3 fp=vert[sourceIdx];
     float3 fq=prevVert[targetIdx];
+    */
 
+
+    float3 fq=vert[sourceIdx];
+    float3 fp=prevVert[targetIdx];
     
     float pix=fp.x;
     float piy=fp.y;
