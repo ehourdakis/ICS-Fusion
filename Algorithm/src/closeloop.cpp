@@ -16,6 +16,8 @@
 #include <unistd.h>
 #include"kernelscalls.h"
 
+
+
 CloseLoop::CloseLoop(const kparams_t &p,sMatrix4 initPose)
     :params(p),
      _frame(-1),
@@ -29,6 +31,8 @@ CloseLoop::CloseLoop(const kparams_t &p,sMatrix4 initPose)
     _isam=new Isam(params);
 #endif
     firstPose=initPose;
+
+    harris=new Harris();
 }
 
 //For testing purposes only.
@@ -56,8 +60,8 @@ bool CloseLoop::addTf(int idx,
                       float rmse,
                       const std::vector<int> &source_corr, 
                       const std::vector<int> &target_corr,
-                      float3 *keyVert,
-                      float3 *prevKeyVert,
+                      const std::vector<float3> &keyVert,
+                      const std::vector<float3> &prevKeyVert,
                       int size)
 {
 
@@ -165,10 +169,26 @@ bool CloseLoop::processFrame()
     return tracked;
 }
 
-bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,int size,Image<float3, Host> vertices,float3 *keyVert)
+void CloseLoop::showKeypts(cv::Mat &outMat)
+{
+    harris->showKeypts(outMat);
+}
+
+bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,
+                           Image<float3, Host> vertices,
+                           std::vector<float3> keyVert)
 {
     evaluation_points.clear();
-    
+    keyVert.clear();
+
+    RgbHost rgb=rgbs.back();
+    harris->detectCorners(vertices,
+                          rgb,
+                          evaluation_points,
+                          keyVert);
+    return evaluation_points.size()>4;
+
+#if 0
     if(!tracked)
         return false;
     
@@ -216,6 +236,7 @@ bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,int size,Image<fl
         tmp_points[idx]=-1;
     }
     return true;
+#endif
 }
 
 Image<float3, Host> CloseLoop::getAllVertex() const

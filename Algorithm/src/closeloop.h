@@ -14,6 +14,7 @@
 #include"smoothnet.h"
 #include<list>
 
+
 #include"harris.h"
 class CloseLoop
 {
@@ -38,22 +39,23 @@ class CloseLoop
         bool optimize();
         float findTransformation(sMatrix4 &tr);
         
-        bool findKeyPts(std::vector<int> &evaluation_points,int size,Image<float3, Host> vertices,float3 *keyVert);
+        bool findKeyPts(std::vector<int> &evaluation_points, Image<float3, Host> vertices, std::vector<float3> keyVert);
         Image<float3, Host> getAllVertex() const;
         
         int getPoseGraphIdx() const;
         bool addTf(int idx,
                    int prevIdx,
-                   const sMatrix4 &tf, 
-                   float fitness, 
+                   const sMatrix4 &tf,
+                   float fitness,
                    float rmse,
-                   const std::vector<int> &source_corr, 
+                   const std::vector<int> &source_corr,
                    const std::vector<int> &target_corr,
-                   float3 *keyVert,
-                   float3 *prevKeyVert,
+                   const std::vector<float3> &keyVert,
+                   const std::vector<float3> &prevKeyVert,
                    int size);
 
         void getIsamPoses(std::vector<sMatrix4> &vec);
+        void showKeypts(cv::Mat &outMat);
     private:
         sMatrix4 firstPose;
         sMatrix4 prevPose;
@@ -81,6 +83,8 @@ class CloseLoop
 
         void clear();
         void reInit();
+
+        Harris *harris;
 
 //         SmoothNet *smoothNet;
 

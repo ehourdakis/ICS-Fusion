@@ -4,9 +4,10 @@
 #include "constant_parameters.h"
 #include<iostream>
 
-sMatrix6 calculatePoint2PointCov(const float3 *vert,
+
+sMatrix6 calculatePoint2PointCov(const std::vector<float3> &vert,
                                  int vertSize,
-                                 const float3 *prevVert,
+                                 const std::vector<float3> &prevVert,
                                  int prevVertSize,
                                  //const int2 *corresp,
                                  const std::vector<int> &sourceCorr,
@@ -16,11 +17,11 @@ sMatrix6 calculatePoint2PointCov(const float3 *vert,
 {
     float3 *vertGpu;
     cudaMalloc(&vertGpu,vertSize*sizeof(float3));
-    cudaMemcpy(vertGpu,vert,vertSize*sizeof(float3),cudaMemcpyHostToDevice);
+    cudaMemcpy(vertGpu,vert.data(),vertSize*sizeof(float3),cudaMemcpyHostToDevice);
 
     float3 *prevVertGpu;
     cudaMalloc(&prevVertGpu,prevVertSize*sizeof(float3));
-    cudaMemcpy(prevVertGpu,prevVert,prevVertSize*sizeof(float3),cudaMemcpyHostToDevice);
+    cudaMemcpy(prevVertGpu,prevVert.data(),prevVertSize*sizeof(float3),cudaMemcpyHostToDevice);
 
     size_t correspSize=sourceCorr.size();
     int *sourceCorrGpu;

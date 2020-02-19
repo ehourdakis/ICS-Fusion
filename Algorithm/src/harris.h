@@ -19,9 +19,11 @@ class Harris
 
 
         void detectCorners(VertHost &vert,
-                              RgbHost &rgb,
-                              std::vector<int> &points,
-                              std::vector<float3> &keypts3D);
+                           RgbHost &rgb,
+                           std::vector<int> &points,
+                           std::vector<float3> &keypts3D);
+
+        void showKeypts(cv::Mat &outMat);
 
     private:
         //TODO add this to params
@@ -29,6 +31,12 @@ class Harris
         int apertureSize;
         float k;
         float thresh;
+
+        cv::Mat dst_norm;
+        cv::Mat dst_norm_scaled;
+        cv::Mat cvRgb;
+        cv::Mat cvGrey ;
+        cv::Mat dst;
 };
 
 #endif

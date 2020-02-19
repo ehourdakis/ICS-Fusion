@@ -34,6 +34,12 @@
 
 #include<defs.h>
 
+#include <opencv2/core/core.hpp>
+
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+
+
 #define CAM_INFO_TOPIC "/camera/depth/camera_info"
 #define RGB_TOPIC "/camera/rgb/image_rect_color"
 #define DEPTH_TOPIC "/camera/depth/image_rect"
@@ -46,6 +52,7 @@
 #define PUB_POINTS_TOPIC "/ics_fusion/pointCloud"
 #define PUB_IMAGE_TOPIC "/ics_fusion/volume_rgb"
 #define PUB_KEY_FRAME_TOPIC "/ics_fusion/key_frame"
+#define PUB_HARRIS_FRAME_TOPIC "/ics_fusion/harris"
 
 #define SMOOTHNET_SERVER "smoothnet_3d"
 
@@ -88,7 +95,7 @@ ros::Publisher volume_pub;
 ros::Publisher odom_pub ;
 ros::Publisher points_pub;
 ros::Publisher key_frame_pub;
-
+ros::Publisher harris_pub;
 
 //frames
 std::string depth_frame,vo_frame,base_link_frame,odom_frame;
@@ -104,10 +111,20 @@ int rightFeetValue=0;
 int passedFromLastKeyFrame=0;
 
 //keypts vertex
-float3 *keyVert;
-float3 *prevKeyVert;
-float3 *vertBuff1;
-float3 *vertBuff2;
+
+std::vector<float3> vertBuff1;
+std::vector<float3> vertBuff2;
+
+std::vector<float3> &keyVert=vertBuff1;
+std::vector<float3> &prevKeyVert=vertBuff2;
+
+void swapVert()
+{
+    std::vector<float3> &tmp=keyVert;
+    keyVert=prevKeyVert;
+    prevKeyVert=tmp;
+}
+
 int keyFrameIdx=-1;
 int prevKeyFrameIdx=-1;
 smoothnet_3d::SmoothNet3dResult snResult;
@@ -132,6 +149,8 @@ ros::Publisher isam_path_pub;
 void publishIsamPath();
 
 #endif
+
+void publishHarris();
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans)
 {
@@ -243,32 +262,34 @@ void smoothnetResultCb(const actionlib::SimpleClientGoalState &state,
 
 void processKeyFrame()
 {
-#ifdef DISABLE_SMOOTHNET3D
-    return;
-#endif
+
     std::cout<<"processKeyFrame"<<std::endl;
     smoothnet_3d::SmoothNet3dGoal goal;
     
     //swap vertex buffers
-    float3 *tmp;
-    tmp=prevKeyVert;
-    prevKeyVert=keyVert;
-    keyVert=tmp;
+//    float3 *tmp;
+//    tmp=prevKeyVert;
+//    prevKeyVert=keyVert;
+//    keyVert=tmp;
+    swapVert();
     
     
     Image<float3, Host> vert=loopCl->getAllVertex();
-    if(!loopCl->findKeyPts(goal.pts,keypt_size,vert,keyVert ) )
+
+    if(!loopCl->findKeyPts(goal.pts,vert,keyVert ) )
     {
+        swapVert();
         //swap vertex buffers back
-        float3 *tmp;
-        tmp=prevKeyVert;
-        prevKeyVert=keyVert;
-        keyVert=tmp;
+//        float3 *tmp;
+//        tmp=prevKeyVert;
+//        prevKeyVert=keyVert;
+//        keyVert=tmp;
+        publishHarris();
         return ;
     }
-    
+
     std::cout<<"Key pts size:"<<goal.pts.size()<<std::endl;
-    
+    publishHarris();
     prevKeyFrameIdx=keyFrameIdx;
     keyFrameIdx=loopCl->getPoseGraphIdx();
     //TODO speed up this with some direct memory copy
@@ -287,13 +308,17 @@ void processKeyFrame()
     
     leftFeetValue=0;
     rightFeetValue=0;
-    passedFromLastKeyFrame=0;
-    keyFrameProcessing=true;
+    passedFromLastKeyFrame=0;    
     
 //     std::vector<int>
 //     Image<float3, Host> CloseLoop::getAllVertex()
     snResult.fitness=-1;
+
+#ifndef DISABLE_SMOOTHNET3D
+    keyFrameProcessing=true;
     smoothnetServer->sendGoal(goal,&smoothnetResultCb);
+#endif
+
 }
 
 bool hasStableContact()
@@ -369,7 +394,7 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
 #endif
     
 #ifdef LOOP_CLOSURE_RATE
-    if(!keyFrameProcessing && (frame %LOOP_CLOSURE_RATE) ==0 )
+    if(!keyFrameProcessing && (frame %LOOP_CLOSURE_RATE) ==0 && frame>0)
     {
         processKeyFrame();
     }    
@@ -442,6 +467,29 @@ void publishVolumeProjection()
     uchar *ptr=(uchar*)volumeRender;
     image.data=std::vector<uchar>(ptr ,ptr+(params.computationSize.x * params.computationSize.y*step_size) );
     volume_pub.publish(image);
+}
+
+void publishHarris()
+{
+    cv::Mat mat;
+    loopCl->showKeypts(mat);
+
+    cv_bridge::CvImage out_msg;
+
+    out_msg.image=mat;
+
+    out_msg.header.frame_id=std::string("IcsFusion_volume");
+//    out_msg->encoding = sensor_msgs::image_encodings::TYPE_32FC1; // Or whatever
+    //out_msg.encoding = sensor_msgs::image_encodings::BGR8; // Or whatever
+    //out_msg.image    = mat; // Your cv::Mat
+
+    //out_msg.encoding = "8UC1";
+    //out_msg.encoding = "32FC1";
+    out_msg.encoding = "rgb8";
+//    CV_8UC3
+
+
+    harris_pub.publish(out_msg.toImageMsg());
 }
 
 void publishOdom()
@@ -673,6 +721,8 @@ int main(int argc, char **argv)
         key_frame_pub = n_p.advertise<std_msgs::Float32>(PUB_KEY_FRAME_TOPIC, 100);
     }
 
+    harris_pub = n_p.advertise<sensor_msgs::Image>(PUB_HARRIS_FRAME_TOPIC, 100);
+
     odom_pub = n_p.advertise<nav_msgs::Odometry>(PUB_ODOM_TOPIC, 50);
     
 #ifdef PUBLISH_ODOM_PATH
@@ -682,8 +732,8 @@ int main(int argc, char **argv)
 #ifdef PUBLISH_ISAM_PATH
     isam_path_pub = n_p.advertise<nav_msgs::Path>(PUB_ISAM_PATH_TOPIC, 50);
 #endif
-    vertBuff1=new float3[keypt_size];
-    vertBuff2=new float3[keypt_size];
+//    vertBuff1=new float3[keypt_size];
+//    vertBuff2=new float3[keypt_size];
     
     prevKeyVert=vertBuff1;
     keyVert=vertBuff2;

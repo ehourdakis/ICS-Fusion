@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
     tf2
     tf2_ros
     smoothnet_3d
+    cv_bridge
 )
 
 catkin_package(CATKIN_DEPENDS 

@@ -4,9 +4,9 @@
 #include"utils.h"
 #include"kparams.h"
 #include<vector>
-sMatrix6 calculatePoint2PointCov(const float3 *vert,
+sMatrix6 calculatePoint2PointCov(const std::vector<float3> &vert,
                                  int vertSize,
-                                 const float3 *prevVert,
+                                 const std::vector<float3> &prevVert,
                                  int prevVertSize,
                                  const std::vector<int> &sourceCorr,
                                  const std::vector<int> &targetCorr,
