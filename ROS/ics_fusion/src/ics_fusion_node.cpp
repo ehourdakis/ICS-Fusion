@@ -34,6 +34,8 @@
 
 #include<defs.h>
 
+#include<fstream>
+
 #define CAM_INFO_TOPIC "/camera/depth/camera_info"
 #define RGB_TOPIC "/camera/rgb/image_rect_color"
 #define DEPTH_TOPIC "/camera/depth/image_rect"
@@ -324,6 +326,27 @@ bool isKeyFrame()
     return hasStableContact();
 }
 
+void saveVec(Image<float3, Host> vec)
+{
+    std::ofstream outfile;
+
+    outfile.open("/home/tavu/disk/tmp/vert", std::ios_base::app);
+//    std::ofstream out_file("~/disk/tmp/vert", std::ios_base::app);
+//    outfile.open("test.txt", std::ios_base::app);
+    //uint2 size=vert.size;
+    uint2 px;
+    for(px.x=0;px.x<vec.size.x;px.x++)
+    {
+        for(px.y=0;px.y<vec.size.y;px.y++)
+        {
+            float3 v=vec[px];
+//            std::cout<<v.x<<','<<v.y<<','<<v.z<<std::endl;
+            outfile<<v.x<<','<<v.y<<','<<v.z<<std::endl;
+        }
+    }
+    outfile.close();
+}
+
 void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_msgs::ImageConstPtr &depth)
 {    
     passedFromLastKeyFrame++;
@@ -358,8 +381,16 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
         ROS_ERROR("Not supported depth format.");
         return;
     }
-    
+    loopCl->processFrame();
 
+    std::cout<<"FRAME:"<<frame<<std::endl;
+    Image<float3, Host> ver=loopCl->getAllVertex();
+    
+    saveVec(ver);
+    ver.release();
+    
+    
+/*
     loopCl->processFrame();
     
 
@@ -389,7 +420,7 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     
     if(publish_points && frame % publish_points_rate ==0)
          publishPoints();
-    
+*/
     frame++;
 }
 
