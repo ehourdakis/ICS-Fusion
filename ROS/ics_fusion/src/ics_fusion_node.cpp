@@ -234,17 +234,17 @@ void doLoopClosure()
             {
                 if(i<prevKeyVert.size())
                 {
-                    pcl_msg0.points[i].x = prevKeyVert[i].x;
-                    pcl_msg0.points[i].y = prevKeyVert[i].y;
-                    pcl_msg0.points[i].z = prevKeyVert[i].z;
+                    pcl_msg0.points[i].x = prevKeyVert[i].z-4.0;
+                    pcl_msg0.points[i].y = -(prevKeyVert[i].x-4.0);
+                    pcl_msg0.points[i].z = -(prevKeyVert[i].y-4.0);
 
                 }
 
                 if(i<keyVert.size())
                 {
-                    pcl_msg1.points[i].x = keyVert[i].x;
-                    pcl_msg1.points[i].y = keyVert[i].y;
-                    pcl_msg1.points[i].z = keyVert[i].z;
+                    pcl_msg1.points[i].x = (keyVert[i].z-4.0);
+                    pcl_msg1.points[i].y = -(keyVert[i].x-4.0);
+                    pcl_msg1.points[i].z = -(keyVert[i].y-4.0);
                 }
                 i++;
             }
