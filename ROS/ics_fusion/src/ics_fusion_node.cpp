@@ -726,13 +726,7 @@ int main(int argc, char **argv)
     
 #ifdef PUBLISH_ISAM_PATH
     isam_path_pub = n_p.advertise<nav_msgs::Path>(PUB_ISAM_PATH_TOPIC, 50);
-#endif
-//    vertBuff1=new float3[keypt_size];
-//    vertBuff2=new float3[keypt_size];
-    
-    prevKeyVert=vertBuff1;
-    keyVert=vertBuff2;
-    
+#endif    
     //subscribe to GEM
     ros::Subscriber gem_left_sub = n_p.subscribe(gem_left_topic, 1, gemLeftCallback);
     ros::Subscriber gem_right_sub = n_p.subscribe(gem_right_topic,1, gemRightCallback);
