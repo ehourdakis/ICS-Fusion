@@ -13,6 +13,8 @@
 #include"PoseGraph.h"
 #include"smoothnet.h"
 #include<list>
+
+#include"harris.h"
 class CloseLoop
 {
     public:

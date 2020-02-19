@@ -258,8 +258,9 @@ struct Image<T, Ref> : public Ref
 
 typedef Image<float, Device> DepthDev;
 typedef Image<float, Host> DepthHost;
+typedef Image<float3, Host> VertHost;
 
 typedef Image<uchar3, Device> RgbDev;
 typedef Image<uchar3, Host> RgbHost;
-
+typedef Image<float3, Host> VertRgb;
 #endif
