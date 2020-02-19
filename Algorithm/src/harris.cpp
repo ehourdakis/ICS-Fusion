@@ -22,26 +22,45 @@ void Harris::detectCorners(VertHost &vert,
 
     cv::cvtColor(cvRgb, cvGrey, CV_BGR2GRAY);
 
-    cv::cornerHarris( cvGrey,dst,blockSize, apertureSize, k );
-    cv::normalize( dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat() );
+   cv::cornerHarris( cvGrey,dst,blockSize, apertureSize, k );
+//    int blockSize=3;
+//    bool useHarrisDetector=true;
+//    double k=0.04;
+//    cv::goodFeaturesToTrack(cvGrey,
+//                            dst,
+//                            200,
+//                            0.1,
+//                            10,
+//                            cv::Mat(),
+//                            blockSize,
+//                            useHarrisDetector,
+//                            k );
+
+    dst_norm=dst;
+//    cv::normalize( dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat() );
     //cv::convertScaleAbs( dst_norm, dst_norm_scaled );
 
-    std::cout<<"H:"<<dst_norm.rows <<" "<< dst_norm.cols<<std::endl;
+//    std::cout<<"H:"<<dst.rows <<" "<< dst_norm.cols<<std::endl;
+//    std::cout<<"H2:"<<rgb.size.x<<" "<<rgb.size.y<<std::endl;
 
     uint2 pix;
     int idx=0;
-    for(pix.x=0;pix.x<dst_norm.rows;pix.x++)
+
+    for(pix.x=0;pix.x<rgb.size.x;pix.x++)
     {
-        for(pix.y=0;pix.y<dst_norm.cols;pix.y++)
+        for(pix.y=0;pix.y<rgb.size.y;pix.y++)
         {
-            if( (int)dst_norm.at<float>(pix.x,pix.y) > thresh )
+            if( (int)dst_norm.at<float>(pix.y,pix.x) > thresh )
             {
-                //circle( dst_norm_scaled, Point(j,i), 5,  Scalar(0), 2, 8, 0 );
-                //keyVert[i]=vertices[pix];
-                points.push_back(idx);
-                //keypts3D.push_back(vert[pix]);
-                idx++;
+                float3 v=vert[pix];
+                //check for zeros. zero means sensor error.
+                if(v.x!=0.0 || v.y!=0.0 || v.z!=0.0)
+                {
+                    points.push_back(idx);
+                    keypts3D.push_back(vert[pix]);
+                }
             }
+            idx++;
         }
     }
 }

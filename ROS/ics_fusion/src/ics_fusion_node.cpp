@@ -220,8 +220,7 @@ void doLoopClosure()
                       results->source_corr,
                       results->target_corr,
                       keyVert,
-                      prevKeyVert,
-                      keypt_size);
+                      prevKeyVert);
     }
     
     results->fitness=-1;
@@ -310,6 +309,18 @@ void processKeyFrame()
     rightFeetValue=0;
     passedFromLastKeyFrame=0;    
     
+    for(int i=0;i<keyVert.size();i++)
+    {
+            float3 v=keyVert[i];
+            int idx=goal.pts[i];
+
+            float3 v2=make_float3(goal.vert_x[idx],
+                                  goal.vert_y[idx],
+                                  goal.vert_z[idx]);
+
+//            std::cout<<v<<" "<<v2<<std::endl;
+    }
+
 //     std::vector<int>
 //     Image<float3, Host> CloseLoop::getAllVertex()
     snResult.fitness=-1;

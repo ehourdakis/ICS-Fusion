@@ -583,19 +583,21 @@ bool IcsFusion::checkPoseKernel(sMatrix4 & pose,
     return true;
 }
 
-void IcsFusion::getImageRaw(Host &to) const
+void IcsFusion::getImageRaw(RgbHost &to) const
 {
 
-  uint s=(uint)rawDepth.size.x*rawDepth.size.y*sizeof(uchar3);
-  to.alloc(s);
-  cudaMemcpy(to.data, rawRgb.data(),s,cudaMemcpyDeviceToHost);
+  uint s=(uint)rawRgb.size.x*rawRgb.size.y*sizeof(uchar3);
+  to.alloc(rawRgb.size);
+  cudaMemcpy(to.data(), rawRgb.data(),s,cudaMemcpyDeviceToHost);
+//  to.size=rawRgb.size;
 }
 
-void IcsFusion::getDepthRaw(Host &to) const
+void IcsFusion::getDepthRaw(DepthHost &to) const
 {
     uint s=(uint)rawDepth.size.x*rawDepth.size.y*sizeof(float);
-    to.alloc(s);
-    cudaMemcpy(to.data, rawDepth.data(),s,cudaMemcpyDeviceToHost);
+    to.alloc(rawDepth.size);
+    cudaMemcpy(to.data(), rawDepth.data(),s,cudaMemcpyDeviceToHost);
+    to.size=rawDepth.size;
 }
 
 void IcsFusion::getIcpValues(Image<float3, Host> &depthVertex,

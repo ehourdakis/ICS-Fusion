@@ -111,8 +111,8 @@ class IcsFusion
         void integrateNewData(sMatrix4 p);
         bool deIntegration(sMatrix4 p,const Host &depth,const Host &rgb);
         bool reIntegration(sMatrix4 pose,const Host &depth,const Host &rgb);
-        void getImageRaw(Host &to) const;
-        void getDepthRaw(Host &data) const;
+        void getImageRaw(RgbHost &to) const;
+        void getDepthRaw(DepthHost &data) const;
         
         
         void getIcpValues(Image<float3, Host> &depthVertex,

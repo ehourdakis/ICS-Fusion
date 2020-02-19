@@ -3,6 +3,8 @@
 #include <type_traits>
 #include <cuda_runtime.h>
 
+#include<iostream>
+
 inline __device__ uint2 thr2pos2()
 {
 #ifdef __CUDACC__
@@ -187,12 +189,14 @@ struct Image: public Allocator
             return Image<T>(size, Allocator::data);
         }
 
-        template<typename A1>
-        Image<T, Allocator> & operator=(const Image<T, A1> & other)
-        {
-            image_copy(*this, other, size.x * size.y * sizeof(T));
-            return *this;
-        }
+//        template<typename A1>
+//        Image<T, Allocator> & operator=(const Image<T, A1> & other)
+//        {
+//            std::cout<<"IMAGE COPY"<<std::endl;
+//            image_copy(*this, other, size.x * size.y * sizeof(T));
+
+//            return *this;
+//        }
 
         T * data()
         {

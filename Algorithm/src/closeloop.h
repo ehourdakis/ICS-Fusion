@@ -39,7 +39,7 @@ class CloseLoop
         bool optimize();
         float findTransformation(sMatrix4 &tr);
         
-        bool findKeyPts(std::vector<int> &evaluation_points, Image<float3, Host> vertices, std::vector<float3> keyVert);
+        bool findKeyPts(std::vector<int> &evaluation_points, Image<float3, Host> vertices, std::vector<float3> &keyVert);
         Image<float3, Host> getAllVertex() const;
         
         int getPoseGraphIdx() const;
@@ -51,8 +51,7 @@ class CloseLoop
                    const std::vector<int> &source_corr,
                    const std::vector<int> &target_corr,
                    const std::vector<float3> &keyVert,
-                   const std::vector<float3> &prevKeyVert,
-                   int size);
+                   const std::vector<float3> &prevKeyVert);
 
         void getIsamPoses(std::vector<sMatrix4> &vec);
         void showKeypts(cv::Mat &outMat);

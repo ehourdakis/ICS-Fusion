@@ -61,17 +61,16 @@ bool CloseLoop::addTf(int idx,
                       const std::vector<int> &source_corr, 
                       const std::vector<int> &target_corr,
                       const std::vector<float3> &keyVert,
-                      const std::vector<float3> &prevKeyVert,
-                      int size)
+                      const std::vector<float3> &prevKeyVert)
 {
 
 //     if(fitness<0.1)
 //         return false;
 
     sMatrix6 cov=calculatePoint2PointCov(keyVert,
-                                         size,
+                                         keyVert.size(),
                                          prevKeyVert,
-                                         size,
+                                         prevKeyVert.size(),
                                          source_corr,
                                          target_corr,
                                          tf,
@@ -176,18 +175,28 @@ void CloseLoop::showKeypts(cv::Mat &outMat)
 
 bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,
                            Image<float3, Host> vertices,
-                           std::vector<float3> keyVert)
+                           std::vector<float3> &keyVert)
 {
     evaluation_points.clear();
     keyVert.clear();
 
     RgbHost rgb=rgbs.back();
+    std::cout<<"RGB:"<<rgb.size.x<<" "<<rgb.size.y<<std::endl;
     harris->detectCorners(vertices,
                           rgb,
                           evaluation_points,
                           keyVert);
-    return evaluation_points.size()>4;
 
+    std::cout<<"E1:"<< evaluation_points.size()<<std::endl;
+
+    if(evaluation_points.size()<4 || evaluation_points.size()>200000)
+    {
+        evaluation_points.clear();
+        keyVert.clear();
+        std::cout<<"Error detecting keypts:"<<std::endl;
+        return false;
+    }
+    return true;
 #if 0
     if(!tracked)
         return false;
