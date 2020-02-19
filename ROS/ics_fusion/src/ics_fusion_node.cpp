@@ -86,6 +86,9 @@ uchar3 *volumeRender;
 bool publish_volume=true;
 bool publish_points=true;
 bool publish_key_frame=true;
+
+bool publish_key_points = true;
+
 int publish_points_rate;
 int key_frame_thr;
 int keypt_size;
@@ -96,7 +99,8 @@ ros::Publisher odom_pub ;
 ros::Publisher points_pub;
 ros::Publisher key_frame_pub;
 ros::Publisher harris_pub;
-
+ros::Publisher pcl_pub0, pcl_pub1;
+sensor_msgs::PointCloud pcl_msg0, pcl_msg1;
 //frames
 std::string depth_frame,vo_frame,base_link_frame,odom_frame;
 
@@ -221,6 +225,36 @@ void doLoopClosure()
                       results->target_corr,
                       keyVert,
                       prevKeyVert);
+        if(publish_key_points)
+        {
+            int i = 0;
+            pcl_msg0.points.resize(prevKeyVert.size());
+            pcl_msg1.points.resize(keyVert.size());
+            while(i<max(keyVert.size(),prevKeyVert.size()))
+            {
+                if(i<prevKeyVert.size())
+                {
+                    pcl_msg0.points[i].x = prevKeyVert[i].x;
+                    pcl_msg0.points[i].y = prevKeyVert[i].y;
+                    pcl_msg0.points[i].z = prevKeyVert[i].z;
+
+                }
+
+                if(i<keyVert.size())
+                {
+                    pcl_msg1.points[i].x = keyVert[i].x;
+                    pcl_msg1.points[i].y = keyVert[i].y;
+                    pcl_msg1.points[i].z = keyVert[i].z;
+                }
+                i++;
+            }
+            pcl_msg0.header.frame_id=VO_FRAME;
+            pcl_msg1.header.frame_id=VO_FRAME;
+            pcl_msg0.header.stamp=ros::Time::now();
+            pcl_msg1.header.stamp=ros::Time::now();
+            pcl_pub0.publish(pcl_msg0);
+            pcl_pub1.publish(pcl_msg1);
+        }
     }
     
     results->fitness=-1;
@@ -735,7 +769,9 @@ int main(int argc, char **argv)
     harris_pub = n_p.advertise<sensor_msgs::Image>(PUB_HARRIS_FRAME_TOPIC, 100);
 
     odom_pub = n_p.advertise<nav_msgs::Odometry>(PUB_ODOM_TOPIC, 50);
-    
+    pcl_pub0 = n_p.advertise<sensor_msgs::PointCloud>("point_cloud0",10);
+    pcl_pub1 = n_p.advertise<sensor_msgs::PointCloud>("point_cloud1",10);
+
 #ifdef PUBLISH_ODOM_PATH
     odom_path_pub = n_p.advertise<nav_msgs::Path>(PUB_ODOM_PATH_TOPIC, 50);
 #endif
