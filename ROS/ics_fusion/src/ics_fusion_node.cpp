@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 
+//#include<swap>
 #include <std_msgs/String.h>
 #include <std_msgs/Float32.h>
 #include <sensor_msgs/Image.h>
@@ -115,19 +116,8 @@ int rightFeetValue=0;
 int passedFromLastKeyFrame=0;
 
 //keypts vertex
-
-std::vector<float3> vertBuff1;
-std::vector<float3> vertBuff2;
-
-std::vector<float3> &keyVert=vertBuff1;
-std::vector<float3> &prevKeyVert=vertBuff2;
-
-void swapVert()
-{
-    std::vector<float3> &tmp=keyVert;
-    keyVert=prevKeyVert;
-    prevKeyVert=tmp;
-}
+std::vector<float3> keyVert;
+std::vector<float3> prevKeyVert;
 
 int keyFrameIdx=-1;
 int prevKeyFrameIdx=-1;
@@ -271,26 +261,6 @@ void smoothnetResultCb(const actionlib::SimpleClientGoalState &state,
     keyFrameProcessing=false;
     snResult=*results;
     return;
-//     if(results->fitness>0)
-//     {
-//         sMatrix4 tf;
-//         for(int i=0;i<4;i++)
-//         {
-//             for(int j=0;j<4;j++)
-//             {
-//                 tf(i,j)=results->tf[4*i+j];
-//             }
-//         }
-    
-//         std::cout<<tf<<std::endl;
-//         loopCl->addTf(keyFrameIdx,prevKeyFrameIdx,tf,results->fitness,results->source_corr,results->target_corr,keyVert,prevKeyVert,keypt_size);
-//     }
-    
-    
-    
-//     std::cout<<"KEY frame processed"<<std::endl;
-// //   ROS_INFO("Answer: %i", result->sequence.back());
-//   ros::shutdown();
 }
 
 void processKeyFrame()
@@ -300,23 +270,15 @@ void processKeyFrame()
     smoothnet_3d::SmoothNet3dGoal goal;
     
     //swap vertex buffers
-//    float3 *tmp;
-//    tmp=prevKeyVert;
-//    prevKeyVert=keyVert;
-//    keyVert=tmp;
-    swapVert();
+    std::swap(keyVert,prevKeyVert);
     
     
     Image<float3, Host> vert=loopCl->getAllVertex();
 
     if(!loopCl->findKeyPts(goal.pts,vert,keyVert ) )
     {
-        swapVert();
         //swap vertex buffers back
-//        float3 *tmp;
-//        tmp=prevKeyVert;
-//        prevKeyVert=keyVert;
-//        keyVert=tmp;
+        std::swap(keyVert,prevKeyVert);
         publishHarris();
         return ;
     }
@@ -343,20 +305,6 @@ void processKeyFrame()
     rightFeetValue=0;
     passedFromLastKeyFrame=0;    
     
-//    for(int i=0;i<keyVert.size();i++)
-//    {
-//            float3 v=keyVert[i];
-//            int idx=goal.pts[i];
-
-//            float3 v2=make_float3(goal.vert_x[idx],
-//                                  goal.vert_y[idx],
-//                                  goal.vert_z[idx]);
-
-//            std::cout<<v<<" "<<v2<<std::endl;
-//    }
-
-//     std::vector<int>
-//     Image<float3, Host> CloseLoop::getAllVertex()
     snResult.fitness=-1;
 
 #ifndef DISABLE_SMOOTHNET3D
