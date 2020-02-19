@@ -465,9 +465,9 @@ void publishOdom()
 
     nav_msgs::Odometry odom;
     geometry_msgs::Pose odom_pose;
-    odom_pose.position.x=pose(0,3);
-    odom_pose.position.y=pose(1,3);
-    odom_pose.position.z=pose(2,3);
+    odom_pose.position.x=pose(0,3)-4;
+    odom_pose.position.y=pose(1,3)+4;
+    odom_pose.position.z=pose(2,3)+4;
     odom_pose.orientation.x=q.getX();
     odom_pose.orientation.y=q.getY();
     odom_pose.orientation.z=q.getZ();
@@ -507,7 +507,7 @@ void publishOdomPath(geometry_msgs::Pose &p)
     nav_msgs::Path newPath=odomPath;
     newPath.header.stamp = ros::Time::now();
     newPath.header.frame_id = VO_FRAME;
-    
+
     odom_path_pub.publish(newPath);
 }
 
@@ -532,9 +532,9 @@ void publishIsamPath()
         tf::Quaternion q;
         rot_matrix.getRotation(q);
         geometry_msgs::Pose odom_pose;
-        odom_pose.position.x=pose(0,3);
-        odom_pose.position.y=pose(1,3);
-        odom_pose.position.z=pose(2,3);
+        odom_pose.position.x=pose(0,3)-4;
+        odom_pose.position.y=pose(1,3)+4;
+        odom_pose.position.z=pose(2,3)+4;
         odom_pose.orientation.x=q.getX();
         odom_pose.orientation.y=q.getY();
         odom_pose.orientation.z=q.getZ();
@@ -542,6 +542,7 @@ void publishIsamPath()
         
         ps.header.stamp = ros::Time::now();
         ps.header.frame_id = VO_FRAME;
+
         ps.pose=odom_pose;
         
         isamPath.poses.push_back(ps);
@@ -549,7 +550,6 @@ void publishIsamPath()
             
     isamPath.header.stamp = ros::Time::now();
     isamPath.header.frame_id = VO_FRAME;
-    
     isam_path_pub.publish(isamPath);
 }
 #endif

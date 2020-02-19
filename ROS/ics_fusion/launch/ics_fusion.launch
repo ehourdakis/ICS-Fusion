@@ -26,5 +26,6 @@
         
         
     </node>    
-    
+     <node pkg = "rviz" type = "rviz" respawn = "false" name = "rviz" output = "screen" args ="-d $(find ics_fusion)/ics_fusion.rviz"> </node>
+
 </launch>
