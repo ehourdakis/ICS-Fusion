@@ -37,6 +37,8 @@ class Harris
         cv::Mat cvRgb;
         cv::Mat cvGrey ;
         cv::Mat dst;
+
+        std::vector< cv::Point2f > corners;
 };
 
 #endif
