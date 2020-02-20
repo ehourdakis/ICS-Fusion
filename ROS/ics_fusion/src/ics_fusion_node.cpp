@@ -130,7 +130,7 @@ geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans);
 #ifdef PUBLISH_ODOM_PATH
 
 #define PUB_ODOM_PATH_TOPIC "/ics_fusion/odom_path"
-nav_msgs::Path odomPath;
+nav_msgs::Path odomPath, isamPath;
 ros::Publisher odom_path_pub ;
 void publishOdomPath(geometry_msgs::Pose &p);
 
@@ -559,12 +559,12 @@ void publishIsamPath()
 {
     std::vector<sMatrix4> vec;
     loopCl->getIsamPoses(vec);
-    nav_msgs::Path isamPath;
+    isamPath = odomPath;
     for(int i=0;i<vec.size();i++)
     {
         geometry_msgs::PoseStamped ps;
-        int odomPosesIdx=odomPath.poses.size()-i-1;
-        ps.header.stamp=odomPath.poses[odomPosesIdx].header.stamp;
+        int odomPosesIdx=odomPath.poses.size()+i-vec.size();
+        ps.header=odomPath.poses[odomPosesIdx].header;
         sMatrix4 pose=fromVisionCord(vec[i]);
         tf::Matrix3x3 rot_matrix( pose(0,0),pose(0,1),pose(0,2),
                               pose(1,0),pose(1,1),pose(1,2),
@@ -581,12 +581,11 @@ void publishIsamPath()
         odom_pose.orientation.z=q.getZ();
         odom_pose.orientation.w=q.getW();
         
-        ps.header.stamp = ros::Time::now();
-        ps.header.frame_id = VO_FRAME;
+        //GEIA SOU PET
 
         ps.pose=odom_pose;
         
-        isamPath.poses.push_back(ps);
+        isamPath.poses[odomPosesIdx]=ps;
     }
             
     isamPath.header.stamp = ros::Time::now();
