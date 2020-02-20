@@ -55,7 +55,7 @@ int CloseLoop::getPoseGraphIdx() const
 
 bool CloseLoop::addTf(int idx,
                       int prevIdx,
-                      const sMatrix4 &tf, 
+                      const sMatrix4 &tf2,
                       float fitness, 
                       float rmse,
                       const std::vector<int> &source_corr, 
@@ -64,6 +64,8 @@ bool CloseLoop::addTf(int idx,
                       const std::vector<float3> &target_vert)
 {
 
+    sMatrix4 tf=inverse(tf2);
+    std::cout<<"T:"<<tf.get_translation()<<std::endl;
     if(source_corr.size()!=target_corr.size())
         return false;
 //    if(fitness<0.2)
@@ -77,8 +79,10 @@ bool CloseLoop::addTf(int idx,
                                          target_corr,
                                          tf,
                                          params);
-    
+#if 0
     sMatrix3 trCov;
+    trCov=trCov*1e-10;
+    /*
     for(int i=0;i<3;i++)
     {
         for(int j=0;j<3;j++)
@@ -86,7 +90,7 @@ bool CloseLoop::addTf(int idx,
             trCov(i,j)=cov(i,j);
         }
     }
-
+    */
     int size=target_corr.size();
     /*
     cov=cov*(1/fitness);
@@ -98,15 +102,16 @@ bool CloseLoop::addTf(int idx,
         int sourceIdx=source_corr[i];
         int targetIdx=target_corr[i];
 
+        std::cout<<"S "<<sourceIdx<<" "<<targetIdx<<" "<<source_vert.size()<<" "<<target_vert.size()<<std::endl;
         float3 sourceV=source_vert[sourceIdx];
         float3 targetV=target_vert[targetIdx];
 
         int lidx=_isam->addLandmark(sourceV);
-        _isam->connectLandmark(sourceV,lidx,0,trCov);
         _isam->connectLandmark(sourceV,lidx,idx,trCov);
+        _isam->connectLandmark(targetV,lidx,0,trCov);
     }
-
-    //_isam->addPoseConstrain(0,idx,tf,cov);
+#endif
+    _isam->addPoseConstrain(0,idx,tf,cov);
 
      optimize();
 
@@ -132,7 +137,7 @@ bool CloseLoop::preprocess(float *depth,uchar3 *rgb)
 bool CloseLoop::processFrame()
 {
     _frame++;
-//    std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
+    std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
 
     tracked=_fusion->tracking(_frame);
     bool integrated=_fusion->integration(_frame);
@@ -183,10 +188,10 @@ bool CloseLoop::processFrame()
         sMatrix6 icpCov =_fusion->calculate_ICP_COV();
         //float icpFitness=_fusion->getFitness();
         //std::cout<<"ICP Fitness:"<<icpFitness<<std::endl;
-        //std::cout<<"ICP Fitness:"<<icpCov<<std::endl;
+//        std::cout<<"ICP cov:\n"<<icpCov<<std::endl;
         //icpCov=icpCov*1000*(1/icpFitness);
         covars.push_back(icpCov);
-        _isam->addFrame(pose,icpCov);
+        _isam->addFrame(pose,icpCov);        
     }
 
     bool raycast=_fusion->raycasting(_frame);
@@ -266,15 +271,16 @@ bool CloseLoop::optimize()
     double err=_isam->optimize(_frame);
 
     std::cout<<"Optimization error:"<<err<<std::endl;
-    if(err<params.optim_thr )
+    if(err>params.optim_thr )
     {
+        std::cout<<"Aborting optimization..."<<std::endl;
         return false;
     }
 
-#ifndef DISABLE_MAP_FIXES
+//#ifndef DISABLE_MAP_FIXES
     fixMap();
     _fusion->raycasting(_frame);
-#endif
+//#endif
     return true;
 }
 
@@ -312,6 +318,7 @@ void CloseLoop::getIsamPoses(std::vector<sMatrix4> &vec)
 
 void CloseLoop::fixMap()
 {
+    std::cout<<"fixMap"<<std::endl;
     auto rdepthIt=depths.rbegin();
     auto rrgbIt=rgbs.rbegin();
     auto rposeIt=poses.rbegin();
@@ -338,13 +345,15 @@ void CloseLoop::fixMap()
         i++;
     }
 
-    sMatrix4 kpose=_fusion->getPose();
 
+    sMatrix4 kpose=_fusion->getPose();
+    std::cout<<"K:"<<kpose.get_translation()<<std::endl;
     rposeIt=poses.rbegin();
 
 //    sMatrix4 p=kpose- *rposeIt;
 //    std::cout<<p<<std::endl;
     _fusion->setPose(*rposeIt);
+    std::cout<<"I:"<<rposeIt->get_translation()<<std::endl;
 }
 
 sMatrix4 CloseLoop::getPose() const

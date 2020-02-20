@@ -412,9 +412,9 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     if(snResult.fitness>0)
          doLoopClosure();
 #endif
-    
+
 #ifdef LOOP_CLOSURE_RATE
-    if( !keyFrameProcessing && (frame %LOOP_CLOSURE_RATE) ==0 && frame>0 )
+    if( !keyFrameProcessing && (frame==4 || ( (frame %LOOP_CLOSURE_RATE) ==0 && frame>0 ) ) )
     {
         processKeyFrame();
     }    
