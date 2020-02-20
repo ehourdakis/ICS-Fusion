@@ -145,6 +145,8 @@ void publishIsamPath();
 #endif
 
 void publishHarris();
+void publishKeyPoints(const sMatrix4 &tf);
+
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans)
 {
@@ -217,41 +219,61 @@ void doLoopClosure()
                       prevKeyVert);
         if(publish_key_points)
         {
-            int i = 0;
-            pcl_msg0.points.resize(prevKeyVert.size());
-            pcl_msg1.points.resize(keyVert.size());
-            while(i<max(keyVert.size(),prevKeyVert.size()))
-            {
-                if(i<prevKeyVert.size())
-                {
-                    pcl_msg0.points[i].x = prevKeyVert[i].z-4.0;
-                    pcl_msg0.points[i].y = -(prevKeyVert[i].x-4.0);
-                    pcl_msg0.points[i].z = -(prevKeyVert[i].y-4.0);
-
-                }
-
-                if(i<keyVert.size())
-                {
-                    pcl_msg1.points[i].x = (keyVert[i].z-4.0);
-                    pcl_msg1.points[i].y = -(keyVert[i].x-4.0);
-                    pcl_msg1.points[i].z = -(keyVert[i].y-4.0);
-                }
-                i++;
-            }
-            pcl_msg0.header.frame_id=VO_FRAME;
-            pcl_msg1.header.frame_id=VO_FRAME;
-            pcl_msg0.header.stamp=ros::Time::now();
-            pcl_msg1.header.stamp=ros::Time::now();
-            pcl_pub0.publish(pcl_msg0);
-            pcl_pub1.publish(pcl_msg1);
+            publishKeyPoints(tf);
         }
     }
     
     results->fitness=-1;
 
     std::cout<<"KEY frame processed"<<std::endl;
-    
+}
 
+void publishKeyPoints(const sMatrix4 &tf)
+{
+    sMatrix4 pose=loopCl->getPose();
+    pcl_msg0.points.resize(prevKeyVert.size());
+    pcl_msg1.points.resize(keyVert.size());
+
+    for(int i=0;i<prevKeyVert.size();i++)
+    {
+        float3 v=prevKeyVert[i];
+        v.x-=params.volume_direction.x;
+        v.y-=params.volume_direction.y;
+        v.z-=params.volume_direction.z;
+
+        v=tf*v;
+        v=pose*v;
+
+        v=fromVisionCordV(v);
+
+        pcl_msg0.points[i].x = v.x;
+        pcl_msg0.points[i].y = v.y;
+        pcl_msg0.points[i].z = v.z;
+    }
+
+    for(int i=0;i<keyVert.size();i++)
+    {
+        float3 v=keyVert[i];
+        v.x-=params.volume_direction.x;
+        v.y-=params.volume_direction.y;
+        v.z-=params.volume_direction.z;
+
+        v=pose*v;
+        v=fromVisionCordV(v);
+
+        pcl_msg1.points[i].x = v.x;
+        pcl_msg1.points[i].y = v.y;
+        pcl_msg1.points[i].z = v.z;
+    }
+
+    pcl_msg0.header.frame_id=VO_FRAME;
+    pcl_msg1.header.frame_id=VO_FRAME;
+
+    pcl_msg0.header.stamp=ros::Time::now();
+    pcl_msg1.header.stamp=ros::Time::now();
+
+    pcl_pub1.publish(pcl_msg1);
+    pcl_pub0.publish(pcl_msg0);
 }
 
 void smoothnetResultCb(const actionlib::SimpleClientGoalState &state,
@@ -716,8 +738,12 @@ int main(int argc, char **argv)
     harris_pub = n_p.advertise<sensor_msgs::Image>(PUB_HARRIS_FRAME_TOPIC, 100);
 
     odom_pub = n_p.advertise<nav_msgs::Odometry>(PUB_ODOM_TOPIC, 50);
-    pcl_pub0 = n_p.advertise<sensor_msgs::PointCloud>("point_cloud0",10);
-    pcl_pub1 = n_p.advertise<sensor_msgs::PointCloud>("point_cloud1",10);
+
+    if(publish_key_points)
+    {
+        pcl_pub0 = n_p.advertise<sensor_msgs::PointCloud>("point_cloud0",10);
+        pcl_pub1 = n_p.advertise<sensor_msgs::PointCloud>("point_cloud1",10);
+    }
 
 #ifdef PUBLISH_ODOM_PATH
     odom_path_pub = n_p.advertise<nav_msgs::Path>(PUB_ODOM_PATH_TOPIC, 50);
