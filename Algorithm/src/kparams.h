@@ -21,7 +21,8 @@ typedef struct
     float3 volume_direction = make_float3(4.0,4.0,4.0);
     float3 volume_size = make_float3(8,8,8);
 
-
+    //depth sensors noise covariance
+    float cov_z=1;
 
 
     std::vector<int> pyramid = {10,5,4};

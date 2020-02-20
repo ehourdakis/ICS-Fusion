@@ -49,8 +49,26 @@ inline Eigen::MatrixXd toEigen(const sMatrix6 &mat)
 }
 
 Isam::Isam(const kparams_t &par)
-    :params(par)
+    :params(par),
+      poseConstrainFactor(0)
 {
+}
+
+void Isam::clearLandmarks()
+{
+    for(int i=0;i<landmarks.size();i++)
+    {
+        Landmark *ld=landmarks[i];
+        slam->remove_node(ld);
+        delete ld;
+    }
+    for(int i=0;i<landmarkFactors.size();i++)
+    {
+        isam::Factor *f=landmarkFactors[i];
+        delete f;
+    }
+    landmarks.clear();
+    landmarkFactors.clear();
 }
 
 void Isam::popFront()
@@ -92,6 +110,18 @@ void Isam::addFrame(const sMatrix4 &pose,const sMatrix6 &covar)
     slam->add_factor(factor);
 }
 
+Isam::Landmark* Isam::addLandmark()
+{
+
+    Landmark *landmark=new Landmark();
+    landmarks.push_back(landmark);
+
+    slam->add_node(landmark);
+
+    return landmark;
+
+}
+
 int Isam::addLandmark(float3 pos)
 {
     (void)pos;
@@ -110,23 +140,15 @@ void Isam::connectLandmark(float3 pos,int landIdx,int poseIdx, sMatrix3 &cov)
     if(poseIdx<0)
         poseIdx=poseSize()+poseIdx;
     
-//    pos.x*=-1;
-//    pos.y*=-1;
-//    pos.z*=-1;
     Point3d point=toIsamPoint(pos);
 
-
-
-//     cov=sMatrix3();
-//     cov=cov*0.1;
-    
     Eigen::MatrixXd eigenCov=toEigen(cov);
     Noise noise = isam::Covariance(eigenCov);
 
     Pose3d_Point3d_Factor* f=new Pose3d_Point3d_Factor(
                                            pose_nodes[poseIdx],landmarks[landIdx],point,noise);
 
-    factors.push_back(f);
+    landmarkFactors.push_back(f);
     slam->add_factor(f); 
 }
 
@@ -224,7 +246,8 @@ sMatrix4 Isam::getPose(int i)
 
 void Isam::clear()
 {
-//    slam->save("isam.graph");
+    clearLandmarks();
+    //slam->save("isam.graph");
     if(slam!=nullptr)
     {
         delete slam;
@@ -251,7 +274,6 @@ void Isam::clear()
 
     pose_nodes.clear();
     factors.clear();
-    landmarks.clear();
 }
 
 Point3d Isam::toIsamPoint(const float3 &f)

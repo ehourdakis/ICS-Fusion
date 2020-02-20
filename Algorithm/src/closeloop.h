@@ -16,6 +16,7 @@
 
 
 #include"harris.h"
+#include"Isam.h"
 class CloseLoop
 {
     public:
@@ -59,7 +60,7 @@ class CloseLoop
         sMatrix4 firstPose;
         sMatrix4 prevPose;
         IcsFusion *_fusion;
-        PoseGraph *_isam;
+        Isam *_isam;
         int prevKeyPoseIdx;
 
         const kparams_t &params;

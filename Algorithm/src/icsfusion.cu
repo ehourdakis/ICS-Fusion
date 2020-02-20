@@ -642,7 +642,8 @@ sMatrix6 IcsFusion::calculate_ICP_COV()
     sMatrix6 initMat;
     for(int i=0;i<36;i++)
         initMat.data[i]=0.0;
-    
+
+
 
     icpCovarianceFirstTerm<<<grid, imageBlock>>>(inputVertex[0],
                                                 vertex,
@@ -667,7 +668,7 @@ sMatrix6 IcsFusion::calculate_ICP_COV()
                                                   trackPose,
                                                   projectedReference,
                                                   delta,                                                  
-                                                  1.0,
+                                                  params.cov_z,
                                                   params.cov_big);
     cudaDeviceSynchronize();
     sMatrix6 covSecondTerm = thrust::reduce(cov_ptr, cov_ptr+size, initMat, thrust::plus<sMatrix6>());

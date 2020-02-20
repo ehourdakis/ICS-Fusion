@@ -13,15 +13,21 @@
 class Isam :public PoseGraph
 {
     public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+        typedef isam::Point3d_Node Landmark;
+
         //Isam(const sMatrix4 &initalPose);
         Isam(const kparams_t &params);
         void addFrame(const sMatrix4 &pose,const sMatrix6 &cov);
+
+
         //void addLandmark(float3 pos1,float3 pos2,double dist);
 
 
         //Adds a landmark and return its idx
         virtual int addLandmark(float3 pos) override;
+        Landmark* addLandmark();
         virtual void connectLandmark(float3 pos,int landIdx,int poseIdx, sMatrix3 &cov) override;
 
         virtual void init(const sMatrix4 &initalPose,const sMatrix6 &cov) override;
@@ -32,6 +38,7 @@ class Isam :public PoseGraph
         void addPoseConstrain(int p1,int p2,const sMatrix4 &delta, const sMatrix6 &cov);
         //void convertCovariance(sMatrix4 pose,sMatrix6 cov) override;
 
+        void clearLandmarks();
 
         void popFront() override;
         virtual sMatrix4 getPose(int i)  override;
@@ -61,6 +68,7 @@ class Isam :public PoseGraph
         isam::Factor *poseConstrainFactor;
         std::vector<isam::Point3d_Node*> landmarks;
 
+        std::vector<isam::Factor*> landmarkFactors;
 //        static Eigen::MatrixXd toEigen(sMatrix4 mat);
 //        static Eigen::MatrixXd toEigen(sMatrix6 mat);
 //        static Eigen::MatrixXd toEigen(sMatrix3 mat);

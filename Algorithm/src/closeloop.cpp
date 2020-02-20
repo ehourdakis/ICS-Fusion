@@ -60,28 +60,58 @@ bool CloseLoop::addTf(int idx,
                       float rmse,
                       const std::vector<int> &source_corr, 
                       const std::vector<int> &target_corr,
-                      const std::vector<float3> &keyVert,
-                      const std::vector<float3> &prevKeyVert)
+                      const std::vector<float3> &source_vert,
+                      const std::vector<float3> &target_vert)
 {
 
-//     if(fitness<0.1)
-//         return false;
+    if(source_corr.size()!=target_corr.size())
+        return false;
+//    if(fitness<0.2)
+//        return false;
 
-    sMatrix6 cov=calculatePoint2PointCov(keyVert,
-                                         keyVert.size(),
-                                         prevKeyVert,
-                                         prevKeyVert.size(),
+    sMatrix6 cov=calculatePoint2PointCov(target_vert,
+                                         target_vert.size(),
+                                         source_vert,
+                                         source_vert.size(),
                                          source_corr,
                                          target_corr,
                                          tf,
                                          params);
     
-    //cov=cov*(1/fitness);
+    sMatrix3 trCov;
+    for(int i=0;i<3;i++)
+    {
+        for(int j=0;j<3;j++)
+        {
+            trCov(i,j)=cov(i,j);
+        }
+    }
+
+    int size=target_corr.size();
+    /*
+    cov=cov*(1/fitness);
     std::cout<<"FITNESS:"<<fitness<<std::endl;
     std::cout<<"RMSE:"<<rmse<<std::endl;
-    std::cout<<"COV:\n"<<cov<<std::endl;
-    _isam->addPoseConstrain(0,idx,tf,cov);
+    */
+    for(int i=0;i<size;i++)
+    {
+        int sourceIdx=source_corr[i];
+        int targetIdx=target_corr[i];
+
+        float3 sourceV=source_vert[sourceIdx];
+        float3 targetV=target_vert[targetIdx];
+
+        int lidx=_isam->addLandmark(sourceV);
+        _isam->connectLandmark(sourceV,lidx,0,trCov);
+        _isam->connectLandmark(sourceV,lidx,idx,trCov);
+    }
+
+    //_isam->addPoseConstrain(0,idx,tf,cov);
+
      optimize();
+
+     _isam->clearLandmarks();
+
      removeOldNodes(idx);
      return true;
 }
@@ -180,14 +210,12 @@ bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,
     evaluation_points.clear();
     keyVert.clear();
 
-    RgbHost rgb=rgbs.back();
-    std::cout<<"RGB:"<<rgb.size.x<<" "<<rgb.size.y<<std::endl;
+    RgbHost rgb=rgbs.back();    
     harris->detectCorners(vertices,
                           rgb,
                           evaluation_points,
                           keyVert);
 
-    std::cout<<"E1:"<< evaluation_points.size()<<std::endl;
 
     if(evaluation_points.size()<4 || evaluation_points.size()>200000)
     {
@@ -196,56 +224,8 @@ bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,
         std::cout<<"Error detecting keypts:"<<std::endl;
         return false;
     }
+
     return true;
-#if 0
-    if(!tracked)
-        return false;
-    
-    Image<TrackData, Host> trackData=_fusion->getTrackData();
-
-    std::vector<int> tmp_points;
-    uint idx=0;
-    uint2 pix;
-    for(pix.x=0;pix.x<trackData.size.x;pix.x++)
-    {
-        for(pix.y=0;pix.y<trackData.size.y;pix.y++)
-        {
-            if(trackData[pix].result==-5)
-            {
-                tmp_points.push_back(idx);
-            }
-            idx++;
-        }
-        
-    }
-    if(idx<size)
-    {
-        return false;
-    }
-
-    evaluation_points.reserve(size);
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-    std::uniform_int_distribution<int> distr(0, tmp_points.size());
-
-    for(int i=0;i<size;i++)
-    {
-        int idx=distr(gen);
-        while(tmp_points[idx]==-1)
-        {
-            idx=distr(gen);
-        }
-        evaluation_points.push_back(tmp_points[idx]);
-
-        uint2 pix;
-        pix.x=tmp_points[idx]/vertices.size.y;
-        pix.y=tmp_points[idx]%vertices.size.y;
-        keyVert[i]=vertices[pix];
-
-        tmp_points[idx]=-1;
-    }
-    return true;
-#endif
 }
 
 Image<float3, Host> CloseLoop::getAllVertex() const
@@ -358,7 +338,12 @@ void CloseLoop::fixMap()
         i++;
     }
 
+    sMatrix4 kpose=_fusion->getPose();
+
     rposeIt=poses.rbegin();
+
+//    sMatrix4 p=kpose- *rposeIt;
+//    std::cout<<p<<std::endl;
     _fusion->setPose(*rposeIt);
 }
 
@@ -411,8 +396,6 @@ void CloseLoop::clear()
 {        
     auto depthIt=depths.begin();
     auto rgbIt=rgbs.begin();
-//     auto covIt=covars.begin();
-//     auto poseIt=poses.poses();
     
     while(depthIt!=depths.end() )
     {

@@ -56,6 +56,7 @@ sMatrix6 calculatePoint2PointCov(const std::vector<float3> &vert,
     thrust::device_ptr<sMatrix6> cov_ptr(covData);
     sMatrix6 d2J_dX2 = thrust::reduce(cov_ptr, cov_ptr+correspSize, initMat, thrust::plus<sMatrix6>());
 
+    //float cov_z=0.05;
     float cov_z=1;
     point2PointCovSecondTerm<<<(correspSize+256)/256, 256>>>(vertGpu,
                                                             vertSize,
@@ -71,14 +72,14 @@ sMatrix6 calculatePoint2PointCov(const std::vector<float3> &vert,
     cudaDeviceSynchronize();    
     sMatrix6 covSecondTerm = thrust::reduce(cov_ptr, cov_ptr+correspSize, initMat, thrust::plus<sMatrix6>());
 
-    std::cout<<"d2J_dX2"<<std::endl;
-    std::cout<<d2J_dX2<<std::endl;
+//    std::cout<<"d2J_dX2"<<std::endl;
+//    std::cout<<d2J_dX2<<std::endl;
 
     sMatrix6 d2J_dX2inv=inverse(d2J_dX2);
 
 
-    std::cout<<"d2J_dX2inv"<<std::endl;
-    std::cout<<d2J_dX2inv<<std::endl;
+//    std::cout<<"d2J_dX2inv"<<std::endl;
+//    std::cout<<d2J_dX2inv<<std::endl;
 
     sMatrix6 tmp=d2J_dX2inv * covSecondTerm;
     sMatrix6 icpCov= tmp * d2J_dX2inv;

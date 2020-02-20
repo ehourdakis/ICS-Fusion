@@ -194,6 +194,7 @@ void readIteFusionParams(ros::NodeHandle &n_p)
 
 void doLoopClosure()
 {
+    std::cout<<"doLoopClosure"<<std::endl;
     smoothnet_3d::SmoothNet3dResult *results=&snResult;
     
     if(results->fitness>0)
@@ -207,7 +208,6 @@ void doLoopClosure()
             }
         }
     
-        std::cout<<tf<<std::endl;
         loopCl->addTf(keyFrameIdx,
                       prevKeyFrameIdx,
                       tf,
@@ -215,8 +215,8 @@ void doLoopClosure()
                       results->rmse,
                       results->source_corr,
                       results->target_corr,
-                      keyVert,
-                      prevKeyVert);
+                      prevKeyVert,
+                      keyVert);
         if(publish_key_points)
         {
             publishKeyPoints(tf);
@@ -224,8 +224,9 @@ void doLoopClosure()
     }
     
     results->fitness=-1;
+    keyFrameProcessing=false;
 
-    std::cout<<"KEY frame processed"<<std::endl;
+    std::cout<<"doLoopClosure ended"<<std::endl;
 }
 
 void publishKeyPoints(const sMatrix4 &tf)
@@ -292,21 +293,19 @@ void smoothnetResultCb(const actionlib::SimpleClientGoalState &state,
 
 void processKeyFrame()
 {
-
     std::cout<<"processKeyFrame"<<std::endl;
     smoothnet_3d::SmoothNet3dGoal goal;
     
+    std::cout<<"KVS:"<<keyVert.size()<<","<<prevKeyVert.size()<<std::endl;
     //swap vertex buffers
     std::swap(keyVert,prevKeyVert);
-    
-    
-    Image<float3, Host> vert=loopCl->getAllVertex();
+    std::cout<<"KVS:"<<keyVert.size()<<","<<prevKeyVert.size()<<std::endl;
 
+    Image<float3, Host> vert=loopCl->getAllVertex();
     if(!loopCl->findKeyPts(goal.pts,vert,keyVert ) )
     {
         //swap vertex buffers back
         std::swap(keyVert,prevKeyVert);
-        publishHarris();
         return ;
     }
 
@@ -339,6 +338,7 @@ void processKeyFrame()
     smoothnetServer->sendGoal(goal,&smoothnetResultCb);
 #endif
 
+    std::cout<<"processKeyFrame ended"<<std::endl;
 }
 
 bool hasStableContact()
@@ -414,7 +414,7 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
 #endif
     
 #ifdef LOOP_CLOSURE_RATE
-    if(!keyFrameProcessing && (frame %LOOP_CLOSURE_RATE) ==0 && frame>0)
+    if( !keyFrameProcessing && (frame %LOOP_CLOSURE_RATE) ==0 && frame>0 )
     {
         processKeyFrame();
     }    
