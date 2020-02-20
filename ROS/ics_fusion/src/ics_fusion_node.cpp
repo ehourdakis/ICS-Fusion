@@ -233,39 +233,44 @@ void publishKeyPoints(const sMatrix4 &tf)
     sMatrix4 pose=loopCl->getPose();
     pcl_msg0.points.resize(prevKeyVert.size());
     pcl_msg1.points.resize(keyVert.size());
+    int i = 0;
+    float3 v;
 
-    for(int i=0;i<prevKeyVert.size();i++)
+    while(i<max(prevKeyVert.size(),keyVert.size()))
     {
-        float3 v=prevKeyVert[i];
-        v.x-=params.volume_direction.x;
-        v.y-=params.volume_direction.y;
-        v.z-=params.volume_direction.z;
+        if(i<prevKeyVert.size())
+        {
+            v=prevKeyVert[i];
+            v.x-=params.volume_direction.x;
+            v.y-=params.volume_direction.y;
+            v.z-=params.volume_direction.z;
 
-        v=tf*v;
-        v=pose*v;
+            v=tf*v;
+            v=pose*v;
 
-        v=fromVisionCordV(v);
+            v=fromVisionCordV(v);
 
-        pcl_msg0.points[i].x = v.x;
-        pcl_msg0.points[i].y = v.y;
-        pcl_msg0.points[i].z = v.z;
+            pcl_msg0.points[i].x = v.x;
+            pcl_msg0.points[i].y = v.y;
+            pcl_msg0.points[i].z = v.z;
+        }
+
+        if(i<keyVert.size())
+        {
+            v=keyVert[i];
+            v.x-=params.volume_direction.x;
+            v.y-=params.volume_direction.y;
+            v.z-=params.volume_direction.z;
+
+            v=pose*v;
+            v=fromVisionCordV(v);
+
+            pcl_msg1.points[i].x = v.x;
+            pcl_msg1.points[i].y = v.y;
+            pcl_msg1.points[i].z = v.z;
+        }
+        i++;
     }
-
-    for(int i=0;i<keyVert.size();i++)
-    {
-        float3 v=keyVert[i];
-        v.x-=params.volume_direction.x;
-        v.y-=params.volume_direction.y;
-        v.z-=params.volume_direction.z;
-
-        v=pose*v;
-        v=fromVisionCordV(v);
-
-        pcl_msg1.points[i].x = v.x;
-        pcl_msg1.points[i].y = v.y;
-        pcl_msg1.points[i].z = v.z;
-    }
-
     pcl_msg0.header.frame_id=VO_FRAME;
     pcl_msg1.header.frame_id=VO_FRAME;
 
