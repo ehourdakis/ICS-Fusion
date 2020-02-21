@@ -196,7 +196,7 @@ void doLoopClosure()
 {
     std::cout<<"doLoopClosure"<<std::endl;
 
-    key_frame_thr++;
+    passedFromLastKeyFrame=0;
     loopCl->processKeyFrame();
 
     if(publish_key_points)
@@ -269,56 +269,6 @@ void smoothnetResultCb(const actionlib::SimpleClientGoalState &state,
     keyFrameProcessing=false;
     snResult=*results;
     return;
-}
-
-void processKeyFrame()
-{
-    std::cout<<"processKeyFrame"<<std::endl;
-    smoothnet_3d::SmoothNet3dGoal goal;
-    
-    std::cout<<"KVS:"<<keyVert.size()<<","<<prevKeyVert.size()<<std::endl;
-    //swap vertex buffers
-    std::swap(keyVert,prevKeyVert);
-    std::cout<<"KVS:"<<keyVert.size()<<","<<prevKeyVert.size()<<std::endl;
-
-    Image<float3, Host> vert=loopCl->getAllVertex();
-    if(!loopCl->findKeyPts(goal.pts,vert,keyVert ) )
-    {
-        //swap vertex buffers back
-        std::swap(keyVert,prevKeyVert);
-        return ;
-    }
-
-    std::cout<<"Key pts size:"<<goal.pts.size()<<std::endl;
-    publishHarris();
-    prevKeyFrameIdx=keyFrameIdx;
-    keyFrameIdx=loopCl->getPoseGraphIdx();
-    //TODO speed up this with some direct memory copy
-    uint2 px;
-    
-    for(px.x=0;px.x<vert.size.x;px.x++)
-    {
-        for(px.y=0;px.y<vert.size.y;px.y++)
-        {
-            float3 v=vert[px];
-            goal.vert_x.push_back(v.x);
-            goal.vert_y.push_back(v.y);
-            goal.vert_z.push_back(v.z);
-        }
-    }
-    
-    leftFeetValue=0;
-    rightFeetValue=0;
-    passedFromLastKeyFrame=0;    
-    
-    snResult.fitness=-1;
-
-#ifndef DISABLE_SMOOTHNET3D
-    keyFrameProcessing=true;
-    smoothnetServer->sendGoal(goal,&smoothnetResultCb);
-#endif
-
-    std::cout<<"processKeyFrame ended"<<std::endl;
 }
 
 bool hasStableContact()
