@@ -82,7 +82,7 @@ SET_TARGET_PROPERTIES(ics_fusion_lib PROPERTIES COMPILE_FLAGS "-fPIC" )
 
 #Comment ISAM if use G2O
 target_link_libraries(ics_fusion_lib 
-    ${G2O_LIBS}
+#    ${G2O_LIBS}
     ${OpenCV_LIBS} 
     ${CUDA_LIBRARIES}
     ics_fusion_cuda_lib

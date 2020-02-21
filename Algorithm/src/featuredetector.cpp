@@ -166,16 +166,17 @@ sMatrix3 calcCovariance(Image<float3, Host> vertexes,float2 pt,float r,float3 &a
 
 void FeatureDetector::calcMask(DepthHost &depth,cv::Mat &mask)
 {
-     mask=cv::Mat::ones(depth.size.x,depth.size.y, CV_8U );
+     mask=cv::Mat::ones(depth.size.y,depth.size.x, CV_8U );
 
      uint2 px;
      for(px.x=0;px.x<depth.size.x;px.x++)
      {
          for(px.y=0;px.y<depth.size.y;px.y++)
          {
+//             mask.at<uchar>(px.y,px.x,0)=0;
              if(depth[px]<0.0001f ||depth[px]>4)
              {
-                 mask.at<uchar>(px.x,px.y,1)=0;
+                 mask.at<uchar>(px.y,px.x,0)=0;
              }
 
          }
@@ -233,9 +234,9 @@ void FeatureDetector::detectFeatures(int frame, DepthHost &depth, RgbHost &rgb,
         d.x=(float)cvKeypoints[i].pt.x;
         d.y=(float)cvKeypoints[i].pt.y;
 
-        float2 pf;
-        pf.x=cvKeypoints[i].pt.x;
-        pf.y=cvKeypoints[i].pt.y;
+//        float2 pf;
+//        pf.x=cvKeypoints[i].pt.x;
+//        pf.y=cvKeypoints[i].pt.y;
 
         d.cov=sMatrix3();
         //d.cov=d.cov*d.s2;
