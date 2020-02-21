@@ -30,6 +30,7 @@ class FeatureDetector
         void getFeatImage(cv::Mat &outMat);
     private:
         void getDescrFromMat(int row,cv::Mat &mat,FeatDescriptor &descr);
+        void calcMask(DepthHost &depth,cv::Mat &mask);
 
         bool drawNewData;
         IcsFusion *_fusion;

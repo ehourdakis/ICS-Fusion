@@ -9,17 +9,22 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
      _params(p),
      _isam(isam)
 {
-    /*
-    int  	nfeatures = 0,
-    int  	nOctaveLayers = 3,
-    double  contrastThreshold = 0.04,
-    double  edgeThreshold = 10,
-    double  sigma = 1.6
-    */
-    sift = cv::xfeatures2d::SIFT::create(0,3,0.08,10,1.6);
+
+    int  	nfeatures = 100;
+    int  	octaveLayers = 3;
+    double  contrastThreshold = 0.04;
+    double  edgeThreshold = 10;
+    double  sigma = 1.6;
+
+    sift = cv::xfeatures2d::SIFT::create(nfeatures,
+                                         octaveLayers,
+                                         contrastThreshold,
+                                         edgeThreshold,
+                                         sigma);
+
     //sift = cv::xfeatures2d::SIFT::create(0,3,0.04,10,1.6);
 
-    matcher = cv::FlannBasedMatcher::create();
+//    matcher = cv::FlannBasedMatcher::create();
     drawNewData=false;
     //TODO add ratio_thresh to params
     ratio_thresh = 0.7f;
@@ -159,6 +164,24 @@ sMatrix3 calcCovariance(Image<float3, Host> vertexes,float2 pt,float r,float3 &a
     return ret;
 }
 
+void FeatureDetector::calcMask(DepthHost &depth,cv::Mat &mask)
+{
+     mask=cv::Mat::ones(depth.size.x,depth.size.y, CV_8U );
+
+     uint2 px;
+     for(px.x=0;px.x<depth.size.x;px.x++)
+     {
+         for(px.y=0;px.y<depth.size.y;px.y++)
+         {
+             if(depth[px]<0.0001f ||depth[px]>4)
+             {
+                 mask.at<uchar>(px.x,px.y,1)=0;
+             }
+
+         }
+     }
+}
+
 void FeatureDetector::detectFeatures(int frame, DepthHost &depth, RgbHost &rgb,
                                                   std::vector<float3> &keypts3D,
                                                   std::vector<FeatDescriptor> &descr)
@@ -177,7 +200,11 @@ void FeatureDetector::detectFeatures(int frame, DepthHost &depth, RgbHost &rgb,
     cv::Mat descrMat;
     //detect sift features
     cvKeypoints.clear();
-    sift->detectAndCompute(cvGrey,cv::noArray(), cvKeypoints,descrMat);
+
+    cv::Mat mask;
+    calcMask(depth,mask);
+
+    sift->detectAndCompute(cvGrey,mask, cvKeypoints,descrMat);
 
     keypts3D.reserve(cvKeypoints.size());
     descr.reserve(cvKeypoints.size());
@@ -222,6 +249,7 @@ void FeatureDetector::detectFeatures(int frame, DepthHost &depth, RgbHost &rgb,
 
         descr.push_back(d);
     }
+    std::cout<<"Features Detected:"<<descr.size()<<std::endl;
 
     drawNewData=true;
     vertexes.release();
