@@ -30,10 +30,30 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
     ratio_thresh = 0.7f;
 }
 
-void FeatureDetector::getFeatImage(cv::Mat &outMat)
+void FeatureDetector::getFeatImage(cv::Mat &outMat, std::vector<cv::DMatch> &good_matches)
 {
 //    outMat=cvGrey.clone();
-    cv::drawKeypoints(cvGrey,cvKeypoints,outMat,cv::Scalar::all(-1),cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+//    cv::drawKeypoints(cvGrey,cvKeypoints,outMat,cv::Scalar::all(-1),cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+
+    if(oldCvRgb.empty())
+    {
+        outMat=cvRgb.clone();
+        return;
+    }
+
+    std::cout<<"good_matches:"<<good_matches.size()<<std::endl;
+    std::cout<<"oldCvRgb:"<<oldCvRgb.empty()<<std::endl;
+    std::cout<<"cvRgb:"<<cvRgb.empty()<<std::endl;
+
+    std::cout<<"oldCvKeypoints:"<<oldCvKeypoints.size()<<std::endl;
+    std::cout<<"cvKeypoints:"<<cvKeypoints.size()<<std::endl;
+
+//    cv::drawMatches( oldCvRgb, oldCvKeypoints, cvRgb, cvKeypoints, good_matches, outMat, cv::Scalar::all(-1),
+//                 cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DEFAULT );
+
+
+    cv::drawMatches( cvRgb, cvKeypoints, oldCvRgb, oldCvKeypoints, good_matches, outMat, cv::Scalar::all(-1),
+                 cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DEFAULT );
 }
 
 void FeatureDetector::getFeatImage(uchar3 *out)
@@ -188,6 +208,9 @@ void FeatureDetector::detectFeatures(int frame, DepthHost &depth, RgbHost &rgb,
 {    
 //    std::cout<<"Feature detection"<<std::endl;
     //load rgb image to opencv
+    oldCvRgb=cvRgb;
+    oldCvKeypoints=cvKeypoints;
+
     cvRgb = cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
 
     //convert image to grey scale
@@ -215,17 +238,7 @@ void FeatureDetector::detectFeatures(int frame, DepthHost &depth, RgbHost &rgb,
         uint2 px=make_uint2((uint) (cvKeypoints[i].pt.x+0.5),
                             (uint) (cvKeypoints[i].pt.y+0.5) );
 
-        if(px.x>=vertexes.size.x ||px.y>=vertexes.size.y)
-            continue;
-
-        float3 vert=vertexes[px];
-        float distance=l2(vert);        
-
-        //eliminate too small or big values.
-        //Posible depth sensor error.
-        if(distance<0.0001f ||distance>4)
-            continue;
-
+        float3 vert=vertexes[px];    
 
         FeatDescriptor d;        
         fromCvMatRow(d,descrMat,i);
@@ -233,20 +246,11 @@ void FeatureDetector::detectFeatures(int frame, DepthHost &depth, RgbHost &rgb,
         d.x=(float)cvKeypoints[i].pt.x;
         d.y=(float)cvKeypoints[i].pt.y;
 
-//        float2 pf;
-//        pf.x=cvKeypoints[i].pt.x;
-//        pf.y=cvKeypoints[i].pt.y;
-
         d.cov=sMatrix3();
         d.cov=d.cov*d.s2;
         //d.cov=d.cov;
 
-        //sMatrix3 cov=calcCovariance(vertexes,pf,cvKeypoints[i].size/2,vert);
         keypts3D.push_back(vert);
-//        float f=infNorm(d.cov);
-//        std::cout<<"C "<<f<<" "<<d.s2<<std::endl;
-//        std::cout<<d.cov<<std::endl;
-
         descr.push_back(d);
     }
     std::cout<<"Features Detected:"<<descr.size()<<std::endl;

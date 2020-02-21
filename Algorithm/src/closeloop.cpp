@@ -212,7 +212,8 @@ bool CloseLoop::processFrame()
 
 void CloseLoop::showKeypts(cv::Mat &outMat)
 {
-    _featDet->getFeatImage(outMat);
+     std::vector<cv::DMatch> good_matches=_keyMap->goodMatches();
+    _featDet->getFeatImage(outMat,good_matches);
 }
 
 bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,
@@ -254,27 +255,32 @@ void CloseLoop::getMatches(std::vector<float3> &prevPts,
 bool CloseLoop::processKeyFrame()
 {
     lastKeyPts.clear();
-    std::vector<FeatDescriptor> descriptors;
+    lastDescr.clear();
 
     auto rgb=rgbs.rbegin();
     auto depth=depths.rbegin();
-    _featDet->detectFeatures(_frame,*depth,*rgb,lastKeyPts,descriptors);
+    _featDet->detectFeatures(_frame,*depth,*rgb,lastKeyPts,lastDescr);
 
     if(_keyMap->isEmpty() )
     {
-        _keyMap->addKeypoints(lastKeyPts,descriptors);
+        _keyMap->addKeypoints(lastKeyPts,lastDescr);
         std::cout<<"Keypts added"<<std::endl;
         return true;
 
     }
     else
     {
-        _keyMap->matching(lastKeyPts,descriptors,_frame);
+        _keyMap->matching(lastKeyPts,lastDescr,_frame);
         std::cout<<"Keypts matched"<<std::endl;
     }
 
     return optimize();
 }
+
+//void CloseLoop::clear()
+//{
+
+//}
 
 bool CloseLoop::optimize()
 {
@@ -380,25 +386,29 @@ void CloseLoop::reInit(int idx)
 
 void CloseLoop::reInit()
 {
-    /*
     int size=poses.size()-1;
-    for(uint i=0; i<size;i++ )
-    {
-        DepthHost depth=depths[i];
-        RgbHost rgb=rgbs[i];
+    auto depthIt=depths.begin();
+    auto rgbIt=rgbs.begin();
 
-        depth.release();
-        rgb.release();
+    for(int i=0;i<depths.size()-1;i++)
+    {
+        depthIt->release();
+        rgbIt->release();
+
+        depthIt++;
+        rgbIt++;
     }
 
-    DepthHost initialDepth=depths[size];
-    RgbHost initialRgb=rgbs[size];
-    sMatrix4 initialPose=poses[size];
+
+    DepthHost initialDepth=*depths.rbegin();
+    RgbHost initialRgb=*rgbs.rbegin();
+    sMatrix4 initialPose=*poses.rbegin();
 
     depths.clear();
     rgbs.clear();
     poses.clear();
     _isam->clear();
+    _keyMap->clear();
 
     depths.push_back(initialDepth);
     rgbs.push_back(initialRgb);
@@ -409,7 +419,9 @@ void CloseLoop::reInit()
         
     _isam->init(initialPose,cov);
     covars.push_back(cov);
-    */
+
+
+    _keyMap->addKeypoints(lastKeyPts,lastDescr);
 }
 
 void CloseLoop::clear()
@@ -423,12 +435,15 @@ void CloseLoop::clear()
         rgbIt->release();
     }
     
+    _isam->clear();
+    _keyMap->clear();
+    _keyMap->addKeypoints(lastKeyPts,lastDescr);
 
     depths.clear();
     rgbs.clear();
     poses.clear();
     covars.clear();
-    _isam->clear();
+
 }
 
 CloseLoop::~CloseLoop()

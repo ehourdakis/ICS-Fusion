@@ -8,6 +8,6 @@
 //#define DISABLE_KEY_FRAMES
 // #define DISABLE_LOOP_CLOSURE
 //#define LOOP_CLOSURE_RATE 400
-#define DISABLE_MAP_FIXES
+//#define DISABLE_MAP_FIXES
 
 #endif

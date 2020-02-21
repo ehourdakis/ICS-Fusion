@@ -56,6 +56,11 @@ void keyptsMap::getMatches(const std::vector<float3> &keypoints,
     }
 }
 
+std::vector<cv::DMatch> keyptsMap::goodMatches()
+{
+    return good_matches;
+}
+
 
 bool keyptsMap::matching(std::vector<float3> &keypoints,
                          std::vector<FeatDescriptor> &descriptors,

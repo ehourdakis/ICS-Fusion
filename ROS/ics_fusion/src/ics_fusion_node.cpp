@@ -210,6 +210,8 @@ void doLoopClosure()
     }
 
     publishHarris();
+
+    loopCl->reInit();
     std::cout<<"doLoopClosure ended"<<std::endl;
 }
 

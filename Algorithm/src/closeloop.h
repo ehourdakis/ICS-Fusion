@@ -47,6 +47,7 @@ class CloseLoop
         Image<float3, Host> getAllVertex() const;
         
         int getPoseGraphIdx() const;
+        void reInit();
         bool addTf(int idx,
                    int prevIdx,
                    const sMatrix4 &tf,
@@ -71,6 +72,7 @@ class CloseLoop
         int prevKeyPoseIdx;
 
         std::vector<float3> lastKeyPts;
+        std::vector<FeatDescriptor> lastDescr;
 
         const kparams_t &params;
         int _frame;
@@ -91,7 +93,7 @@ class CloseLoop
         bool tracked;
 
         void clear();
-        void reInit();
+
 
         Harris *harris;
         keyptsMap *_keyMap;

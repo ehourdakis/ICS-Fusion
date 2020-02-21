@@ -246,7 +246,7 @@ sMatrix4 Isam::getPose(int i)
 
 void Isam::clear()
 {
-    clearLandmarks();
+//    clearLandmarks();
     //slam->save("isam.graph");
     if(slam!=nullptr)
     {
@@ -272,8 +272,16 @@ void Isam::clear()
         delete l;
     }
 
+    for(uint i=0; i<landmarkFactors.size();i++ )
+    {
+        Factor *f=landmarkFactors[i];
+        delete f;
+    }
+
     pose_nodes.clear();
     factors.clear();
+    landmarkFactors.clear();
+    landmarks.clear();
 }
 
 Point3d Isam::toIsamPoint(const float3 &f)

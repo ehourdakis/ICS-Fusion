@@ -30,6 +30,8 @@ class keyptsMap
         void getMatches(const std::vector<float3> &keypoints,
                         std::vector<float3> &train,
                         std::vector<float3> &query);
+
+        std::vector<cv::DMatch> goodMatches();
     private:
 
 //        void toCvMat(std::vector<FeatDescriptor> &descr,
