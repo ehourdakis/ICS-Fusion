@@ -27,6 +27,9 @@ class keyptsMap
             return _points.size()==0;
         }
 
+        void getMatches(const std::vector<float3> &keypoints,
+                        std::vector<float3> &train,
+                        std::vector<float3> &query);
     private:
 
 //        void toCvMat(std::vector<FeatDescriptor> &descr,
@@ -43,6 +46,8 @@ class keyptsMap
         std::vector<float3> _points;
         std::vector<FeatDescriptor> _descr;
         sMatrix4 prevPose;
+
+        std::vector<cv::DMatch> good_matches;
 
         void saveDescriptors(std::string fileName, const std::vector<FeatDescriptor> &desc);
         void saveKeypoints(std::string fileName,const std::vector<float3> &keypts);

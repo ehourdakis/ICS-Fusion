@@ -30,8 +30,8 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
 
     for(uint i=0;i<keypoints.size();i++)
     {
-        sMatrix3 cov;
-        cov=cov*descriptors[i].s2;
+        sMatrix3 cov=descriptors[i].cov;
+        //cov=cov*descriptors[i].cov;
 
         int lidx=_isam->addLandmark(keypoints[i]);
         lanmarks.push_back(lidx);
@@ -41,6 +41,20 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
     prevPose=_fusion->getPose();
 }
 
+void keyptsMap::getMatches(const std::vector<float3> &keypoints,
+                std::vector<float3> &train,
+                std::vector<float3> &query)
+{
+    for(int i=0;i<good_matches.size();i++)
+    {
+        cv::DMatch m=good_matches[i];
+        int tidx=m.trainIdx;
+        int qidx=m.queryIdx;
+
+        train.push_back(_points[tidx]);
+        query.push_back(keypoints[qidx]);
+    }
+}
 
 
 bool keyptsMap::matching(std::vector<float3> &keypoints,
@@ -58,7 +72,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
     matcher->knnMatch( queryDescr,trainDescr, knn_matches, 2 );
 
 
-    std::vector<cv::DMatch> good_matches;
+    good_matches.clear();
 
     std::vector< std::pair<int, int> > matchIdx;
     std::vector<uint> newDescrIdx;
@@ -137,11 +151,8 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
     //_descr=descriptors;
 
     prevPose=pose;
-
     return true;
-
 }
-
 
 void keyptsMap::saveKeypoints(std::string fileName,const std::vector<float3> &keypts)
 {

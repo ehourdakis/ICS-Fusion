@@ -119,8 +119,10 @@ int passedFromLastKeyFrame=0;
 std::vector<float3> keyVert;
 std::vector<float3> prevKeyVert;
 
-int keyFrameIdx=-1;
-int prevKeyFrameIdx=-1;
+//poses
+sMatrix4 keyFramePose;
+sMatrix4 prevKeyFramePose;
+
 smoothnet_3d::SmoothNet3dResult snResult;
 
 actionlib::SimpleActionClient<smoothnet_3d::SmoothNet3dAction> *smoothnetServer=0;
@@ -145,7 +147,7 @@ void publishIsamPath();
 #endif
 
 void publishHarris();
-void publishKeyPoints(const sMatrix4 &tf);
+void publishKeyPoints();
 
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans)
@@ -199,19 +201,25 @@ void doLoopClosure()
     passedFromLastKeyFrame=0;
     loopCl->processKeyFrame();
 
+    prevKeyFramePose=keyFramePose;
+    keyFramePose=loopCl->getPose();
+
     if(publish_key_points)
     {
-
-//        publishKeyPoints(tf);
+        publishKeyPoints();
     }
 
     publishHarris();
     std::cout<<"doLoopClosure ended"<<std::endl;
 }
 
-void publishKeyPoints(const sMatrix4 &tf)
+void publishKeyPoints()
 {
-    sMatrix4 pose=loopCl->getPose();
+    std::vector<float3> prevKeyVert;
+    std::vector<float3> keyVert;
+
+    loopCl->getMatches(prevKeyVert,keyVert);
+
     pcl_msg0.points.resize(prevKeyVert.size());
     pcl_msg1.points.resize(keyVert.size());
     int i = 0;
@@ -222,12 +230,11 @@ void publishKeyPoints(const sMatrix4 &tf)
         if(i<prevKeyVert.size())
         {
             v=prevKeyVert[i];
+            v=prevKeyFramePose*v;
+            v=prevKeyVert[i];
             v.x-=params.volume_direction.x;
             v.y-=params.volume_direction.y;
             v.z-=params.volume_direction.z;
-
-            v=tf*v;
-            v=pose*v;
 
             v=fromVisionCordV(v);
 
@@ -239,11 +246,12 @@ void publishKeyPoints(const sMatrix4 &tf)
         if(i<keyVert.size())
         {
             v=keyVert[i];
+            v=keyFramePose*v;
+            v=keyVert[i];
             v.x-=params.volume_direction.x;
             v.y-=params.volume_direction.y;
             v.z-=params.volume_direction.z;
 
-            v=pose*v;
             v=fromVisionCordV(v);
 
             pcl_msg1.points[i].x = v.x;

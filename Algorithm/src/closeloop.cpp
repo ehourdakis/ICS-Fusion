@@ -245,25 +245,31 @@ Image<float3, Host> CloseLoop::getAllVertex() const
     return _fusion->getAllVertex();
 }
 
+void CloseLoop::getMatches(std::vector<float3> &prevPts,
+                std::vector<float3> &newPts)
+{
+    _keyMap->getMatches(lastKeyPts,prevPts,newPts);
+}
+
 bool CloseLoop::processKeyFrame()
 {
-    std::vector<float3> keypoints;
+    lastKeyPts.clear();
     std::vector<FeatDescriptor> descriptors;
 
     auto rgb=rgbs.rbegin();
     auto depth=depths.rbegin();
-    _featDet->detectFeatures(_frame,*depth,*rgb,keypoints,descriptors);
+    _featDet->detectFeatures(_frame,*depth,*rgb,lastKeyPts,descriptors);
 
     if(_keyMap->isEmpty() )
     {
-        _keyMap->addKeypoints(keypoints,descriptors);
+        _keyMap->addKeypoints(lastKeyPts,descriptors);
         std::cout<<"Keypts added"<<std::endl;
         return true;
 
     }
     else
     {
-        _keyMap->matching(keypoints,descriptors,_frame);
+        _keyMap->matching(lastKeyPts,descriptors,_frame);
         std::cout<<"Keypts matched"<<std::endl;
     }
 
@@ -369,6 +375,7 @@ void CloseLoop::reInit(int idx)
 {
     
 }
+
 
 
 void CloseLoop::reInit()
