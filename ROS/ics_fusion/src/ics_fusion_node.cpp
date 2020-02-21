@@ -195,37 +195,16 @@ void readIteFusionParams(ros::NodeHandle &n_p)
 void doLoopClosure()
 {
     std::cout<<"doLoopClosure"<<std::endl;
-    smoothnet_3d::SmoothNet3dResult *results=&snResult;
-    
-    if(results->fitness>0)
-    {
-        sMatrix4 tf;
-        for(int i=0;i<4;i++)
-        {
-            for(int j=0;j<4;j++)
-            {
-                tf(i,j)=results->tf[4*i+j];
-            }
-        }
-    
-        loopCl->addTf(keyFrameIdx,
-                      prevKeyFrameIdx,
-                      tf,
-                      results->fitness,
-                      results->rmse,
-                      results->source_corr,
-                      results->target_corr,
-                      prevKeyVert,
-                      keyVert);
-        if(publish_key_points)
-        {
-            publishKeyPoints(tf);
-        }
-    }
-    
-    results->fitness=-1;
-    keyFrameProcessing=false;
 
+    loopCl->processKeyFrame();
+
+    if(publish_key_points)
+    {
+
+//        publishKeyPoints(tf);
+    }
+
+    publishHarris();
     std::cout<<"doLoopClosure ended"<<std::endl;
 }
 
@@ -406,19 +385,30 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     
 
     loopCl->processFrame();
-    
-
+    bool _isKeyFrame=false;
 #ifndef DISABLE_LOOP_CLOSURE
-    if(snResult.fitness>0)
-         doLoopClosure();
-#endif
 
-#ifdef LOOP_CLOSURE_RATE
-    if( !keyFrameProcessing && (frame==4 || ( (frame %LOOP_CLOSURE_RATE) ==0 && frame>0 ) ) )
-    {
-        processKeyFrame();
-    }    
+  #ifdef LOOP_CLOSURE_RATE
+    if(frame==4)
+        _isKeyFrame=true;
+    if( frame>0 && (frame%LOOP_CLOSURE_RATE)==0)
+        _isKeyFrame=true;
+  #else
+    _isKeyFrame=isKeyFrame();
+  #endif
 #endif
+    if(_isKeyFrame)
+    {
+         doLoopClosure();
+    }
+
+    if(publish_key_frame)
+    {
+        std_msgs::Float32 data;
+        data.data=(float)_isKeyFrame;
+        key_frame_pub.publish(data);
+    }
+
 
     publishOdom();
     
@@ -502,6 +492,7 @@ void publishHarris()
 //    out_msg->encoding = sensor_msgs::image_encodings::TYPE_32FC1; // Or whatever
     //out_msg.encoding = sensor_msgs::image_encodings::BGR8; // Or whatever
     //out_msg.image    = mat; // Your cv::Mat
+
 
     //out_msg.encoding = "8UC1";
     //out_msg.encoding = "32FC1";
@@ -629,17 +620,6 @@ void gemLeftCallback(const std_msgs::Float32 f)
         leftFeetValue--;
     else
         leftFeetValue=0;
-    
-    bool b=isKeyFrame();
-    if(b)
-        processKeyFrame();
-    
-    if(publish_key_frame)
-    {    
-        std_msgs::Float32 data;
-        data.data=(float)b;
-        key_frame_pub.publish(data);
-    }
 }
 
 void gemRightCallback(const std_msgs::Float32 f)
@@ -650,18 +630,6 @@ void gemRightCallback(const std_msgs::Float32 f)
         rightFeetValue--;
     else
         rightFeetValue=0;
-    
-    
-    bool b=isKeyFrame();
-    if(b)
-        processKeyFrame();
-    
-    if(publish_key_frame)
-    {    
-        std_msgs::Float32 data;
-        data.data=(float)b;
-        key_frame_pub.publish(data);
-    }
 }
 
 void publishPoints()
@@ -761,8 +729,8 @@ int main(int argc, char **argv)
     ros::Subscriber gem_left_sub = n_p.subscribe(gem_left_topic, 1, gemLeftCallback);
     ros::Subscriber gem_right_sub = n_p.subscribe(gem_right_topic,1, gemRightCallback);
 
-    smoothnetServer=new actionlib::SimpleActionClient<smoothnet_3d::SmoothNet3dAction>(SMOOTHNET_SERVER,true);
-    smoothnetServer->waitForServer();
+    //smoothnetServer=new actionlib::SimpleActionClient<smoothnet_3d::SmoothNet3dAction>(SMOOTHNET_SERVER,true);
+    //smoothnetServer->waitForServer();
     
     ROS_INFO("Waiting camera info");
     while(ros::ok())

@@ -17,6 +17,9 @@
 
 #include"harris.h"
 #include"Isam.h"
+
+#include"featuredetector.h"
+
 class CloseLoop
 {
     public:
@@ -56,6 +59,7 @@ class CloseLoop
 
         void getIsamPoses(std::vector<sMatrix4> &vec);
         void showKeypts(cv::Mat &outMat);
+        bool processKeyFrame();
     private:
         sMatrix4 firstPose;
         sMatrix4 prevPose;
@@ -85,6 +89,8 @@ class CloseLoop
         void reInit();
 
         Harris *harris;
+        keyptsMap *_keyMap;
+        FeatureDetector *_featDet;
 
 //         SmoothNet *smoothNet;
 

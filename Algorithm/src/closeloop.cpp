@@ -25,6 +25,7 @@ CloseLoop::CloseLoop(const kparams_t &p,sMatrix4 initPose)
 {
     _fusion = new IcsFusion(params,initPose);
 
+
 #ifdef USE_G2O
      _isam=new G2oGraph(params);
 #else
@@ -33,6 +34,9 @@ CloseLoop::CloseLoop(const kparams_t &p,sMatrix4 initPose)
     firstPose=initPose;
 
     harris=new Harris();
+
+    _featDet=new FeatureDetector(p,_fusion,_isam);
+    _keyMap=new keyptsMap(_isam,_fusion);
 }
 
 //For testing purposes only.
@@ -205,7 +209,7 @@ bool CloseLoop::processFrame()
 
 void CloseLoop::showKeypts(cv::Mat &outMat)
 {
-    harris->showKeypts(outMat);
+    _featDet->getFeatImage(outMat);
 }
 
 bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,
@@ -237,35 +241,32 @@ Image<float3, Host> CloseLoop::getAllVertex() const
 {
     return _fusion->getAllVertex();
 }
-/*
+
 bool CloseLoop::processKeyFrame()
 {
+    std::vector<float3> keypoints;
+    std::vector<FeatDescriptor> descriptors;
 
-    smoothNet->loadFrameData(_frame);
-    bool found=smoothNet->findDescriptors(_frame);
+    auto rgb=rgbs.rbegin();
+    auto depth=depths.rbegin();
+    _featDet->detectFeatures(_frame,*depth,*rgb,keypoints,descriptors);
 
-    if(found)
+    if(_keyMap->isEmpty() )
     {
-        int currPoseIdx=_isam->poseSize()-1;
-        if(firstKeyFrame)
-        {
-            prevKeyPoseIdx=currPoseIdx;
-            firstKeyFrame=false;
-        }
-        else
-        {
-            sMatrix4 tf=smoothNet->getTf();
-            sMatrix6 cov=smoothNet->calculateCov();
-            _isam->addPoseConstrain(prevKeyPoseIdx,currPoseIdx,tf,cov);
-            optimize();
-            reInit();
-            prevKeyPoseIdx=0;
-        }
+        _keyMap->addKeypoints(keypoints,descriptors);
+        std::cout<<"Keypts added"<<std::endl;
+        return true;
+
     }
-    smoothNet->clear();
-    return true;
+    else
+    {
+        _keyMap->matching(keypoints,descriptors,_frame);
+        std::cout<<"Keypts matched"<<std::endl;
+    }
+
+    return optimize();
 }
-*/
+
 bool CloseLoop::optimize()
 {
     double err=_isam->optimize(_frame);
@@ -277,10 +278,10 @@ bool CloseLoop::optimize()
         return false;
     }
 
-//#ifndef DISABLE_MAP_FIXES
+#ifndef DISABLE_MAP_FIXES
     fixMap();
     _fusion->raycasting(_frame);
-//#endif
+#endif
     return true;
 }
 

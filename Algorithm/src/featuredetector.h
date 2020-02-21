@@ -19,7 +19,7 @@ class FeatureDetector
     public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam);
-//        FeatureDetector(kparams_t p, IcsFusion *f);
+
         void detectFeatures(int frame,
                             DepthHost &depth,
                             RgbHost &rgb,
@@ -27,8 +27,7 @@ class FeatureDetector
                             std::vector<FeatDescriptor> &descr);
         void getFeatImage(uchar3 *out);
 
-//        void addFeatures(descr_t);
-
+        void getFeatImage(cv::Mat &outMat);
     private:
         void getDescrFromMat(int row,cv::Mat &mat,FeatDescriptor &descr);
 

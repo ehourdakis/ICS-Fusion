@@ -25,6 +25,11 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
     ratio_thresh = 0.7f;
 }
 
+void FeatureDetector::getFeatImage(cv::Mat &outMat)
+{
+//    outMat=cvGrey.clone();
+    cv::drawKeypoints(cvGrey,cvKeypoints,outMat,cv::Scalar::all(-1),cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+}
 
 void FeatureDetector::getFeatImage(uchar3 *out)
 {
@@ -217,8 +222,6 @@ void FeatureDetector::detectFeatures(int frame, DepthHost &depth, RgbHost &rgb,
 
         descr.push_back(d);
     }
-
-
 
     drawNewData=true;
     vertexes.release();

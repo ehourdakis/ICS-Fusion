@@ -32,7 +32,6 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
     {
         sMatrix3 cov;
         cov=cov*descriptors[i].s2;
-        //cov=cov*1e-7;
 
         int lidx=_isam->addLandmark(keypoints[i]);
         lanmarks.push_back(lidx);
@@ -79,62 +78,43 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
             float3 p1=prevPose*_points[tidx];
             float3 p2=pose*keypoints[qidx];;
 
-            float d=dist(p1,p2);
-            if(m.distance<50)
+            float dist3d=dist(p1,p2);
+            float discDist=m.distance;
+            if(discDist<50)
             {
-                if(d<0.5)
+                if(dist3d<0.5)
                 {
-
                     good_matches.push_back(m);
-                    sMatrix3 cov1;
-                    cov1=descriptors[qidx].cov;
+                    sMatrix3 cov=descriptors[qidx].cov;
                     
-                    sMatrix3 cov0;
-                    cov0=_descr[tidx].cov;
-
-
-                    //cov=cov*1e-7;
-                    //cov=cov*(m.distance/20000);
                     std::pair<int, int> p(tidx, qidx);
                     matchIdx.push_back(p);
                     
                     int lidx=lanmarks[tidx];
-
-                    //int lidx=_isam->addLandmark(_points[tidx]);
-                    
-                    //_isam->connectLandmark(_points[tidx],lidx,0,cov0);
-                    _isam->connectLandmark(keypoints[qidx],lidx,-1,cov1);
-                    
-                    //_isam->connectLandmark(keypoints[qidx],lidx,1,cov1);
-                    
+                    _isam->connectLandmark(keypoints[qidx],lidx,-1,cov);
                 }
             }
             else
             {
-                sMatrix3 cov;
-                cov=cov*descriptors[qidx].s2;
+                sMatrix3 cov=descriptors[qidx].cov;
                 //cov=cov*1e-7;
                int lidx=_isam->addLandmark(keypoints[qidx]);
                _isam->connectLandmark(keypoints[qidx],lidx,-1,cov);
-
-//                 _isam->connectLandmark(keypoints[qidx],lidx,-1,cov);
-                
-//                 lanmarks.push_back(lidx);
-                //_points.push_back(keypoints[qidx]);
-                //_descr.push_back(descriptors[qidx]);
-//                 newLanmarks[qidx]=lidx;
-                newDescrIdx.push_back(qidx);
+               _points.push_back(keypoints[qidx]);
+               _descr.push_back(descriptors[qidx]);
+               lanmarks.push_back(lidx);
+               newDescrIdx.push_back(qidx);
             }
 
 
         }
     }
-//    lanmarks=newLanmarks;
+
     std::cout<<"Feature number "<<keypoints.size()<<std::endl;
     std::cout<<"Matches size "<<good_matches.size()<<std::endl;
     std::cout<<"New Feature number "<<newDescrIdx.size()<<std::endl;
 
-
+#if 0
     /*Save keypoint map*/
     char buf[32];
     sprintf(buf,"f_/f_%d_map_keypts",frame);
@@ -152,7 +132,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
     /*Save match keypoints*/
     sprintf(buf,"f_/f_%d_matching",frame);
     saveMatching(buf,matchIdx);
-
+#endif
     //_points=keypoints;
     //_descr=descriptors;
 
