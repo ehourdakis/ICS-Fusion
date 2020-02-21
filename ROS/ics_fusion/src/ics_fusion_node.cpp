@@ -196,6 +196,7 @@ void doLoopClosure()
 {
     std::cout<<"doLoopClosure"<<std::endl;
 
+    key_frame_thr++;
     loopCl->processKeyFrame();
 
     if(publish_key_points)
