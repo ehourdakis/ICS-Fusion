@@ -194,6 +194,9 @@ bool CloseLoop::processFrame()
         //std::cout<<"ICP Fitness:"<<icpFitness<<std::endl;
 //        std::cout<<"ICP cov:\n"<<icpCov<<std::endl;
         //icpCov=icpCov*1000*(1/icpFitness);
+
+//        icpCov=icpCov*10000;
+
         covars.push_back(icpCov);
         _isam->addFrame(pose,icpCov);        
     }

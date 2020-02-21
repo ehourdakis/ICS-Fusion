@@ -10,7 +10,7 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
      _isam(isam)
 {
 
-    int  	nfeatures = 100;
+    int  	nfeatures = 200;
     int  	octaveLayers = 3;
     double  contrastThreshold = 0.04;
     double  edgeThreshold = 10;
@@ -173,8 +173,7 @@ void FeatureDetector::calcMask(DepthHost &depth,cv::Mat &mask)
      {
          for(px.y=0;px.y<depth.size.y;px.y++)
          {
-//             mask.at<uchar>(px.y,px.x,0)=0;
-             if(depth[px]<0.0001f ||depth[px]>4 || depth[px]!=depth[px])
+             if(depth[px]<0.0001f ||depth[px]>4.00 || depth[px]!=depth[px])
              {
                  mask.at<uchar>(px.y,px.x,0)=0;
              }
@@ -239,8 +238,8 @@ void FeatureDetector::detectFeatures(int frame, DepthHost &depth, RgbHost &rgb,
 //        pf.y=cvKeypoints[i].pt.y;
 
         d.cov=sMatrix3();
-        //d.cov=d.cov*d.s2;
-        d.cov=d.cov*1e-6;
+        d.cov=d.cov*d.s2;
+        //d.cov=d.cov;
 
         //sMatrix3 cov=calcCovariance(vertexes,pf,cvKeypoints[i].size/2,vert);
         keypts3D.push_back(vert);
