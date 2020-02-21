@@ -174,7 +174,7 @@ void FeatureDetector::calcMask(DepthHost &depth,cv::Mat &mask)
          for(px.y=0;px.y<depth.size.y;px.y++)
          {
 //             mask.at<uchar>(px.y,px.x,0)=0;
-             if(depth[px]<0.0001f ||depth[px]>4)
+             if(depth[px]<0.0001f ||depth[px]>4 || depth[px]!=depth[px])
              {
                  mask.at<uchar>(px.y,px.x,0)=0;
              }
