@@ -261,9 +261,9 @@ __global__ void deIntegrateKernel(Volume vol,
             else
             {
 #ifdef USE_LAB                
-                float3 fcol=rgb2lab(rgb[px]);
+                fcol=rgb2lab(rgb[px]);
 #else
-                float3 fcol = make_float3(rgb[px].x,rgb[px].y,rgb[px].z);
+                fcol = make_float3(rgb[px].x,rgb[px].y,rgb[px].z);
 #endif
                 float3 p_color = vol.getColor(pix);
                 
