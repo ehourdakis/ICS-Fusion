@@ -63,7 +63,10 @@ class CloseLoop
         bool processKeyFrame();
         void getMatches(std::vector<float3> &prevPts,
                         std::vector<float3> &newPts);
-
+        void saveImage(char *filename);
+        void saveDescriptors(char *filename);
+        void saveKeyPts(char *filename);
+        void saveCorrespondance(char *fileName);
     private:
         sMatrix4 firstPose;
         sMatrix4 prevPose;

@@ -125,6 +125,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
            _descr.push_back(descriptors[qidx]);
            lanmarks.push_back(lidx);
            newDescrIdx.push_back(qidx);
+           
         }
     }
 

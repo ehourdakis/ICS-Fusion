@@ -50,8 +50,12 @@ void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_ma
     cv::drawMatches( cvRgb, cvKeypoints, oldCvRgb, oldCvKeypoints, good_matches, cvOutput, cv::Scalar::all(-1),
                  cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DEFAULT );
 // #endif
-    std::cout<<cvOutput.rows<<" "<<cvOutput.cols<<std::endl;
     memcpy(out,cvOutput.data,s);
+}
+
+void FeatureDetector::saveImage(char *filename) const
+{
+    imwrite( filename, cvOutput );
 }
 
 void FeatureDetector::getFeatImage(uchar3 *out)
@@ -227,6 +231,9 @@ void FeatureDetector::detectFeatures(int frame, DepthHost &depth, RgbHost &rgb,
 
     sift->detectAndCompute(cvGrey,mask, cvKeypoints,descrMat);
 
+        std::cout<<descrMat.rows<<" "<<descrMat.cols<<std::endl;
+
+    
     keypts3D.reserve(cvKeypoints.size());
     descr.reserve(cvKeypoints.size());
 
@@ -240,10 +247,10 @@ void FeatureDetector::detectFeatures(int frame, DepthHost &depth, RgbHost &rgb,
 
         FeatDescriptor d;        
         fromCvMatRow(d,descrMat,i);
-        d.s2=sq(cvKeypoints[i].size/2);
+        d.s2=cvKeypoints[i].size;
         //d.s2=(cvKeypoints[i].size/2)/10000;
 
-        d.s2*=1e-4;
+//         d.s2*=1e-4;
 
         d.x=(float)cvKeypoints[i].pt.x;
         d.y=(float)cvKeypoints[i].pt.y;

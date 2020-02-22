@@ -79,6 +79,7 @@ sMatrix4 getGtTransformed(/*SLAMBenchLibraryHelper *lib*/ const slambench::TimeS
 // Functions Implementation
 // ===========================================================
 
+int lastKeyFrame=0;
 Eigen::Matrix4f sMatrix4ToEigen(const sMatrix4 &mat)
 {
     Eigen::Matrix4f ret;
@@ -324,17 +325,17 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         //saveVertexPly(buf,vert);
         
     }
-    else if(frame>3)
+    else if(frame>=3)
     {
         sMatrix4 gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
         gtPoses.push_back(gtPose);
         char buf[32];
 
-        sprintf(buf,"data/gt/f_%d_pose",frame);
-        savePose(buf,gtPose);
+//         sprintf(buf,"data/gt/f_%d_pose",frame);
+//         savePose(buf,gtPose);
         
-        sprintf(buf,"data/gt/f_%d_poses",frame);
-        savePoses(buf,gtPoses);
+        sprintf(buf,"data/gt/pose%d",frame);
+        savePoseMat(buf,gtPose);
 
     }
 
@@ -353,8 +354,8 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
     {
 //enable this for dbg purpuses
 #if 1
-        char buf[32];
-        sprintf(buf,"data/poses/f_%d_poses",frame);
+        char buf[128];
+        sprintf(buf,"data/poses/f_%d_poses.txt",frame);
         savePoses(buf,kfusionPoses);
 
         sprintf(buf,"data/ply/f_%d_vertices.ply",frame);
@@ -366,6 +367,20 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
             //saveVoxelsToFile(buf,icsFusion->getVolume(),params);
         loopCl->processKeyFrame();
         loopCl->showKeypts(outputFeat);
+        
+        sprintf(buf,"data/feat/frame%d.png",frame);
+        loopCl->saveImage(buf);
+        
+        sprintf(buf,"data/feat/descr%d.txt",frame);
+        loopCl->saveDescriptors(buf);
+        
+        sprintf(buf,"data/feat/points%d.txt",frame);
+        loopCl->saveKeyPts(buf);
+        
+        sprintf(buf,"data/feat/corr_from%dto%d.txt",lastKeyFrame,frame);
+         loopCl->saveCorrespondance(buf);
+        
+        lastKeyFrame=frame;
 #ifdef DRAW_MATCHES
         
         loopCl->reInit();

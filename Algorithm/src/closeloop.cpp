@@ -220,6 +220,11 @@ void CloseLoop::showKeypts(uchar3 *out)
 #endif
 }
 
+void CloseLoop::saveImage(char *filename)
+{
+    _featDet->saveImage(filename);
+}
+
 bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,
                            Image<float3, Host> vertices,
                            std::vector<float3> &keyVert)
@@ -280,6 +285,49 @@ bool CloseLoop::processKeyFrame()
 
     return optimize();
 }
+
+void CloseLoop::saveDescriptors(char *fileName)
+{    
+    std::ofstream outFile(fileName, std::ios::out);
+    for(int i=0;i<lastDescr.size();i++)
+    {
+        FeatDescriptor d=lastDescr[i];
+        for(int j=0;j<d.size();j++)
+        {
+            outFile<<d.data[i]<<" ";
+        }
+        outFile<<d.s2<<"\n";   
+    }
+    outFile.close();
+}
+
+void CloseLoop::saveKeyPts(char *fileName)
+{
+    std::ofstream outFile(fileName, std::ios::out);
+    for(int i=0;i<lastKeyPts.size();i++)
+    {
+        float3 pt=lastKeyPts[i];        
+        outFile<<pt.x<<" "<<pt.y<<" "<<pt.z<<"\n";
+    }
+    outFile.close();
+}
+
+void CloseLoop::saveCorrespondance(char *fileName)
+{
+    std::vector<cv::DMatch> good_matches=_keyMap->goodMatches();
+    if(good_matches.size()==0)
+        return;
+    
+    std::ofstream outFile(fileName, std::ios::out);
+    
+    for(int i=0;i<good_matches.size();i++)
+    {
+        cv::DMatch m=good_matches[i];           
+        outFile<<m.trainIdx<<" "<<m.queryIdx<<"\n";
+    }
+    outFile.close();
+}
+
 
 //void CloseLoop::clear()
 //{

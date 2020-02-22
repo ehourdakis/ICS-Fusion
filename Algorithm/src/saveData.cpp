@@ -78,11 +78,25 @@ void savePoses(char *fileName,const std::vector<sMatrix4> &poses)
         }
         Eigen::Vector3f rotV = rot.eulerAngles(2, 1, 0);
 
-        file<<pose(0,3)<<','<<pose(1,3)<<','<<pose(2,3)<<" " ;
+        file<<pose(0,3)<<','<<pose(1,3)<<','<<pose(2,3)<<"," ;
         file<<rotV(0)<<','<<rotV(1)<<','<<rotV(2)<<'\n';
     }
 
     file.close();
+}
+void savePoseMat(char *fileName,const sMatrix4 &pose)
+{
+    using namespace std;
+    ofstream file(fileName, std::ios::out);
+    for (int i=0;i<4;i++)
+    {
+        for(int j=0;j<4;j++)
+        {
+             file<<pose(i,j)<<' ';
+        }
+         file<<"\n";
+    }
+     file.close();
 }
 
 void savePose(char *fileName,const sMatrix4 &pose)
