@@ -46,6 +46,8 @@ static uchar3* outputFeatRGB;
 static uchar3* inputDepthRGB;
 static uchar3* trackRGB;
 static uint16_t* inputDepth;
+
+static uchar3 *outputFeat;
 // ===========================================================
 // SLAMBench Sensors
 // ===========================================================
@@ -64,6 +66,7 @@ slambench::outputs::Output *pose_output;
 slambench::outputs::Output *rgb_frame_output;
 slambench::outputs::Output *track_frame_output;
 slambench::outputs::Output *volume_frame_output;
+slambench::outputs::Output *feat_frame_output;
 slambench::outputs::Output *depth_frame_output;
 
 // ===========================================================
@@ -209,6 +212,13 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper * slam_settings)
     outputFeatRGB= new uchar3[params.inputSize.x * params.inputSize.y];
     inputDepthRGB = new uchar3[params.inputSize.x * params.inputSize.y];
     trackRGB = new uchar3[params.inputSize.x * params.inputSize.y];
+
+#ifdef DRAW_MATCHES
+    outputFeat = new uchar3[params.inputSize.x * params.inputSize.y*2]; 
+#else
+    outputFeat = new uchar3[params.inputSize.x * params.inputSize.y]; 
+#endif
+
     std::cout << "input size is = "<<params.inputSize.x<<","<<params.inputSize.y<<std::endl;
 
     loopCl=new CloseLoop(params,poseMatrix);
@@ -221,8 +231,14 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper * slam_settings)
     slam_settings->GetOutputManager().RegisterOutput(rgb_frame_output);
 
     volume_frame_output = new slambench::outputs::Output("Volume Frame", slambench::values::VT_FRAME);
+    feat_frame_output = new slambench::outputs::Output("Feature Frame", slambench::values::VT_FRAME);
+    
     volume_frame_output->SetKeepOnlyMostRecent(true);
+    feat_frame_output->SetKeepOnlyMostRecent(true);
+    
     slam_settings->GetOutputManager().RegisterOutput(volume_frame_output);
+    slam_settings->GetOutputManager().RegisterOutput(feat_frame_output);
+    
 
     track_frame_output = new slambench::outputs::Output("track Frame", slambench::values::VT_FRAME);
     track_frame_output->SetKeepOnlyMostRecent(true);
@@ -349,6 +365,11 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
             //sprintf(buf,"data/volume/frame%d_volume",frame);
             //saveVoxelsToFile(buf,icsFusion->getVolume(),params);
         loopCl->processKeyFrame();
+        loopCl->showKeypts(outputFeat);
+#ifdef DRAW_MATCHES
+        
+        loopCl->reInit();
+#endif
     }
     frame++;
 
@@ -375,6 +396,7 @@ bool sb_clean_slam_system()
     delete outputRGB;
     delete outputGtRGB;
     delete outputFeatRGB;
+    delete outputFeat;
 
     delete inputDepthRGB;
     delete trackRGB;
@@ -524,6 +546,23 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
                                                                              outputRGB));
     }
 
+    if(feat_frame_output->IsActive() )
+    {        
+        
+        std::lock_guard<FastLock> lock (lib->GetOutputManager().GetLock());
+        
+#ifdef DRAW_MATCHES
+        int size_x= params.inputSize.x*2;
+        int size_y= params.inputSize.y;
+#else
+        int size_x= params.inputSize.x;
+        int size_y= params.inputSize.y;
+#endif
+        volume_frame_output->AddPoint(ts, new slambench::values::FrameValue( size_x,
+                                                                             size_y,
+                                                                             slambench::io::pixelformat::RGB_III_888,
+                                                                             outputFeat));
+    }
 
 
     return true;

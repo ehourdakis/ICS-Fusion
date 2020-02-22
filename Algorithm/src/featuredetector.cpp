@@ -41,7 +41,7 @@ void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_ma
 // #else
 
     int s=_params.inputSize.x*_params.inputSize.y*3*2;
-    if(oldCvRgb.empty())
+    if(oldCvRgb.empty()||good_matches.size()==0)
     {
         memset(out,0,s);
         return;
