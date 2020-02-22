@@ -272,7 +272,7 @@ bool CloseLoop::processKeyFrame()
 
     if(_keyMap->isEmpty() )
     {
-        _keyMap->addKeypoints(lastKeyPts,lastDescr);
+        _keyMap->addKeypoints(lastKeyPts,lastDescr,_frame);
         std::cout<<"Keypts added"<<std::endl;
         return true;
 
@@ -294,7 +294,7 @@ void CloseLoop::saveDescriptors(char *fileName)
         FeatDescriptor d=lastDescr[i];
         for(int j=0;j<d.size();j++)
         {
-            outFile<<d.data[i]<<" ";
+            outFile<<d.data[j]<<" ";
         }
         outFile<<d.s2<<"\n";   
     }
@@ -473,7 +473,7 @@ void CloseLoop::reInit()
     covars.push_back(cov);
 
 
-    _keyMap->addKeypoints(lastKeyPts,lastDescr);
+    _keyMap->addKeypoints(lastKeyPts,lastDescr,_frame);
 }
 
 void CloseLoop::clear()
@@ -489,7 +489,7 @@ void CloseLoop::clear()
     
     _isam->clear();
     _keyMap->clear();
-    _keyMap->addKeypoints(lastKeyPts,lastDescr);
+    _keyMap->addKeypoints(lastKeyPts,lastDescr,_frame);
 
     depths.clear();
     rgbs.clear();

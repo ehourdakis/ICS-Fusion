@@ -16,7 +16,7 @@ class keyptsMap
     public:
         keyptsMap(PoseGraph *isam,IcsFusion *f);
         void addKeypoints(std::vector<float3> &keypoints,
-                           std::vector<FeatDescriptor> &descriptors);
+                           std::vector<FeatDescriptor> &descriptors,int frame);
 
         bool matching(std::vector<float3> &keypoints,
                       std::vector<FeatDescriptor> &descriptors, int frame);
@@ -50,6 +50,7 @@ class keyptsMap
         sMatrix4 prevPose;
 
         std::vector<cv::DMatch> good_matches;
+        std::vector<int> descrFrame;
 
         void saveDescriptors(std::string fileName, const std::vector<FeatDescriptor> &desc);
         void saveKeypoints(std::string fileName,const std::vector<float3> &keypts);

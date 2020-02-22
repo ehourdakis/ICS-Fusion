@@ -16,10 +16,11 @@ void keyptsMap::clear()
     _points.clear();
     _descr.clear();
     lanmarks.clear();
+    descrFrame.clear();
 }
 
 void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
-                             std::vector<FeatDescriptor> &descriptors)
+                             std::vector<FeatDescriptor> &descriptors,int frame)
 {
     _points.insert(_points.end(),
                    keypoints.begin(),
@@ -37,6 +38,7 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
         lanmarks.push_back(lidx);
         _isam->connectLandmark(keypoints[i],lidx,-1,cov);
         
+        descrFrame.push_back(frame);
     }
     prevPose=_fusion->getPose();
 }
@@ -125,7 +127,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
            _descr.push_back(descriptors[qidx]);
            lanmarks.push_back(lidx);
            newDescrIdx.push_back(qidx);
-           
+           descrFrame.push_back(frame);
         }
     }
 
