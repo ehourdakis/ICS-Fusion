@@ -17,6 +17,8 @@
 #include<saveData.h>
 #include <unistd.h>
 
+#include<defs.h>
+
 #define SLAMBENCH_CH
 
 kparams_t params;
@@ -177,7 +179,7 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper * slam_settings)
                 params.inputSize.x / params.compute_size_ratio,
                 params.inputSize.y / params.compute_size_ratio);
 
-    Matrix4 poseMatrix;
+    sMatrix4 poseMatrix;
 
     poseMatrix.data[0].w +=  params.volume_direction.x;
     poseMatrix.data[1].w +=  params.volume_direction.y;
@@ -289,7 +291,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
     tracked=loopCl->processFrame();
     kfusionPoses.push_back(loopCl->getPose());
 #endif
-
+    
     IcsFusion *icsFusion=loopCl->fusion();
     
     //use ground truth pose for loop closure.
@@ -301,45 +303,53 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         std::cout<<"inital gt"<<std::endl;
         std::cout<<initialGt<<std::endl;
         char buf[32];
-        sprintf(buf,"data/ply/f_%d_vertices.ply",frame);
-        Image<float3, Host> vert=icsFusion->getAllVertex();
-        saveVertexPly(buf,vert);
+        //sprintf(buf,"data/ply/f_%d_vertices.ply",frame);
+        //Image<float3, Host> vert=icsFusion->getAllVertex();
+        //saveVertexPly(buf,vert);
         
     }
-    if(frame>=3)
+    else if(frame>3)
     {
-
         sMatrix4 gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
         gtPoses.push_back(gtPose);
+        char buf[32];
 
-        if( (frame%40) == 0)
-        {
+        sprintf(buf,"data/gt/f_%d_pose",frame);
+        savePose(buf,gtPose);
+        
+        sprintf(buf,"data/gt/f_%d_poses",frame);
+        savePoses(buf,gtPoses);
 
+    }
+
+#endif
+
+    bool _isKeyFrame=false;
+
+#ifdef LOOP_CLOSURE_RATE
+    
+    if(frame==4)
+        _isKeyFrame=true;
+    if( frame>0 && (frame%LOOP_CLOSURE_RATE)==0)
+        _isKeyFrame=true;
+#endif
+    if(_isKeyFrame)
+    {
 //enable this for dbg purpuses
 #if 1
-            char buf[32];
-            sprintf(buf,"data/gt/f_%d_pose",frame);
-            savePose(buf,gtPose);
+        char buf[32];
+        sprintf(buf,"data/poses/f_%d_poses",frame);
+        savePoses(buf,kfusionPoses);
 
-            sprintf(buf,"data/gt/f_%d_poses",frame);
-            savePoses(buf,gtPoses);
-            
-            sprintf(buf,"data/poses/f_%d_poses",frame);
-            savePoses(buf,kfusionPoses);
-
-            sprintf(buf,"data/ply/f_%d_vertices.ply",frame);
-            Image<float3, Host> vert=icsFusion->getAllVertex();
-            saveVertexTxtPly(buf,vert);
-            vert.release();
+        sprintf(buf,"data/ply/f_%d_vertices.ply",frame);
+        Image<float3, Host> vert=icsFusion->getAllVertex();
+        saveVertexTxtPly(buf,vert);
+        vert.release();
 #endif
             //sprintf(buf,"data/volume/frame%d_volume",frame);
             //saveVoxelsToFile(buf,icsFusion->getVolume(),params);
-            loopCl->processKeyFrame();
-        }
-        
-        
+        loopCl->processKeyFrame();
     }
-#endif
     frame++;
 
     return true;

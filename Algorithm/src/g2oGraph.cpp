@@ -55,7 +55,7 @@ void G2oGraph::addPoseConstrain(int p1,int p2,const sMatrix4 &pose, const sMatri
     optimizer.addEdge(odom);
 }
 
-void G2oGraph::init(const sMatrix4 &initialPose)
+void G2oGraph::init(const sMatrix4 &initialPose, const sMatrix6 &cov)
 {
     optimizer.setVerbose(true);
     std::unique_ptr<g2o::BlockSolver_6_3::LinearSolverType> linearSolver;

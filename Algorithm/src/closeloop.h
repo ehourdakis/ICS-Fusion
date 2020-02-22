@@ -59,7 +59,7 @@ class CloseLoop
                    const std::vector<float3> &prevKeyVert);
 
         void getIsamPoses(std::vector<sMatrix4> &vec);
-        void showKeypts(cv::Mat &outMat);
+        void showKeypts(uchar3 *out);
         bool processKeyFrame();
         void getMatches(std::vector<float3> &prevPts,
                         std::vector<float3> &newPts);
@@ -68,7 +68,7 @@ class CloseLoop
         sMatrix4 firstPose;
         sMatrix4 prevPose;
         IcsFusion *_fusion;
-        Isam *_isam;
+        PoseGraph *_isam;
         int prevKeyPoseIdx;
 
         std::vector<float3> lastKeyPts;

@@ -195,7 +195,7 @@ bool CloseLoop::processFrame()
 //        std::cout<<"ICP cov:\n"<<icpCov<<std::endl;
         //icpCov=icpCov*1000*(1/icpFitness);
 
-//        icpCov=icpCov*10000;
+        icpCov=icpCov*1000;
 
         covars.push_back(icpCov);
         _isam->addFrame(pose,icpCov);        
@@ -210,10 +210,14 @@ bool CloseLoop::processFrame()
     return tracked;
 }
 
-void CloseLoop::showKeypts(cv::Mat &outMat)
+void CloseLoop::showKeypts(uchar3 *out)
 {
+#ifdef DRAW_MATCHES
      std::vector<cv::DMatch> good_matches=_keyMap->goodMatches();
-    _featDet->getFeatImage(outMat,good_matches);
+    _featDet->getFeatImage(out,good_matches);
+#else
+    _featDet->getFeatImage(out);
+#endif
 }
 
 bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,

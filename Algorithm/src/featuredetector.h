@@ -27,7 +27,7 @@ class FeatureDetector
                             std::vector<FeatDescriptor> &descr);
         void getFeatImage(uchar3 *out);
 
-        void getFeatImage(cv::Mat &outMat, std::vector<cv::DMatch> &good_matches);
+        void getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_matches);
     private:
         void getDescrFromMat(int row,cv::Mat &mat,FeatDescriptor &descr);
         void calcMask(DepthHost &depth,cv::Mat &mask);

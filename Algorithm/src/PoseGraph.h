@@ -13,6 +13,11 @@ class PoseGraph
         virtual void connectLandmark(float3 pos,int landIdx,int poseIdx, sMatrix3 &cov) = 0;
         virtual void connectLandmark(float2 pos, int lid, double Sigma2){}
         
+        virtual void clearLandmarks()
+        {
+
+        }
+
         virtual void clear() = 0;
         virtual void popFront()=0;
         virtual double optimize(int frame) = 0;

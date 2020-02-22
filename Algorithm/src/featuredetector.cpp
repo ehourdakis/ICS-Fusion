@@ -3,6 +3,7 @@
 #include<fstream>
 
 #include <opencv2/features2d.hpp>
+#include"defs.h"
 
 FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
     :_fusion(f),
@@ -10,10 +11,11 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
      _isam(isam)
 {
 
-    int  	nfeatures = 200;
+    int  	nfeatures = 400;
     int  	octaveLayers = 3;
-    double  contrastThreshold = 0.04;
-    double  edgeThreshold = 10;
+    double  contrastThreshold = 0.01;
+    double  edgeThreshold = 3;
+    //double  sigma = 1.6;
     double  sigma = 1.6;
 
     sift = cv::xfeatures2d::SIFT::create(nfeatures,
@@ -30,30 +32,26 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
     ratio_thresh = 0.7f;
 }
 
-void FeatureDetector::getFeatImage(cv::Mat &outMat, std::vector<cv::DMatch> &good_matches)
+void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_matches)
 {
-//    outMat=cvGrey.clone();
-//    cv::drawKeypoints(cvGrey,cvKeypoints,outMat,cv::Scalar::all(-1),cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+// #ifndef DRAW_MATCHES
+//     outMat=cvGrey.clone();
+//     cv::drawKeypoints(cvGrey,cvKeypoints,outMat,cv::Scalar::all(-1),cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+//     return;
+// #else
 
+    int s=_params.inputSize.x*_params.inputSize.y*3*2;
     if(oldCvRgb.empty())
     {
-        outMat=cvRgb.clone();
+        memset(out,0,s);
         return;
     }
 
-    std::cout<<"good_matches:"<<good_matches.size()<<std::endl;
-    std::cout<<"oldCvRgb:"<<oldCvRgb.empty()<<std::endl;
-    std::cout<<"cvRgb:"<<cvRgb.empty()<<std::endl;
-
-    std::cout<<"oldCvKeypoints:"<<oldCvKeypoints.size()<<std::endl;
-    std::cout<<"cvKeypoints:"<<cvKeypoints.size()<<std::endl;
-
-//    cv::drawMatches( oldCvRgb, oldCvKeypoints, cvRgb, cvKeypoints, good_matches, outMat, cv::Scalar::all(-1),
-//                 cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DEFAULT );
-
-
-    cv::drawMatches( cvRgb, cvKeypoints, oldCvRgb, oldCvKeypoints, good_matches, outMat, cv::Scalar::all(-1),
+    cv::drawMatches( cvRgb, cvKeypoints, oldCvRgb, oldCvKeypoints, good_matches, cvOutput, cv::Scalar::all(-1),
                  cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DEFAULT );
+// #endif
+    std::cout<<cvOutput.rows<<" "<<cvOutput.cols<<std::endl;
+    memcpy(out,cvOutput.data,s);
 }
 
 void FeatureDetector::getFeatImage(uchar3 *out)
@@ -243,6 +241,10 @@ void FeatureDetector::detectFeatures(int frame, DepthHost &depth, RgbHost &rgb,
         FeatDescriptor d;        
         fromCvMatRow(d,descrMat,i);
         d.s2=sq(cvKeypoints[i].size/2);
+        //d.s2=(cvKeypoints[i].size/2)/10000;
+
+        d.s2*=1e-4;
+
         d.x=(float)cvKeypoints[i].pt.x;
         d.y=(float)cvKeypoints[i].pt.y;
 

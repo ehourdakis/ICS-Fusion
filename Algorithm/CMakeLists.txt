@@ -3,7 +3,7 @@ project(ics_fusion_lib)
 
 find_package(CUDA)
 add_compile_options(-std=c++11)
-#add_definitions(-DUSE_G2O)
+# add_definitions(-DUSE_G2O)
 LIST(APPEND G2O_LIBS
   cxsparse  
   g2o_cli g2o_ext_freeglut_minimal g2o_simulator
@@ -48,7 +48,7 @@ set(cpp_srcs
     ${CMAKE_CURRENT_LIST_DIR}/src/closeloop.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/featuredetector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/keyptsmap.cpp
-    #${CMAKE_CURRENT_LIST_DIR}/src/g2oGraph.cpp   
+#     ${CMAKE_CURRENT_LIST_DIR}/src/g2oGraph.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/Isam.cpp     
     ${CMAKE_CURRENT_LIST_DIR}/src/saveData.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/harris.cpp
@@ -82,7 +82,7 @@ SET_TARGET_PROPERTIES(ics_fusion_lib PROPERTIES COMPILE_FLAGS "-fPIC" )
 
 #Comment ISAM if use G2O
 target_link_libraries(ics_fusion_lib 
-#    ${G2O_LIBS}
+#     ${G2O_LIBS}
     ${OpenCV_LIBS} 
     ${CUDA_LIBRARIES}
     ics_fusion_cuda_lib

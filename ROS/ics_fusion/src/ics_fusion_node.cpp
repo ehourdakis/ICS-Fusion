@@ -123,6 +123,9 @@ std::vector<float3> prevKeyVert;
 sMatrix4 keyFramePose;
 sMatrix4 prevKeyFramePose;
 
+//visualization data
+uchar3 *featImage;
+
 smoothnet_3d::SmoothNet3dResult snResult;
 
 actionlib::SimpleActionClient<smoothnet_3d::SmoothNet3dAction> *smoothnetServer=0;
@@ -210,8 +213,9 @@ void doLoopClosure()
     }
 
     publishHarris();
-
+#ifdef DRAW_MATCHES
     loopCl->reInit();
+#endif
     std::cout<<"doLoopClosure ended"<<std::endl;
 }
 
@@ -291,8 +295,8 @@ bool hasStableContact()
     {
         if( (rightFeetVal>2) && (leftFeetVal<-2) )
             ret=true;
-        else if( (rightFeetVal<-2) && (leftFeetVal>2)) 
-            ret=true;  
+//        else if( (rightFeetVal<-2) && (leftFeetVal>2))
+//            ret=true;
     }  
     return ret;
 }
@@ -414,6 +418,11 @@ void camInfoCallback(sensor_msgs::CameraInfoConstPtr msg)
 
     inputRGB     = new uchar3[params.inputSize.x * params.inputSize.y];    
     volumeRender = new uchar3[params.computationSize.x * params.computationSize.y];
+#ifdef DRAW_MATCHES
+    featImage = new uchar3[params.inputSize.x * params.inputSize.y*2]; 
+#else
+    featImage = new uchar3[params.inputSize.x * params.inputSize.y]; 
+#endif
     
     loopCl=new CloseLoop(params,poseMatrix);
 }
@@ -425,9 +434,9 @@ void publishVolumeProjection()
     
     sensor_msgs::Image image;
     image.header.stamp=ros::Time::now();
-    
-    image.height=params.inputSize.y;
+
     image.width=params.inputSize.x;
+    image.height=params.inputSize.y;
     
     int step_size=sizeof(uchar)*3;
     image.is_bigendian=0;
@@ -442,9 +451,27 @@ void publishVolumeProjection()
 
 void publishHarris()
 {
-    cv::Mat mat;
-    loopCl->showKeypts(mat);
-
+//     cv::Mat mat;
+    loopCl->showKeypts(featImage);
+    sensor_msgs::Image image;
+    image.header.stamp=ros::Time::now();
+    
+#ifdef DRAW_MATCHES
+    image.width=params.inputSize.x;
+    image.height=params.inputSize.y;
+#else 
+    image.width=params.inputSize.x;
+    image.height=params.inputSize.y;
+#endif   
+    
+    int step_size=sizeof(uchar)*3;
+    image.is_bigendian=0;
+    image.step=step_size*image.width;
+    image.header.frame_id=std::string("IcsFusion_volume");
+    image.encoding=std::string("rgb8");
+    uchar *ptr=(uchar*)featImage;
+    image.data=std::vector<uchar>(ptr ,ptr+(params.computationSize.x * params.computationSize.y*step_size) );
+    /*
     cv_bridge::CvImage out_msg;
 
     out_msg.image=mat;
@@ -460,8 +487,8 @@ void publishHarris()
     out_msg.encoding = "rgb8";
 //    CV_8UC3
 
-
-    harris_pub.publish(out_msg.toImageMsg());
+*/
+    harris_pub.publish(image);
 }
 
 void publishOdom()

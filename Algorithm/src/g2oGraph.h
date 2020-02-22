@@ -33,7 +33,7 @@ class G2oGraph :public PoseGraph
         {
             clear();
         }
-        virtual void init(const sMatrix4 &initialPose) override;
+        virtual void init(const sMatrix4 &initialPose, const sMatrix6 &cov) override;
         virtual void addFrame(const sMatrix4 &pose,const sMatrix6 &cov) override;
         virtual int addLandmark(float3 pos) override;
         virtual void connectLandmark(float3 pos,int landIdx,int poseIdx, sMatrix3 &cov) override;

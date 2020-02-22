@@ -90,7 +90,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         cv::DMatch m=knn_matches[i][0];
         int tidx=m.trainIdx;
         int qidx=m.queryIdx;
-
+        float discDist=m.distance;
         if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
         {
 
@@ -98,34 +98,33 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
             float3 p2=pose*keypoints[qidx];;
 
             float dist3d=dist(p1,p2);
-            float discDist=m.distance;
-            if(discDist<50 || true)
+
+            if(discDist<100 )
             {
-                if(dist3d<0.5 ||true)
+                if(dist3d<0.5||true )
                 {
                     good_matches.push_back(m);
                     sMatrix3 cov=descriptors[qidx].cov;
                     
                     std::pair<int, int> p(tidx, qidx);
                     matchIdx.push_back(p);
-                    
+//                    std::cout<<cov<<std::endl;
                     int lidx=lanmarks[tidx];
                     _isam->connectLandmark(keypoints[qidx],lidx,-1,cov);
                 }
             }
-            else
-            {
-                sMatrix3 cov=descriptors[qidx].cov;
-                //cov=cov*1e-7;
-               int lidx=_isam->addLandmark(keypoints[qidx]);
-               _isam->connectLandmark(keypoints[qidx],lidx,-1,cov);
-               _points.push_back(keypoints[qidx]);
-               _descr.push_back(descriptors[qidx]);
-               lanmarks.push_back(lidx);
-               newDescrIdx.push_back(qidx);
-            }
-
-
+        }
+        else if(discDist>150 )
+        {
+            sMatrix3 cov=descriptors[qidx].cov;
+            //cov=cov*1e-7;
+//            std::cout<<cov<<std::endl;
+           int lidx=_isam->addLandmark(keypoints[qidx]);
+           _isam->connectLandmark(keypoints[qidx],lidx,-1,cov);
+           _points.push_back(keypoints[qidx]);
+           _descr.push_back(descriptors[qidx]);
+           lanmarks.push_back(lidx);
+           newDescrIdx.push_back(qidx);
         }
     }
 
