@@ -67,6 +67,7 @@ class CloseLoop
         void saveDescriptors(char *filename);
         void saveKeyPts(char *filename);
         void saveCorrespondance(char *fileName);
+        void saveKeyMap(char *descrFile,char *poitsFile,char *frameFile);
     private:
         sMatrix4 firstPose;
         sMatrix4 prevPose;

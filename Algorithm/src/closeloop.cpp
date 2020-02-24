@@ -210,6 +210,11 @@ bool CloseLoop::processFrame()
     return tracked;
 }
 
+void CloseLoop::saveKeyMap(char *descrFile,char *poitsFile,char *frameFile)
+{
+    _keyMap->saveMap(descrFile,poitsFile,frameFile);
+}
+
 void CloseLoop::showKeypts(uchar3 *out)
 {
 #ifdef DRAW_MATCHES

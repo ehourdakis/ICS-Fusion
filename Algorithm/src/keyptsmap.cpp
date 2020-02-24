@@ -38,7 +38,7 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
         lanmarks.push_back(lidx);
         _isam->connectLandmark(keypoints[i],lidx,-1,cov);
         
-        descrFrame.push_back(frame);
+        descrFrame.push_back(make_uint2(frame,i) );
     }
     prevPose=_fusion->getPose();
 }
@@ -127,7 +127,8 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
            _descr.push_back(descriptors[qidx]);
            lanmarks.push_back(lidx);
            newDescrIdx.push_back(qidx);
-           descrFrame.push_back(frame);
+           
+           descrFrame.push_back(make_uint2(frame,qidx) );
         }
     }
 
@@ -186,7 +187,7 @@ void keyptsMap::saveKeypoints(std::string fileName,const std::vector<float3> &ke
 void keyptsMap::saveDescriptors(std::string fileName, const std::vector<FeatDescriptor> &desc)
 {
 //    std::cout << "Saving 3DMatch descriptors to disk (desc.3dmatch.bin)..." << std::endl;
-    std::ofstream desc_out_file(fileName, std::ios::binary | std::ios::out);
+    std::ofstream desc_out_file(fileName, std::ios::out);
 
     for(int i=0;i<desc.size();i++)
     {
@@ -194,23 +195,23 @@ void keyptsMap::saveDescriptors(std::string fileName, const std::vector<FeatDesc
         {
             desc_out_file<<desc[i].data[j]<<" ";
         }
-        desc_out_file<<'\n';
+        desc_out_file<<desc[i].s2<<'\n';
     }
     desc_out_file.close();
 }
 
-void keyptsMap::saveMatching(std::string fileName, const std::vector< std::pair<int, int> > &matchIdx)
+void keyptsMap::saveMap(char *descrFile,char *poitsFile,char *frameFile)
 {
-//    std::cout << "Saving 3DMatch descriptors to disk (desc.3dmatch.bin)..." << std::endl;
-    std::ofstream out_file(fileName, std::ios::binary | std::ios::out);
-
-    for(int i=0;i<matchIdx.size();i++)
+    saveDescriptors( std::string(descrFile),_descr );
+    saveKeypoints( std::string(poitsFile),_points );
+    
+    std::ofstream outFile(frameFile, std::ios::out);
+    for(int i=0;i<descrFrame.size();i++)
     {
-        auto p=matchIdx[i];
-        out_file<<p.first<<" "<<p.second<<'\n';
-
+        uint2 p=descrFrame[i];
+        outFile<<p.x<<" "<<p.y<<"\n";
     }
-    out_file.close();
+    outFile.close();
 }
 
 

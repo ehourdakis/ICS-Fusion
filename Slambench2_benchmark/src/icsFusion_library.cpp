@@ -336,6 +336,10 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         
         sprintf(buf,"data/gt/pose%d",frame);
         savePoseMat(buf,gtPose);
+        
+        sMatrix4 pose=loopCl->getPose();
+        sprintf(buf,"data/poses/pose%d",frame);
+        savePoseMat(buf,gtPose);
 
     }
 
@@ -355,8 +359,11 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
 //enable this for dbg purpuses
 #if 1
         char buf[128];
-        sprintf(buf,"data/poses/f_%d_poses.txt",frame);
-        savePoses(buf,kfusionPoses);
+        char buf1[128];
+        char buf2[128];
+        
+//         sprintf(buf,"data/poses/f_%d_poses.txt",frame);
+//         savePoses(buf,kfusionPoses);
 
         sprintf(buf,"data/ply/f_%d_vertices.ply",frame);
         Image<float3, Host> vert=icsFusion->getAllVertex();
@@ -377,12 +384,17 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         sprintf(buf,"data/feat/points%d.txt",frame);
         loopCl->saveKeyPts(buf);
         
-        sprintf(buf,"data/feat/corr_from%dto%d.txt",lastKeyFrame,frame);
-         loopCl->saveCorrespondance(buf);
+        sprintf(buf,"data/feat/corr_from_%d_to%d.txt",lastKeyFrame, frame);
+        loopCl->saveCorrespondance(buf);
+        
+        sprintf(buf,"data/feat/descrmap%d.txt",frame);
+        sprintf(buf1,"data/feat/keyptsmap%d.txt",frame);
+        sprintf(buf2,"data/feat/framemap%d.txt",frame);
+        
+        loopCl->saveKeyMap(buf,buf1,buf2);
         
         lastKeyFrame=frame;
 #ifdef DRAW_MATCHES
-        
         loopCl->reInit();
 #endif
     }
