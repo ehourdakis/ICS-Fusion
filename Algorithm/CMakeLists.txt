@@ -15,6 +15,21 @@ LIST(APPEND G2O_LIBS
   g2o_types_data g2o_types_sim3
 )
 
+SET(sift_src
+    ${CMAKE_CURRENT_LIST_DIR}/src/sift/CovEstArgumentEvaluator.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/sift/CovEstimator.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/sift/covUtils.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/sift/GeneralFeature.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/sift/ImagePyramid.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/sift/imgfeatures.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/sift/ipoint.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/sift/main.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/sift/sift.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/sift/sift_cov.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/sift/sift_cov.h
+    ${CMAKE_CURRENT_LIST_DIR}/src/sift/utils.cpp
+)
+
 
 set(TOON_INCLUDE_PATHS "$ENV{HOME}/src/TooN")
 # set(TOON_INCLUDE_PATHS "/usr/local/src/TooN")
@@ -25,6 +40,7 @@ set(PCL_INCLUDE_DIRS "/usr/include/pcl-1.7")
 
 find_package( OpenCV REQUIRED )
  
+message(WARING Opencv: ${OpenCV_INCLUDE_DIRS})
 
 include_directories(
     ${CUDA_INCLUDE_DIRS}
@@ -32,7 +48,7 @@ include_directories(
     ${EIGEN_INCLUDE_DIRS}
     ${SUITESPARSE_INCLUDE_DIR}
     ${OpenCV_INCLUDE_DIRS}
-    ${PCL_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}    
 )
 
 set(cuda_srcs
@@ -74,6 +90,7 @@ SET_TARGET_PROPERTIES(ics_fusion_cuda_lib PROPERTIES COMPILE_FLAGS "-fPIC" )
 
 add_library(ics_fusion_lib 
     ${cpp_srcs}
+    ${sift_src}
 )
 
 add_compile_options(-ggdb)
@@ -84,7 +101,7 @@ SET_TARGET_PROPERTIES(ics_fusion_lib PROPERTIES COMPILE_FLAGS "-fPIC" )
 target_link_libraries(ics_fusion_lib 
 #     ${G2O_LIBS}
     ${OpenCV_LIBS} 
-    ${CUDA_LIBRARIES}
+    ${CUDA_LIBRARIES}    
     ics_fusion_cuda_lib
     isam
     cholmod

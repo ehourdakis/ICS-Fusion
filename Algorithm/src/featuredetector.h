@@ -14,6 +14,8 @@
 #include <opencv2/features2d/features2d.hpp>
 
 //typedef cv::Mat descr_t;
+
+#include"sift/sift_cov.h"
 class FeatureDetector
 {
     public:
@@ -31,7 +33,20 @@ class FeatureDetector
         
         void saveImage(char *filename) const;
     private:
-        void getDescrFromMat(int row,cv::Mat &mat,FeatDescriptor &descr);
+
+        SiftCov siftCov;
+
+        Eigen::MatrixXd computeCov2DTo3D(Eigen::MatrixXd cov2D,
+                                                          double depth,
+                                                          double fx,
+                                                          double fy,
+                                                          double cx,
+                                                          double cy,
+                                                          double depth_noise_cov);
+
+
+
+
         void calcMask(DepthHost &depth,cv::Mat &mask);
 
         bool drawNewData;
@@ -39,31 +54,9 @@ class FeatureDetector
         PoseGraph *_isam;
         kparams_t _params;
 
-        void writePointsPcd(Image<float3, Host> &vertex,
-                      Image<float3, Host> &norm,
-                      char *filename);
-        void writeNormalsPcd(Image<float3, Host> &vertex,
-                      Image<float3, Host> &norm,
-                      char *filename);
-
-        void writeWrongNormPoints(char *fileName);
-        void writeWrongNormNormals(char *fileName);
-        void writePoints(std::vector<float3> &vec,char *fileName);
-
         //opencv
         cv::Mat cvRgb,cvGrey,cvOutput;
-        cv::Ptr<cv::Feature2D> sift;
-        cv::Ptr<cv::FlannBasedMatcher> matcher;
-
-
-        //cv keypoint type
         std::vector<cv::KeyPoint> cvKeypoints;
-
-        //        std::vector<cv::KeyPoint> cvKeypoints;
-        std::vector<cv::KeyPoint> oldCvKeypoints;
-        std::vector<float3> oldKeypts3D;
-//        cv::Mat oldDescriptors;
-        cv::Mat oldCvRgb;
 
         float ratio_thresh;
 

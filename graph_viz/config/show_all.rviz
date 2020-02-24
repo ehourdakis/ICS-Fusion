@@ -251,26 +251,24 @@ Visualization Manager:
       Unreliable: false
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /isam_poses_pre_optimization
       Name: isam_pre_opt
       Namespaces:
-        "": true
-        Testline: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /isam_poses_post_optimization
       Name: isam_post_opt
       Namespaces:
-        "": true
-        Testline: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /poses
+      Marker Topic: /poses_gt
       Name: gt
       Namespaces:
         "": true
@@ -302,16 +300,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 308.913727
+      Distance: 222.70163
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -122.486465
-        Y: -21.8932934
-        Z: -73.4394608
+        X: -116.944679
+        Y: -29.2663097
+        Z: -63.246151
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false

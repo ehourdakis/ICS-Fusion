@@ -18,19 +18,44 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
     //double  sigma = 1.6;
     double  sigma = 1.6;
 
-    sift = cv::xfeatures2d::SIFT::create(nfeatures,
-                                         octaveLayers,
-                                         contrastThreshold,
-                                         edgeThreshold,
-                                         sigma);
-
     //sift = cv::xfeatures2d::SIFT::create(0,3,0.04,10,1.6);
 
 //    matcher = cv::FlannBasedMatcher::create();
     drawNewData=false;
     //TODO add ratio_thresh to params
-    ratio_thresh = 0.7f;
 }
+
+Eigen::MatrixXd FeatureDetector::computeCov2DTo3D(Eigen::MatrixXd cov2D,
+                                                  double depth,
+                                                  double fx,
+                                                  double fy,
+                                                  double cx,
+                                                  double cy,
+                                                  double depth_noise_cov)
+{
+
+    Eigen::MatrixXd cov3D = Eigen::MatrixXd::Zero(3,3);
+
+
+    Eigen::MatrixXd F = Eigen::MatrixXd::Zero(3,2);
+    F(0,0) = depth / fx;
+    F(1,1) = depth / fy;
+
+    Eigen::MatrixXd L = Eigen::MatrixXd::Zero(3,3);
+    L(0,0) = - cx / fx;
+    L(1,1) = - cy / fy;
+    L(2,2) = 1.00;
+
+    Eigen::MatrixXd Qz = Eigen::MatrixXd::Zero(3,3);
+    Qz(2,2) = depth_noise_cov;
+
+    cov3D.noalias() = F*cov2D*F.transpose();
+
+    cov3D.noalias() += L*Qz*L.transpose();
+
+    return cov3D;
+}
+
 
 void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_matches)
 {
@@ -40,17 +65,17 @@ void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_ma
 //     return;
 // #else
 
-    int s=_params.inputSize.x*_params.inputSize.y*3*2;
-    if(oldCvRgb.empty()||good_matches.size()==0)
-    {
-        memset(out,0,s);
-        return;
-    }
+//    int s=_params.inputSize.x*_params.inputSize.y*3*2;
+//    if(oldCvRgb.empty()||good_matches.size()==0)
+//    {
+//        memset(out,0,s);
+//        return;
+//    }
 
-    cv::drawMatches( cvRgb, cvKeypoints, oldCvRgb, oldCvKeypoints, good_matches, cvOutput, cv::Scalar::all(-1),
-                 cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DEFAULT );
-// #endif
-    memcpy(out,cvOutput.data,s);
+//    cv::drawMatches( cvRgb, cvKeypoints, oldCvRgb, oldCvKeypoints, good_matches, cvOutput, cv::Scalar::all(-1),
+//                 cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DEFAULT );
+//// #endif
+//    memcpy(out,cvOutput.data,s);
 }
 
 void FeatureDetector::saveImage(char *filename) const
@@ -59,21 +84,11 @@ void FeatureDetector::saveImage(char *filename) const
 }
 
 void FeatureDetector::getFeatImage(uchar3 *out)
-{
-    int s=_params.inputSize.x*_params.inputSize.y*3;
-    if(cvKeypoints.size()==0 )
-    {
-        memset(out,0,s);
-        return;
-    }
+{    
+    int s=_params.inputSize.x*_params.inputSize.y;
+    memcpy(out,cvRgb.data,s*3);
+    siftCov.draw(_params.inputSize.x,_params.inputSize.y,out);
 
-    if(drawNewData)
-    {
-        //cv::drawKeypoints(cvGrey, cvKeypoints, cvOutput,cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-        cv::drawKeypoints(cvGrey,cvKeypoints,cvOutput,cv::Scalar::all(-1),cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-        drawNewData=false;
-    }
-    memcpy(out,cvOutput.data,s);
 }
 
 float infNorm(const sMatrix3 &mat)
@@ -204,10 +219,81 @@ void FeatureDetector::calcMask(DepthHost &depth,cv::Mat &mask)
      }
 }
 
-void FeatureDetector::detectFeatures(int frame, DepthHost &depth, RgbHost &rgb,
-                                                  std::vector<float3> &keypts3D,
-                                                  std::vector<FeatDescriptor> &descr)
+void FeatureDetector::detectFeatures(int frame,
+                                     DepthHost &depth, RgbHost &rgb,
+                                     std::vector<float3> &keypts3D,
+                                     std::vector<FeatDescriptor> &descr)
 {    
+    cvRgb = cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
+    cv::cvtColor(cvRgb, cvGrey, CV_BGR2GRAY);
+
+    uint width=_params.inputSize.y;
+    uint height=_params.inputSize.x;
+    siftCov.load(width,height,cvGrey.data,cvRgb.data);
+
+    siftCov.detectFeatures();
+    IpVec vec=siftCov.getFeatures();
+
+
+    std::cout<<"V:"<<vec.size()<<std::endl;
+
+    Image<float3, Host> vertexes=_fusion->getAllVertex();
+    for(int i=0;i<vec.size();i+=2)
+    {
+        Ipoint pt=vec[i];
+        std::cout<<"PT:"<<pt.x<<" "<<pt.y<<std::endl;
+
+        uint2 px=make_uint2((uint) (pt.x+0.5),
+                            (uint) (pt.y+0.5) );
+
+        if(depth[px]>0.0001f && depth[px]<4.00 && depth[px]==depth[px])
+        {
+            float depthVal=depth[px];
+            float3 vert=vertexes[px];
+            keypts3D.push_back(vert);
+
+            FeatDescriptor desc;
+            memcpy(desc.data,pt.descriptor,sizeof(float)*DESCR_SIZE);
+
+            Eigen::Matrix2d cov2d;
+            for(int i=0;i<2;i++)
+            {
+                for(int j=0;j<2;j++)
+                {
+                    cov2d(i,j)=CV_MAT_ELEM(*pt.cov, float, i, j) ;
+                }
+            }
+            std::cout<<cov2d<<std::endl;
+
+            Eigen::MatrixXd eigenCov=computeCov2DTo3D(cov2d,depthVal,
+                             _params.camera.x,
+                             _params.camera.y,
+                             _params.camera.z,
+                             _params.camera.w,
+                             _params.cov_z);
+
+            for(int i=0;i<2;i++)
+            {
+                for(int j=0;j<2;j++)
+                {
+                    desc.cov(i,j)=eigenCov(i,j);
+                }
+            }
+            descr.push_back(desc);
+        }
+        cvReleaseMat(&pt.cov);
+    }
+
+    std::cout<<"Features Detected:"<<descr.size()<<std::endl;
+
+    drawNewData=true;
+    vertexes.release();
+
+    return;
+
+
+
+#if 0
 //    std::cout<<"Feature detection"<<std::endl;
     //load rgb image to opencv
     oldCvRgb=cvRgb;
@@ -262,187 +348,5 @@ void FeatureDetector::detectFeatures(int frame, DepthHost &depth, RgbHost &rgb,
         keypts3D.push_back(vert);
         descr.push_back(d);
     }
-    std::cout<<"Features Detected:"<<descr.size()<<std::endl;
-
-    drawNewData=true;
-    vertexes.release();
-}
-
-void FeatureDetector::getDescrFromMat(int row,cv::Mat &mat,FeatDescriptor &descr)
-{
-    for(int i=0;i<DESCR_SIZE;i++)
-    {
-        descr.data[i]=mat.at<double>(row,i);
-    }
-}
-
-void FeatureDetector::writeWrongNormPoints(char *fileName)
-{
-    Image<float3, Host> vert=_fusion->getAllVertex();
-    Image<TrackData, Host> trackData=_fusion->getTrackData();
-    uint keyptsSize=_fusion->getWrongNormalsSize();
-
-    using namespace std;
-    ofstream file(fileName, std::ios::out);
-
-    file<<"VERSION 0.7\n";
-    file<<"FIELDS x y z\n";
-    file<<"SIZE 4 4 4\n";
-    file<<"TYPE F F F\n";
-    file<<"COUNT 1 1 1\n";
-    file<<"WIDTH "<<1<<"\n";
-    file<<"HEIGHT "<<keyptsSize<<"\n";
-
-    file<<"VIEWPOINT 0 0 0 1 0 0 0\n";
-    file<<"POINTS "<<keyptsSize<<"\n";
-    file<<"DATA ascii"<<endl;//also flush
-
-    uint2 px;
-    for(px.x=0;px.x<_params.computationSize.x;px.x++)
-    {
-        for(px.y=0;px.y<_params.computationSize.y;px.y++)
-        {
-            TrackData &data = trackData[px];
-            if(data.result==-5)
-            {
-                file<<vert[px].x<<" "<<vert[px].y<<" "<<vert[px].z<<"\n";
-            }
-        }
-    }
-    file<<endl;
-    file.close();
-
-    vert.release();
-    trackData.release();
-
-}
-
-void FeatureDetector::writeWrongNormNormals(char *fileName)
-{
-    Image<float3, Host> norm=_fusion->getAllNormals();
-    Image<TrackData, Host> trackData=_fusion->getTrackData();
-    uint keyptsSize=_fusion->getWrongNormalsSize();
-
-    using namespace std;
-    ofstream file(fileName, std::ios::out);
-
-    file<<"VERSION 0.7\n";
-    file<<"FIELDS x y z\n";
-    file<<"SIZE 4 4 4\n";
-    file<<"TYPE F F F\n";
-    file<<"COUNT 1 1 1\n";
-    file<<"WIDTH "<<1<<"\n";
-    file<<"HEIGHT "<<keyptsSize<<"\n";
-
-    file<<"VIEWPOINT 0 0 0 1 0 0 0\n";
-    file<<"POINTS "<<keyptsSize<<"\n";
-    file<<"DATA ascii"<<endl;//also flush
-
-
-    uint2 px;
-    for(px.x=0;px.x<_params.computationSize.x;px.x++)
-    {
-        for(px.y=0;px.y<_params.computationSize.y;px.y++)
-        {
-            TrackData &data = trackData[px];
-            if(data.result==-5)
-            {
-                file<<norm[px].x<<" "<<norm[px].y<<" "<<norm[px].z<<"\n";
-            }
-        }
-    }
-    file<<endl;
-    file.close();
-
-    norm.release();
-    trackData.release();
-}
-
-void FeatureDetector::writePoints(std::vector<float3> &vec,char *fileName)
-{
-    using namespace std;
-    ofstream file(fileName, std::ios::out);
-
-//    file<<"VERSION 0.7\n";
-//    file<<"FIELDS x y z\n";
-//    file<<"SIZE 4 4 4\n";
-//    file<<"TYPE F F F\n";
-//    file<<"COUNT 1 1 1\n";
-//    file<<"WIDTH "<<1<<"\n";
-//    file<<"HEIGHT "<<vec.size()<<"\n";
-
-//    file<<"VIEWPOINT 0 0 0 1 0 0 0\n";
-//    file<<"POINTS "<<vec.size()<<"\n";
-//    file<<"DATA ascii"<<endl;//also flush
-
-    for(uint i=0;i<vec.size();i++)
-    {
-        file<<vec[i].x<<" "<<vec[i].y<<" "<<vec[i].z<<"\n";
-    }
-    file<<endl;
-    file.close();
-}
-
-void FeatureDetector::writePointsPcd(Image<float3, Host> &vertex,
-              Image<float3, Host> &norm,
-              char *fileName)
-{
-    using namespace std;
-    ofstream file(fileName, std::ios::out);
-
-    file<<"VERSION 0.7\n";
-    file<<"FIELDS x y z\n";
-    file<<"SIZE 4 4 4\n";
-    file<<"TYPE F F F\n";
-    file<<"COUNT 1 1 1\n";
-    file<<"WIDTH "<<vertex.size.x<<"\n";
-    file<<"HEIGHT "<<vertex.size.y<<"\n";
-
-    file<<"VIEWPOINT 0 0 0 1 0 0 0\n";
-    file<<"POINTS "<<vertex.size.x*vertex.size.y<<"\n";
-    file<<"DATA ascii"<<endl;//also flush
-
-    for(uint x=0;x<vertex.size.x;x++)
-    {
-        for(uint y=0;y<vertex.size.y;y++)
-        {
-            uint2 px=make_uint2(x,y);
-            file<<vertex[px].x<<" "<<vertex[px].y<<" "<<vertex[px].z<<"\n";
-//            file<<norm[px].x<<" "<<norm[px].y<<" "<<norm[px].z<<"\n";
-        }
-    }
-    file<<endl;
-    file.close();
-}
-
-void FeatureDetector::writeNormalsPcd(Image<float3, Host> &vertex,
-              Image<float3, Host> &norm,
-              char *fileName)
-{
-    using namespace std;
-    ofstream file(fileName, std::ios::out);    
-
-    file<<"VERSION 0.7\n";
-    file<<"FIELDS normal_x normal_y normal_z\n";
-    file<<"SIZE 4 4 4\n";
-    file<<"TYPE F F F\n";
-    file<<"COUNT 1 1 1\n";
-    file<<"WIDTH "<<vertex.size.x<<"\n";
-    file<<"HEIGHT "<<vertex.size.y<<"\n";
-
-    file<<"VIEWPOINT 0 0 0 1 0 0 0\n";
-    file<<"POINTS "<<vertex.size.x*vertex.size.y<<"\n";
-    file<<"DATA ascii"<<endl;//also flush
-
-    for(uint x=0;x<vertex.size.x;x++)
-    {
-        for(uint y=0;y<vertex.size.y;y++)
-        {
-            uint2 px=make_uint2(x,y);
-//            file<<vertex[px].x<<" "<<vertex[px].y<<" "<<vertex[px].z<<" ";
-            file<<norm[px].x<<" "<<norm[px].y<<" "<<norm[px].z<<"\n";
-        }
-    }
-    file<<endl;
-    file.close();
+#endif
 }
