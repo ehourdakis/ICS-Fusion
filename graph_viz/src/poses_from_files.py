@@ -37,14 +37,11 @@ def readFile(fileName):
         nums = line.split()
         j = 0
         for n in nums:
-            print(n)
             mat[i][j]=float(n)
             j = j + 1
         i = i + 1
-    
-    print(mat)
+
     ret = rot.poseFromHom(mat)
-    print(ret)
     return ret
 
 def addMarkers(poses, rgb):
