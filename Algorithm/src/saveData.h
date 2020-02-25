@@ -12,5 +12,7 @@ void savePose(char *fileName,const sMatrix4 &pose);
 void savePoseMat(char *fileName,const sMatrix4 &pose);
 void saveVertexPly(char *fileName,const Image<float3, Host> &vert);
 void saveVertexTxtPly(char *fileName,const Image<float3, Host> &vert);
+void saveNormals(char *fileName,const Image<float3, Host> &norm);
+void saveVertex(char *fileName,const Image<float3, Host> &vert);
 
 #endif

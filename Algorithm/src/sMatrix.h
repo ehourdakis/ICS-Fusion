@@ -1,6 +1,8 @@
 #ifndef SMATRIX_H 
 #define SMATRIX_H
+
 #include <vector_types.h>
+#include "cutil_math.h"
 
 struct sMatrix4
 {

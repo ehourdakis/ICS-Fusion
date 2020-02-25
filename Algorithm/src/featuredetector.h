@@ -5,7 +5,7 @@
 #include"kparams.h"
 #include"Isam.h"
 #include"featursDescriptor.h"
-
+#include"SiftCovEstimator.h"
 //=====OpenCv=====
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/core.hpp>
@@ -19,7 +19,7 @@
 class FeatureDetector
 {
     public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam);
 
         void detectFeatures(int frame,
@@ -33,8 +33,20 @@ class FeatureDetector
         
         void saveImage(char *filename) const;
     private:
+        //opencv
+        cv::Mat cvRgb,cvGrey,cvOutput;
+        cv::Ptr<cv::Feature2D> sift;
+        cv::Ptr<cv::FlannBasedMatcher> matcher;
+        SiftCovEstimator *covEstim;
 
-        SiftCov siftCov;
+        //cv keypoint type
+        std::vector<cv::KeyPoint> cvKeypoints;
+
+        //        std::vector<cv::KeyPoint> cvKeypoints;
+        std::vector<cv::KeyPoint> oldCvKeypoints;
+        std::vector<float3> oldKeypts3D;
+//        cv::Mat oldDescriptors;
+        cv::Mat oldCvRgb;
 
         Eigen::MatrixXd computeCov2DTo3D(Eigen::MatrixXd cov2D,
                                                           double depth,
@@ -54,9 +66,7 @@ class FeatureDetector
         PoseGraph *_isam;
         kparams_t _params;
 
-        //opencv
-        cv::Mat cvRgb,cvGrey,cvOutput;
-        std::vector<cv::KeyPoint> cvKeypoints;
+        void *data;
 
         float ratio_thresh;
 

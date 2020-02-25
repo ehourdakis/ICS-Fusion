@@ -198,7 +198,6 @@ double Isam::optimize(int frame)
 
     slam->batch_optimization();
 
-
 //    sprintf(buf,"data/isam/f_%d_graph_opt",frame);
 //    slam->save(buf);
 

@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
 
-    <arg name="frame" default="200" />
+    <arg name="frame" default="300" />
     <arg name="scale" default="1000" />
-    <arg name="data_dir" default="/tmp/data" />
+    <arg name="data_dir" default="/home/tavu/disk/data/slambench_data/" />
     
-    <node pkg="graph_viz" name="gt_poses" type="publish_poses.py" args="$(arg scale)" output="screen">
+<!--    <node pkg="graph_viz" name="gt_poses" type="publish_poses.py" args="$(arg scale)" output="screen">
         <param name="file_name" value="$(arg data_dir)/gt/f_$(arg frame)_poses" />
         <param name="rgb" value="1,0,0" type="str" />
         <param name="origin" value="0,0,0" type="str" />
 
         <remap from="/poses" to="/poses_gt"/>
-    </node>
+    </node>-->
     
     <node pkg="graph_viz" name="kfusion_poses" type="publish_poses.py" args="$(arg scale)" output="screen">        
         <param name="file_name" value="$(arg data_dir)/poses/f_$(arg frame)_poses" />
@@ -32,6 +32,17 @@
         <param name="rgb" value="1,0,1" type="str" />
         <param name="origin" value="4,4,4" type="str" />       
         <remap from="/isam_poses" to="/isam_poses_post_optimization"/>
+    </node>
+    
+    <node pkg="graph_viz" name="poses_from_files" type="poses_from_files.py" args="$(arg scale)" output="screen">        
+        <param name="dir_name" value="/home/tavu/catkin_ws/src/ros_isam_test/data_2frames/gt/" />
+        <param name="start" value="4" type="int" />
+        <param name="end" value="300" type="int" />
+        <param name="origin" value="4,4,4" type="str" />    
+        <param name="rgb" value="1,0,0" type="str" /> 
+        <param name="origin" value="0,0,0" type="str" />
+        
+        <remap from="/poses" to="/poses_gt"/>
     </node>
     
 

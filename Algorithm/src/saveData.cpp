@@ -166,6 +166,40 @@ void saveVertexTxtPly(char *fileName,const Image<float3, Host> &vert)
     out_file.close();
 }
 
+void saveVertex(char *fileName,const Image<float3, Host> &vert)
+{
+    std::ofstream out_file(fileName);
+    uint2 size=vert.size;
+
+    for(int x=0;x<size.x;x++)
+    {
+        for(int y=0;y<size.y;y++)
+        {
+            uint2 pos=make_uint2(x,y);
+            float3 val=vert[pos];
+            out_file<<val.x<<" "<<val.y<<" "<<val.z<<"\n";
+        }
+    }
+    out_file.close();
+}
+
+void saveNormals(char *fileName,const Image<float3, Host> &norm)
+{
+    std::ofstream out_file(fileName);
+    uint2 size=norm.size;
+
+
+    for(int x=0;x<size.x;x++)
+    {
+        for(int y=0;y<size.y;y++)
+        {
+            uint2 pos=make_uint2(x,y);
+            float3 val=norm[pos];
+            out_file<<val.x<<" "<<val.y<<" "<<val.z<<"\n";
+        }
+    }
+    out_file.close();
+}
 
 void saveVertexPly(char *fileName,const Image<float3, Host> &vert)
 {

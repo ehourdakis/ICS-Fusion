@@ -11,18 +11,22 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
      _isam(isam)
 {
 
-    int  	nfeatures = 400;
+    int  	nfeatures = 200;
     int  	octaveLayers = 3;
     double  contrastThreshold = 0.01;
     double  edgeThreshold = 3;
     //double  sigma = 1.6;
     double  sigma = 1.6;
-
-    //sift = cv::xfeatures2d::SIFT::create(0,3,0.04,10,1.6);
-
-//    matcher = cv::FlannBasedMatcher::create();
+    sift = cv::xfeatures2d::SIFT::create(nfeatures,
+                                         octaveLayers,
+                                         contrastThreshold,
+                                         edgeThreshold,
+                                         sigma);
     drawNewData=false;
-    //TODO add ratio_thresh to params
+    data=malloc(_params.inputSize.x*_params.inputSize.y*3);
+
+    covEstim=new SiftCovEstimator(_params.inputSize.y,_params.inputSize.x,20,true);
+
 }
 
 Eigen::MatrixXd FeatureDetector::computeCov2DTo3D(Eigen::MatrixXd cov2D,
@@ -59,10 +63,11 @@ Eigen::MatrixXd FeatureDetector::computeCov2DTo3D(Eigen::MatrixXd cov2D,
 
 void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_matches)
 {
-// #ifndef DRAW_MATCHES
-//     outMat=cvGrey.clone();
-//     cv::drawKeypoints(cvGrey,cvKeypoints,outMat,cv::Scalar::all(-1),cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-//     return;
+#ifndef DRAW_MATCHES
+    outMat=cvGrey.clone();
+    cv::drawKeypoints(cvGrey,cvKeypoints,outMat,cv::Scalar::all(-1),cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+    return;
+#endif
 // #else
 
 //    int s=_params.inputSize.x*_params.inputSize.y*3*2;
@@ -85,10 +90,7 @@ void FeatureDetector::saveImage(char *filename) const
 
 void FeatureDetector::getFeatImage(uchar3 *out)
 {    
-    int s=_params.inputSize.x*_params.inputSize.y;
-    memcpy(out,cvRgb.data,s*3);
-    siftCov.draw(_params.inputSize.x,_params.inputSize.y,out);
-
+    covEstim->getDrawnData(out);
 }
 
 float infNorm(const sMatrix3 &mat)
@@ -223,79 +225,7 @@ void FeatureDetector::detectFeatures(int frame,
                                      DepthHost &depth, RgbHost &rgb,
                                      std::vector<float3> &keypts3D,
                                      std::vector<FeatDescriptor> &descr)
-{    
-    cvRgb = cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
-    cv::cvtColor(cvRgb, cvGrey, CV_BGR2GRAY);
-
-    uint width=_params.inputSize.y;
-    uint height=_params.inputSize.x;
-    siftCov.load(width,height,cvGrey.data,cvRgb.data);
-
-    siftCov.detectFeatures();
-    IpVec vec=siftCov.getFeatures();
-
-
-    std::cout<<"V:"<<vec.size()<<std::endl;
-
-    Image<float3, Host> vertexes=_fusion->getAllVertex();
-    for(int i=0;i<vec.size();i+=2)
-    {
-        Ipoint pt=vec[i];
-        std::cout<<"PT:"<<pt.x<<" "<<pt.y<<std::endl;
-
-        uint2 px=make_uint2((uint) (pt.x+0.5),
-                            (uint) (pt.y+0.5) );
-
-        if(depth[px]>0.0001f && depth[px]<4.00 && depth[px]==depth[px])
-        {
-            float depthVal=depth[px];
-            float3 vert=vertexes[px];
-            keypts3D.push_back(vert);
-
-            FeatDescriptor desc;
-            memcpy(desc.data,pt.descriptor,sizeof(float)*DESCR_SIZE);
-
-            Eigen::Matrix2d cov2d;
-            for(int i=0;i<2;i++)
-            {
-                for(int j=0;j<2;j++)
-                {
-                    cov2d(i,j)=CV_MAT_ELEM(*pt.cov, float, i, j) ;
-                }
-            }
-            std::cout<<cov2d<<std::endl;
-
-            Eigen::MatrixXd eigenCov=computeCov2DTo3D(cov2d,depthVal,
-                             _params.camera.x,
-                             _params.camera.y,
-                             _params.camera.z,
-                             _params.camera.w,
-                             _params.cov_z);
-
-            for(int i=0;i<2;i++)
-            {
-                for(int j=0;j<2;j++)
-                {
-                    desc.cov(i,j)=eigenCov(i,j);
-                }
-            }
-            descr.push_back(desc);
-        }
-        cvReleaseMat(&pt.cov);
-    }
-
-    std::cout<<"Features Detected:"<<descr.size()<<std::endl;
-
-    drawNewData=true;
-    vertexes.release();
-
-    return;
-
-
-
-#if 0
-//    std::cout<<"Feature detection"<<std::endl;
-    //load rgb image to opencv
+{
     oldCvRgb=cvRgb;
     oldCvKeypoints=cvKeypoints;
 
@@ -304,49 +234,63 @@ void FeatureDetector::detectFeatures(int frame,
     //convert image to grey scale
     cv::cvtColor(cvRgb, cvGrey, CV_BGR2GRAY);
 
-    //cv keypoint type
-    //std::vector<cv::KeyPoint> cvKeypoints;
 
     //store cv descriptors
     cv::Mat descrMat;
-    //detect sift features
-    cvKeypoints.clear();
-
     cv::Mat mask;
     calcMask(depth,mask);
 
     sift->detectAndCompute(cvGrey,mask, cvKeypoints,descrMat);
 
-        std::cout<<descrMat.rows<<" "<<descrMat.cols<<std::endl;
-
-    
     keypts3D.reserve(cvKeypoints.size());
     descr.reserve(cvKeypoints.size());
+
+    covEstim->load(cvGrey.data,cvRgb.data);
 
     Image<float3, Host> vertexes=_fusion->getAllVertex();
     for(uint i=0;i<cvKeypoints.size();i++)
     {
-        uint2 px=make_uint2((uint) (cvKeypoints[i].pt.x+0.5),
-                            (uint) (cvKeypoints[i].pt.y+0.5) );
+        Eigen::Matrix2d cov2d;
+        if( covEstim->calcCovariance(cvKeypoints[i],cov2d) )
+        {
+            uint2 px=make_uint2((uint) (cvKeypoints[i].pt.x+0.5),
+                                (uint) (cvKeypoints[i].pt.y+0.5) );
 
-        float3 vert=vertexes[px];    
+            float3 vert=vertexes[px];
 
-        FeatDescriptor d;        
-        fromCvMatRow(d,descrMat,i);
-        d.s2=cvKeypoints[i].size;
-        //d.s2=(cvKeypoints[i].size/2)/10000;
+            FeatDescriptor d;
+            fromCvMatRow(d,descrMat,i);
+            d.s2=cvKeypoints[i].size/2;
 
-//         d.s2*=1e-4;
+            d.x=(float)cvKeypoints[i].pt.x;
+            d.y=(float)cvKeypoints[i].pt.y;
 
-        d.x=(float)cvKeypoints[i].pt.x;
-        d.y=(float)cvKeypoints[i].pt.y;
+            //std::cout<<cov2d<<std::endl;
 
-        d.cov=sMatrix3();
-        d.cov=d.cov*d.s2;
-        //d.cov=d.cov;
 
-        keypts3D.push_back(vert);
-        descr.push_back(d);
+            Eigen::MatrixXd eigenCov=computeCov2DTo3D(cov2d,
+                                   vert.z,
+                                   _params.camera.x,
+                                   _params.camera.y,
+                                   _params.camera.z,
+                                   _params.camera.w,
+                                   _params.cov_z);
+
+            for(int i=0;i<3;i++)
+            {
+                for(int j=0;j<3;j++)
+                {
+                    d.cov(i,j)=eigenCov(i,j);
+                }
+            }
+            keypts3D.push_back(vert);
+            descr.push_back(d);
+
+            //std::cout<<d.cov<<std::endl;
+        }
     }
-#endif
+
+
+    std::cout<<"Features Detected:"<<descr.size()<<std::endl;
+    vertexes.release();
 }

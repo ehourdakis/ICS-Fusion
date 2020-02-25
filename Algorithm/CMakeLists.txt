@@ -68,6 +68,7 @@ set(cpp_srcs
     ${CMAKE_CURRENT_LIST_DIR}/src/Isam.cpp     
     ${CMAKE_CURRENT_LIST_DIR}/src/saveData.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/harris.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/SiftCovEstimator.cpp
 #     ${CMAKE_CURRENT_LIST_DIR}/src/smoothnetcore.cpp
 #     ${CMAKE_CURRENT_LIST_DIR}/src/smoothnet.cpp
 

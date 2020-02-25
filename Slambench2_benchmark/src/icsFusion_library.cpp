@@ -331,15 +331,28 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         gtPoses.push_back(gtPose);
         char buf[32];
 
-//         sprintf(buf,"data/gt/f_%d_pose",frame);
-//         savePose(buf,gtPose);
-        
+        /*
         sprintf(buf,"data/gt/pose%d",frame);
         savePoseMat(buf,gtPose);
         
         sMatrix4 pose=loopCl->getPose();
         sprintf(buf,"data/poses/pose%d",frame);
+        savePoseMat(buf,pose);
+
+
+        sprintf(buf,"data/poses/pose%d",frame);
         savePoseMat(buf,gtPose);
+
+        sprintf(buf,"data/vert/vert%d.txt",frame);
+        Image<float3, Host> vert=icsFusion->getAllVertex();
+        saveVertex(buf,vert);
+        vert.release();
+
+        sprintf(buf,"data/norm/norm%d.txt",frame);
+        Image<float3, Host> norm=icsFusion->getAllNormals();
+        saveVertex(buf,norm);
+        vert.release();
+        */
 
     }
 
@@ -348,11 +361,19 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
     bool _isKeyFrame=false;
 
 #ifdef LOOP_CLOSURE_RATE
-    
+
     if(frame==4)
         _isKeyFrame=true;
     if( frame>0 && (frame%LOOP_CLOSURE_RATE)==0)
         _isKeyFrame=true;
+
+//    if(frame==10)
+//        _isKeyFrame=true;
+//    if(frame==12)
+//        _isKeyFrame=true;
+//    if(frame==25)
+//        _isKeyFrame=true;
+
 #endif
     if(_isKeyFrame)
     {
@@ -365,16 +386,15 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
 //         sprintf(buf,"data/poses/f_%d_poses.txt",frame);
 //         savePoses(buf,kfusionPoses);
 
-        sprintf(buf,"data/ply/f_%d_vertices.ply",frame);
-        Image<float3, Host> vert=icsFusion->getAllVertex();
-        saveVertexTxtPly(buf,vert);
-        vert.release();
+
 #endif
+
+        loopCl->getPose();
             //sprintf(buf,"data/volume/frame%d_volume",frame);
             //saveVoxelsToFile(buf,icsFusion->getVolume(),params);
         loopCl->processKeyFrame();
         loopCl->showKeypts(outputFeat);
-        
+
         sprintf(buf,"data/feat/frame%d.png",frame);
         loopCl->saveImage(buf);
         
