@@ -8,6 +8,7 @@ keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f)
 {
     matcher=cv::FlannBasedMatcher::create();
     ratio_thresh = 0.7f;
+//    ratio_thresh = 1.f;
 //    ratio_thresh = 0.9f;
 }
 
@@ -102,7 +103,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 
             float dist3d=dist(p1,p2);
 
-            if(discDist<100 )
+            if(discDist<10000 )
             {
                 if(dist3d<0.5||true )
                 {
