@@ -102,7 +102,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 
             float dist3d=dist(p1,p2);
 
-            if(discDist<100 )
+            if(discDist<70 )
             {
                 if(dist3d<0.5||true )
                 {

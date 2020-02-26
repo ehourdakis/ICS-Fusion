@@ -11,7 +11,7 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
      _isam(isam)
 {
 
-    int  	nfeatures = 100;
+    int  	nfeatures = 200;
     int  	octaveLayers = 3;
     double  contrastThreshold = 0.01;
     double  edgeThreshold = 3;
