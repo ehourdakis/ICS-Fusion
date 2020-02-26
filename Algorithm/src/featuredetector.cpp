@@ -22,11 +22,9 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
                                          contrastThreshold,
                                          edgeThreshold,
                                          sigma);
-    drawNewData=false;
-    data=malloc(_params.inputSize.x*_params.inputSize.y*3);
-
     covEstim=new SiftCovEstimator(_params.inputSize.y,_params.inputSize.x,20,true);
-
+    drawnDesc=(uchar3*)malloc(sizeof(uchar3)*_params.inputSize.x*_params.inputSize.y);
+    oldDrawnDesc=(uchar3*)malloc(sizeof(uchar3)*_params.inputSize.x*_params.inputSize.y);
 }
 
 Eigen::MatrixXd FeatureDetector::computeCov2DTo3D(Eigen::MatrixXd cov2D,
@@ -63,24 +61,20 @@ Eigen::MatrixXd FeatureDetector::computeCov2DTo3D(Eigen::MatrixXd cov2D,
 
 void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_matches)
 {
-#ifndef DRAW_MATCHES
-    outMat=cvGrey.clone();
-    cv::drawKeypoints(cvGrey,cvKeypoints,outMat,cv::Scalar::all(-1),cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-    return;
-#endif
-// #else
+    int s=_params.inputSize.x*_params.inputSize.y*3*2;
+    if(oldCvKeypoints.size()==0 || good_matches.size()==0)
+    {
+        memset(out,0,s);
+        return;
+    }
+    cv::Mat cvOldDesc(_params.inputSize.y, _params.inputSize.x, CV_8UC3,oldDrawnDesc);
+    cv::Mat cvNewDesc(_params.inputSize.y, _params.inputSize.x, CV_8UC3,drawnDesc);
 
-//    int s=_params.inputSize.x*_params.inputSize.y*3*2;
-//    if(oldCvRgb.empty()||good_matches.size()==0)
-//    {
-//        memset(out,0,s);
-//        return;
-//    }
 
-//    cv::drawMatches( cvRgb, cvKeypoints, oldCvRgb, oldCvKeypoints, good_matches, cvOutput, cv::Scalar::all(-1),
-//                 cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DEFAULT );
-//// #endif
-//    memcpy(out,cvOutput.data,s);
+    cv::drawMatches( cvNewDesc, cvKeypoints, cvOldDesc, oldCvKeypoints, good_matches, cvOutput, cv::Scalar::all(-1),
+                 cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DEFAULT );
+
+    memcpy(out,cvOutput.data,s);
 }
 
 void FeatureDetector::saveImage(char *filename) const
@@ -91,116 +85,6 @@ void FeatureDetector::saveImage(char *filename) const
 void FeatureDetector::getFeatImage(uchar3 *out)
 {    
     covEstim->getDrawnData(out);
-}
-
-float infNorm(const sMatrix3 &mat)
-{
-    float ret=-1;
-    for(int i=0;i<3;i++)
-    {
-        for(int j=0;j<3;j++)
-        {
-            float tmp=mat(i,j);
-            if(tmp<0)
-                tmp*=-1;
-            if(tmp>ret)
-                ret=tmp;
-        }
-    }
-    return ret;
-}
-
-sMatrix3 calcCovariance(Image<float3, Host> vertexes,float2 pt,float r,float3 &avg)
-{
-    sMatrix3 ret;
-    float2 ipt;
-    //float3 avg=make_float3(0,0,0);
-    int count=0;
-    for(ipt.x=pt.x-r;ipt.x<=pt.x+r;ipt.x++)
-    {
-        if(ipt.x<0 ||pt.x>=vertexes.size.x)
-            continue;
-
-        for(ipt.y=pt.y-r;ipt.y<=pt.y+r;ipt.y++)
-        {
-            if(ipt.y<0 ||pt.y>=vertexes.size.y)
-                continue;
-
-            float xx=sq(ipt.x-pt.x);
-            float yy=sq(ipt.y-pt.y);
-            float dist=sqrt(xx+yy);
-            if(dist>r)
-                continue;
-
-            uint2 px=make_uint2((uint) (ipt.x+0.5),
-                                (uint) (ipt.y+0.5) );
-            if(px.x>=vertexes.size.x || px.y>=vertexes.size.y)
-                continue;
-
-            float3 vert=vertexes[px];
-            avg=avg+vert;
-            count++;
-        }
-    }
-    avg.x/=count;
-    avg.y/=count;
-    avg.z/=count;
-
-    uint2 px=make_uint2((uint) (pt.x+0.5),
-                        (uint) (pt.y+0.5) );
-
-//    avg=vertexes[px];
-
-    float s[3];
-    s[0]=0;
-    s[2]=0;
-    s[1]=0;
-
-    for(ipt.x=pt.x-r;ipt.x<=pt.x+r;ipt.x++)
-    {
-        if(ipt.x<0 ||pt.x>=vertexes.size.x)
-            continue;
-
-        for(ipt.y=pt.y-r;ipt.y<=pt.y+r;ipt.y++)
-        {
-            if(ipt.y<0 ||pt.y>=vertexes.size.y)
-                continue;
-
-            float xx=sq(ipt.x-pt.x);
-            float yy=sq(ipt.y-pt.y);
-            float dist=sqrt(xx+yy);
-            if(dist>r)
-                continue;
-
-            uint2 px=make_uint2((uint) (ipt.x+0.5),
-                                (uint) (ipt.y+0.5) );
-
-            if(px.x>=vertexes.size.x || px.y>=vertexes.size.y)
-                continue;
-            float3 vert=vertexes[px];
-
-            s[0]+=sq(vert.x-avg.x);
-            s[1]+=sq(vert.y-avg.y);
-            s[2]+=sq(vert.z-avg.z);
-        }
-    }
-
-    s[0]=sqrt(s[0]/count);
-    s[1]=sqrt(s[1]/count);
-    s[2]=sqrt(s[2]/count);
-
-    for(int i=0;i<3;i++)
-    {
-        for(int j=0;j<3;j++)
-        {
-            ret(i,j)=s[i]*s[j];
-            if(i==j && ret(i,j)==0)
-                ret(i,j)=1e-5;
-        }
-    }
-
-
-    return ret;
 }
 
 void FeatureDetector::calcMask(DepthHost &depth,cv::Mat &mask)
@@ -226,11 +110,14 @@ void FeatureDetector::detectFeatures(int frame,
                                      std::vector<float3> &keypts3D,
                                      std::vector<FeatDescriptor> &descr)
 {
-    oldCvRgb=cvRgb;
+    (void) frame;
+    oldDrawnDesc=drawnDesc;
+
     oldCvKeypoints=cvKeypoints;
+    cvKeypoints.clear();
+    cv::Mat cvRgb = cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
 
-    cvRgb = cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
-
+    cv::Mat cvGrey;
     //convert image to grey scale
     cv::cvtColor(cvRgb, cvGrey, CV_BGR2GRAY);
 
@@ -285,12 +172,10 @@ void FeatureDetector::detectFeatures(int frame,
             }
             keypts3D.push_back(vert);
             descr.push_back(d);
-
-            //std::cout<<d.cov<<std::endl;
         }
     }
 
-
+    covEstim->getDrawnData(drawnDesc);
     std::cout<<"Features Detected:"<<descr.size()<<std::endl;
     vertexes.release();
 }

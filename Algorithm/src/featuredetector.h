@@ -33,8 +33,10 @@ class FeatureDetector
         
         void saveImage(char *filename) const;
     private:
-        //opencv
-        cv::Mat cvRgb,cvGrey,cvOutput;
+        cv::Mat cvOutput;
+        uchar3 *drawnDesc;
+        uchar3 *oldDrawnDesc;
+
         cv::Ptr<cv::Feature2D> sift;
         cv::Ptr<cv::FlannBasedMatcher> matcher;
         SiftCovEstimator *covEstim;
@@ -42,11 +44,9 @@ class FeatureDetector
         //cv keypoint type
         std::vector<cv::KeyPoint> cvKeypoints;
 
-        //        std::vector<cv::KeyPoint> cvKeypoints;
+
         std::vector<cv::KeyPoint> oldCvKeypoints;
         std::vector<float3> oldKeypts3D;
-//        cv::Mat oldDescriptors;
-        cv::Mat oldCvRgb;
 
         Eigen::MatrixXd computeCov2DTo3D(Eigen::MatrixXd cov2D,
                                                           double depth,
@@ -61,16 +61,13 @@ class FeatureDetector
 
         void calcMask(DepthHost &depth,cv::Mat &mask);
 
-        bool drawNewData;
         IcsFusion *_fusion;
         PoseGraph *_isam;
         kparams_t _params;
 
-        void *data;
-
         float ratio_thresh;
 
-        int _frame;
+//        int _frame;
 };
 
 #endif // FEATUREDETECTOR_H

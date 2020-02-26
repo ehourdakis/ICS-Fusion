@@ -214,7 +214,7 @@ bool sb_init_slam_system(SLAMBenchLibraryHelper * slam_settings)
     inputDepthRGB = new uchar3[params.inputSize.x * params.inputSize.y];
     trackRGB = new uchar3[params.inputSize.x * params.inputSize.y];
 
-#ifdef DRAW_MATCHES_
+#ifdef DRAW_MATCHES
     outputFeat = new uchar3[params.inputSize.x * params.inputSize.y*2]; 
 #else
     outputFeat = new uchar3[params.inputSize.x * params.inputSize.y]; 
@@ -598,7 +598,7 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
         
         std::lock_guard<FastLock> lock (lib->GetOutputManager().GetLock());
         
-#ifdef DRAW_MATCHES_
+#ifdef DRAW_MATCHES
         int size_x= params.inputSize.x*2;
         int size_y= params.inputSize.y;
 #else

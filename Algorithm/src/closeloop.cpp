@@ -217,7 +217,7 @@ void CloseLoop::saveKeyMap(char *descrFile,char *poitsFile,char *frameFile)
 
 void CloseLoop::showKeypts(uchar3 *out)
 {
-#ifdef DRAW_MATCHES_
+#ifdef DRAW_MATCHES
      std::vector<cv::DMatch> good_matches=_keyMap->goodMatches();
     _featDet->getFeatImage(out,good_matches);
 #else
