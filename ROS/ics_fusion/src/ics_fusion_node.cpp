@@ -204,13 +204,17 @@ void doLoopClosure()
     passedFromLastKeyFrame=0;
     loopCl->processKeyFrame();
 
+    std::cout<<"optimizeeeeeeeeeeeeeee"<<std::endl;
+
     prevKeyFramePose=keyFramePose;
     keyFramePose=loopCl->getPose();
 
-    if(publish_key_points)
+    if(publish_key_points &&false)
     {
         publishKeyPoints();
     }
+
+    std::cout<<keyFramePose<<std::endl;
 
     publishHarris();
 #ifdef DRAW_MATCHES

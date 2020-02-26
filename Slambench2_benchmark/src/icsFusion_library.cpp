@@ -313,6 +313,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
     
     //use ground truth pose for loop closure.
     //This is usefull for loop closure testing
+    sMatrix4 gtPose;
 #ifdef SLAMBENCH_CH
     if(frame==3)
     {
@@ -327,7 +328,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
     }
     else if(frame>=3)
     {
-        sMatrix4 gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
+        gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
         gtPoses.push_back(gtPose);
         char buf[32];
 
@@ -393,6 +394,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
             //sprintf(buf,"data/volume/frame%d_volume",frame);
             //saveVoxelsToFile(buf,icsFusion->getVolume(),params);
         loopCl->processKeyFrame();
+        std::cout<<gtPose<<std::endl;
         loopCl->showKeypts(outputFeat);
 
         sprintf(buf,"data/feat/frame%d.png",frame);

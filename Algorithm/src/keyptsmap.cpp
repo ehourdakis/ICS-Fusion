@@ -1,15 +1,27 @@
 #include "keyptsmap.h"
 #include<fstream>
-#define COV 1.0e-5;
+
+#include<Open3D/Registration/Registration.h>
+#include<Open3D/Geometry/PointCloud.h>
+
+//#define COV 1.0e-5;
+
 
 keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f)
     :_isam(isam),
       _fusion(f)
 {
+    descr=new open3d::registration::Feature();
+    prevDescr=new open3d::registration::Feature();
+
+    max_correspondence_distance=0.005;
+
+
     matcher=cv::FlannBasedMatcher::create();
     ratio_thresh = 0.7f;
-//    ratio_thresh = 1.f;
-//    ratio_thresh = 0.9f;
+
+
+
 }
 
 void keyptsMap::clear()
@@ -18,12 +30,16 @@ void keyptsMap::clear()
     _descr.clear();
     lanmarks.clear();
     descrFrame.clear();
+
+    eigenPts.clear();
+    prevEigenPts.clear();
 }
 
 void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
                              std::vector<FeatDescriptor> &descriptors,
                              int frame)
 {
+    /*
     _points.insert(_points.end(),
                    keypoints.begin(),
                    keypoints.end());
@@ -43,6 +59,23 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
         descrFrame.push_back(make_uint2(frame,i) );
     }
     prevPose=_fusion->getPose();
+    */
+
+    descr->Resize(DESCR_SIZE,descriptors.size());
+    //descr->Resize(descriptors.size(),DESCR_SIZE);
+
+    for(int i=0;i<keypoints.size();i++)
+    {
+        Eigen::Vector3d v(keypoints[i].x,
+                          keypoints[i].y,
+                          keypoints[i].z);
+        eigenPts.push_back(v);
+
+        for(int j=0;j<DESCR_SIZE;j++)
+        {
+            descr->data_(j,i)=descriptors[i].data[j];
+        }
+    }
 }
 
 void keyptsMap::getMatches(const std::vector<float3> &keypoints,
@@ -70,6 +103,86 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
                          std::vector<FeatDescriptor> &descriptors,
                          int frame)
 {
+    using namespace open3d::geometry;
+    using namespace open3d::registration;
+    good_matches.clear();
+
+    std::swap(prevEigenPts,eigenPts);
+    std::swap(prevDescr,descr);
+
+    eigenPts.clear();
+    eigenPts.reserve(keypoints.size());
+
+    descr->Resize(DESCR_SIZE,descriptors.size());
+    //descr->Resize(descriptors.size(),DESCR_SIZE);
+
+    for(int i=0;i<keypoints.size();i++)
+    {
+        Eigen::Vector3d v(keypoints[i].x,
+                          keypoints[i].y,
+                          keypoints[i].z);
+        eigenPts.push_back(v);
+
+        for(int j=0;j<DESCR_SIZE;j++)
+        {
+            //descr->data_(i,j)=descriptors[i].data[j];
+            descr->data_(j,i)=descriptors[i].data[j];
+        }
+    }
+    std::cout<<"Keypts:"<<prevEigenPts.size()<<" "<<eigenPts.size()<<std::endl;
+
+    if(prevEigenPts.size()>0 && eigenPts.size()>0)
+    {
+
+
+        PointCloud cloud0=PointCloud(prevEigenPts);
+        PointCloud cloud1=PointCloud(eigenPts);
+
+
+        std::cout<<"RegistrationRANSACBasedOnFeatureMatching"<<std::endl;
+        //RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(cloud0,cloud1,*prevDescr,*descr,max_correspondence_distance);
+        RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance);
+
+        sMatrix4 tf;
+        for(int i=0;i<4;i++)
+        {
+            for(int j=0;j<4;j++)
+                tf(i,j)=results.transformation_(i,j);
+        }
+
+        std::cout<<tf<<std::endl;
+        std::cout<<inverse(tf)<<std::endl;
+
+        CorrespondenceSet corr=results.correspondence_set_;
+        for(int i=0;i<corr.size();i++)
+        {
+            Eigen::Vector2i c=corr[i];
+//            cv::DMatch m( c(0),c(1),1 );
+            cv::DMatch m( c(0),c(1),1 );
+            good_matches.push_back(m);
+
+        }
+
+
+    }
+    return true;
+//    geometry::PointCloud cloud1=PointCloud();
+
+//    RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching();
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if 0
     std::vector< std::vector<cv::DMatch> > knn_matches;
     cv::Mat queryDescr=toCvMat(descriptors);
     cv::Mat trainDescr=toCvMat(_descr);
@@ -137,7 +250,6 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
     std::cout<<"Matches size "<<good_matches.size()<<std::endl;
     std::cout<<"New Feature number "<<newDescrIdx.size()<<std::endl;
 
-#if 0
     /*Save keypoint map*/
     char buf[32];
     sprintf(buf,"f_/f_%d_map_keypts",frame);
@@ -159,7 +271,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
     //_points=keypoints;
     //_descr=descriptors;
 
-    prevPose=pose;
+//    prevPose=pose;
     return true;
 }
 

@@ -11,6 +11,10 @@
 #include <opencv2/xfeatures2d/nonfree.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <map>
+
+//Open3d
+#include<Open3D/Registration/Feature.h>
+
 class keyptsMap
 {
     public:
@@ -24,7 +28,7 @@ class keyptsMap
 
         bool isEmpty()
         {
-            return _points.size()==0;
+            return eigenPts.size()==0;
         }
 
         void getMatches(const std::vector<float3> &keypoints,
@@ -35,10 +39,15 @@ class keyptsMap
         void saveMap(char *descrFile,char *poitsFile,char *frameFile);
     private:
 
-//        void toCvMat(std::vector<FeatDescriptor> &descr,
-//                     cv::Mat &mat);
+        double max_correspondence_distance;
 
-        //std::map<int,int> lanmarks;
+        std::vector<Eigen::Vector3d> eigenPts;
+        std::vector<Eigen::Vector3d> prevEigenPts;
+
+        open3d::registration::Feature *descr;
+        open3d::registration::Feature *prevDescr;
+
+
         std::vector<int> lanmarks;
         cv::Ptr<cv::FlannBasedMatcher> matcher;
         PoseGraph *_isam;

@@ -2,7 +2,11 @@ cmake_minimum_required(VERSION 3.3)
 project(ics_fusion_lib)
 
 find_package(CUDA)
-add_compile_options(-std=c++11)
+
+#find_package(open3d)
+#find_package(qhull)
+
+add_compile_options(-std=c++11 -fopenmp)
 # add_definitions(-DUSE_G2O)
 LIST(APPEND G2O_LIBS
   cxsparse  
@@ -94,9 +98,13 @@ add_library(ics_fusion_lib
     ${sift_src}
 )
 
-add_compile_options(-ggdb)
-SET_TARGET_PROPERTIES(ics_fusion_lib PROPERTIES COMPILE_FLAGS "-fPIC" )
+add_compile_options(-ggdb -fopenmp)
+SET_TARGET_PROPERTIES(ics_fusion_lib PROPERTIES COMPILE_FLAGS "-fPIC -fopenmp" )
 
+find_package(OpenMP)
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 
 #Comment ISAM if use G2O
 target_link_libraries(ics_fusion_lib 
@@ -106,7 +114,8 @@ target_link_libraries(ics_fusion_lib
     ics_fusion_cuda_lib
     isam
     cholmod
+    Open3D.a
+    qhull
+    libqhullcpp.a
+#    OpenMP::OpenMP_CXX
 )
-
-# add_dependencies(talker node_example_gencfg node_example_generate_messages_cpp)
-
