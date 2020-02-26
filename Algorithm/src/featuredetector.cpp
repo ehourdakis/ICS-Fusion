@@ -4,24 +4,24 @@
 
 #include <opencv2/features2d.hpp>
 #include"defs.h"
-
+#include <algorithm>
 FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
     :_fusion(f),
      _params(p),
      _isam(isam)
 {
 
-    int  	nfeatures = 200;
+    int  	nfeatures = 100;
     int  	octaveLayers = 3;
     double  contrastThreshold = 0.01;
     double  edgeThreshold = 3;
-    //double  sigma = 1.6;
     double  sigma = 1.6;
     sift = cv::xfeatures2d::SIFT::create(nfeatures,
                                          octaveLayers,
                                          contrastThreshold,
                                          edgeThreshold,
                                          sigma);
+
     covEstim=new SiftCovEstimator(_params.inputSize.y,_params.inputSize.x,20,true);
     drawnDesc=(uchar3*)malloc(sizeof(uchar3)*_params.inputSize.x*_params.inputSize.y);
     oldDrawnDesc=(uchar3*)malloc(sizeof(uchar3)*_params.inputSize.x*_params.inputSize.y);
@@ -61,8 +61,9 @@ Eigen::MatrixXd FeatureDetector::computeCov2DTo3D(Eigen::MatrixXd cov2D,
 
 void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_matches)
 {
+
     int s=_params.inputSize.x*_params.inputSize.y*3*2;
-    if(oldCvKeypoints.size()==0 || good_matches.size()==0)
+    if(oldCvKeypoints.size()==0 )
     {
         memset(out,0,s);
         return;
@@ -73,6 +74,7 @@ void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_ma
 
     cv::drawMatches( cvNewDesc, cvKeypoints, cvOldDesc, oldCvKeypoints, good_matches, cvOutput, cv::Scalar::all(-1),
                  cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DEFAULT );
+
 
     memcpy(out,cvOutput.data,s);
 }
@@ -111,49 +113,54 @@ void FeatureDetector::detectFeatures(int frame,
                                      std::vector<FeatDescriptor> &descr)
 {
     (void) frame;
-    oldDrawnDesc=drawnDesc;
+    std::swap(oldDrawnDesc,drawnDesc);
 
-    oldCvKeypoints=cvKeypoints;
+
+    std::swap(oldCvKeypoints,cvKeypoints);
     cvKeypoints.clear();
-    cv::Mat cvRgb = cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
+    oldCvRgb=cvRgb;
+    //cv::Mat cvRgb = cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
+    cvRgb = cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
 
     cv::Mat cvGrey;
     //convert image to grey scale
     cv::cvtColor(cvRgb, cvGrey, CV_BGR2GRAY);
-
 
     //store cv descriptors
     cv::Mat descrMat;
     cv::Mat mask;
     calcMask(depth,mask);
 
-    sift->detectAndCompute(cvGrey,mask, cvKeypoints,descrMat);
+    std::vector<cv::KeyPoint> allcvKeypoints;
+    sift->detectAndCompute(cvGrey,mask, allcvKeypoints,descrMat);
 
-    keypts3D.reserve(cvKeypoints.size());
-    descr.reserve(cvKeypoints.size());
+    keypts3D.reserve(allcvKeypoints.size());
+    descr.reserve(allcvKeypoints.size());
 
     covEstim->load(cvGrey.data,cvRgb.data);
 
+
     Image<float3, Host> vertexes=_fusion->getAllVertex();
-    for(uint i=0;i<cvKeypoints.size();i++)
+    for(uint i=0;i<allcvKeypoints.size();i++)
     {
         Eigen::Matrix2d cov2d;
-        if( covEstim->calcCovariance(cvKeypoints[i],cov2d) )
+        if( covEstim->calcCovariance(allcvKeypoints[i],cov2d) )
         {
-            uint2 px=make_uint2((uint) (cvKeypoints[i].pt.x+0.5),
-                                (uint) (cvKeypoints[i].pt.y+0.5) );
+            cv::KeyPoint point=allcvKeypoints[i];
+
+            uint2 px=make_uint2((uint) (point.pt.x+0.5),
+                                (uint) (point.pt.y+0.5) );
 
             float3 vert=vertexes[px];
 
             FeatDescriptor d;
             fromCvMatRow(d,descrMat,i);
-            d.s2=cvKeypoints[i].size/2;
+            d.s2=point.size/2;
 
-            d.x=(float)cvKeypoints[i].pt.x;
-            d.y=(float)cvKeypoints[i].pt.y;
+            d.x=(float)point.pt.x;
+            d.y=(float)point.pt.y;
 
             //std::cout<<cov2d<<std::endl;
-
 
             Eigen::MatrixXd eigenCov=computeCov2DTo3D(cov2d,
                                    vert.z,
@@ -170,6 +177,8 @@ void FeatureDetector::detectFeatures(int frame,
                     d.cov(i,j)=eigenCov(i,j);
                 }
             }
+
+            cvKeypoints.push_back(point);
             keypts3D.push_back(vert);
             descr.push_back(d);
         }

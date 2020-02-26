@@ -8,7 +8,7 @@ keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f)
 {
     matcher=cv::FlannBasedMatcher::create();
 //    ratio_thresh = 0.7f;
-    ratio_thresh = 0.75f;
+    ratio_thresh = 0.9f;
 }
 
 void keyptsMap::clear()
@@ -20,7 +20,8 @@ void keyptsMap::clear()
 }
 
 void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
-                             std::vector<FeatDescriptor> &descriptors,int frame)
+                             std::vector<FeatDescriptor> &descriptors,
+                             int frame)
 {
     _points.insert(_points.end(),
                    keypoints.begin(),
@@ -93,7 +94,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         int tidx=m.trainIdx;
         int qidx=m.queryIdx;
         float discDist=m.distance;
-        if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
+        if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance )
         {
 
             float3 p1=prevPose*_points[tidx];
@@ -110,7 +111,6 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
                     
                     std::pair<int, int> p(tidx, qidx);
                     matchIdx.push_back(p);
-//                    std::cout<<cov<<std::endl;
                     int lidx=lanmarks[tidx];
                     _isam->connectLandmark(keypoints[qidx],lidx,-1,cov);
                 }

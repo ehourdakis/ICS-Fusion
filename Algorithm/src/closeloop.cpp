@@ -434,13 +434,6 @@ sMatrix4 CloseLoop::getPose() const
     return _fusion->getPose();
 }
 
-void CloseLoop::reInit(int idx)
-{
-    
-}
-
-
-
 void CloseLoop::reInit()
 {
     int size=poses.size()-1;

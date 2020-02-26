@@ -415,6 +415,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         
         lastKeyFrame=frame;
 #ifdef DRAW_MATCHES
+        std::cout<<"Re-init"<<std::endl;
         loopCl->reInit();
 #endif
     }

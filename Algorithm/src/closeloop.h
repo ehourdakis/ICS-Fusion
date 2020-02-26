@@ -82,7 +82,6 @@ class CloseLoop
         int _frame;
         
         void fixMap();
-        void reInit(int idx);
 
         void removeOldNodes(int idx);
 

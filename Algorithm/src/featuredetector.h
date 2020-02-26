@@ -37,6 +37,8 @@ class FeatureDetector
         uchar3 *drawnDesc;
         uchar3 *oldDrawnDesc;
 
+        cv::Mat cvRgb,oldCvRgb;
+
         cv::Ptr<cv::Feature2D> sift;
         cv::Ptr<cv::FlannBasedMatcher> matcher;
         SiftCovEstimator *covEstim;
@@ -56,9 +58,6 @@ class FeatureDetector
                                                           double cy,
                                                           double depth_noise_cov);
 
-
-
-
         void calcMask(DepthHost &depth,cv::Mat &mask);
 
         IcsFusion *_fusion;
@@ -66,8 +65,6 @@ class FeatureDetector
         kparams_t _params;
 
         float ratio_thresh;
-
-//        int _frame;
 };
 
 #endif // FEATUREDETECTOR_H
