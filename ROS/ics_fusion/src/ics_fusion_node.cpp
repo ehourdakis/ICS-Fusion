@@ -457,14 +457,18 @@ void publishHarris()
     image.header.stamp=ros::Time::now();
     
 #ifdef DRAW_MATCHES
-    image.width=params.inputSize.x;
+    image.width=params.inputSize.x*2;
     image.height=params.inputSize.y;
 #else 
     image.width=params.inputSize.x;
     image.height=params.inputSize.y;
 #endif   
     
+#ifdef DRAW_MATCHES
+    int step_size=sizeof(uchar)*3*2;
+#else
     int step_size=sizeof(uchar)*3;
+#endif
     image.is_bigendian=0;
     image.step=step_size*image.width;
     image.header.frame_id=std::string("IcsFusion_volume");
