@@ -14,7 +14,7 @@ keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f)
     descr=new open3d::registration::Feature();
     prevDescr=new open3d::registration::Feature();
 
-    max_correspondence_distance=0.005;
+    max_correspondence_distance=0.01;
 
 
     matcher=cv::FlannBasedMatcher::create();
@@ -151,7 +151,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         }
 
         std::cout<<tf<<std::endl;
-        std::cout<<inverse(tf)<<std::endl;
+//        std::cout<<inverse(tf)<<std::endl;
 
         CorrespondenceSet corr=results.correspondence_set_;
         for(int i=0;i<corr.size();i++)

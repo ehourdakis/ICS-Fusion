@@ -26,6 +26,8 @@ kparams_t params;
 bool tracked ;
 bool integrated;
 
+sMatrix4 prevKeyPose;
+
 slambench::io::pixelformat::EPixelFormat depthFormat;
 SLAMBenchLibraryHelper *lib;
 
@@ -394,7 +396,13 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
             //sprintf(buf,"data/volume/frame%d_volume",frame);
             //saveVoxelsToFile(buf,icsFusion->getVolume(),params);
         loopCl->processKeyFrame();
-        std::cout<<gtPose<<std::endl;
+
+        sMatrix4 delta=inverse(prevKeyPose)*gtPose;
+        prevKeyPose=gtPose;
+
+        std::cout<<delta<<std::endl;
+
+
         loopCl->showKeypts(outputFeat);
 
         sprintf(buf,"data/feat/frame%d.png",frame);

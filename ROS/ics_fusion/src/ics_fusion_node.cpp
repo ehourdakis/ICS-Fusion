@@ -204,7 +204,7 @@ void doLoopClosure()
     passedFromLastKeyFrame=0;
     loopCl->processKeyFrame();
 
-    std::cout<<"optimizeeeeeeeeeeeeeee"<<std::endl;
+
 
     prevKeyFramePose=keyFramePose;
     keyFramePose=loopCl->getPose();
@@ -214,7 +214,7 @@ void doLoopClosure()
         publishKeyPoints();
     }
 
-    std::cout<<keyFramePose<<std::endl;
+    std::cout<<inverse(prevKeyFramePose)*keyFramePose<<std::endl;
 
     publishHarris();
 #ifdef DRAW_MATCHES
@@ -299,8 +299,8 @@ bool hasStableContact()
     {
         if( (rightFeetVal>2) && (leftFeetVal<-2) )
             ret=true;
-//        else if( (rightFeetVal<-2) && (leftFeetVal>2))
-//            ret=true;
+        else if( (rightFeetVal<-2) && (leftFeetVal>2))
+            ret=true;
     }  
     return ret;
 }
@@ -469,7 +469,7 @@ void publishHarris()
 #endif   
     
 #ifdef DRAW_MATCHES
-    int step_size=sizeof(uchar)*3*2;
+    int step_size=sizeof(uchar)*3;
 #else
     int step_size=sizeof(uchar)*3;
 #endif
@@ -478,7 +478,7 @@ void publishHarris()
     image.header.frame_id=std::string("IcsFusion_volume");
     image.encoding=std::string("rgb8");
     uchar *ptr=(uchar*)featImage;
-    image.data=std::vector<uchar>(ptr ,ptr+(params.computationSize.x * params.computationSize.y*step_size) );
+    image.data=std::vector<uchar>(ptr ,ptr+(image.width*image.height*step_size) );
     /*
     cv_bridge::CvImage out_msg;
 
