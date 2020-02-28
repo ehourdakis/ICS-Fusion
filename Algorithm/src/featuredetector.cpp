@@ -69,19 +69,16 @@ Eigen::MatrixXd FeatureDetector::computeCov2DTo3D(Eigen::MatrixXd cov2D,
 
 void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_matches)
 {
-
     int s=_params.inputSize.x*_params.inputSize.y*3*2;
+
     if(oldCvKeypoints.size()==0 || good_matches.size()==0)
     {
         memset(out,0,s);
         return;
     }
 
-//    std::cout<<"SS:"<<cvKeypoints.size()<<" "<<oldCvKeypoints.size()<<std::endl;
-
     cv::Mat cvOldDesc(_params.inputSize.y, _params.inputSize.x, CV_8UC3,oldDrawnDesc);
     cv::Mat cvNewDesc(_params.inputSize.y, _params.inputSize.x, CV_8UC3,drawnDesc);
-
 
     cv::drawMatches( cvNewDesc, cvKeypoints, cvOldDesc, oldCvKeypoints, good_matches, cvOutput, cv::Scalar::all(-1),
                  cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DEFAULT );
@@ -113,7 +110,6 @@ void FeatureDetector::calcMask(DepthHost &depth,cv::Mat &mask)
              {
                  mask.at<uchar>(px.y,px.x,0)=0;
              }
-
          }
      }
 }
@@ -123,25 +119,22 @@ void FeatureDetector::detectFeatures(int frame,
                                      std::vector<float3> &keypts3D,
                                      std::vector<FeatDescriptor> &descr)
 {
-
-
+    (void) frame;
     keypts3D.clear();
     descr.clear();
-
     std::vector<cv::KeyPoint> allcvKeypoints;
 
-    cv::Mat cvRgbTmp = cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
+    cv::Mat cvRgb=cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
     cv::Mat cvGrey;
-    cv::cvtColor(cvRgbTmp, cvGrey, CV_BGR2GRAY);
+    cv::cvtColor(cvRgb, cvGrey, CV_BGR2GRAY);
 
 
+    /*
     cv::Mat cvLaplacian;
-    Laplacian( cvGrey, cvLaplacian, CV_8UC1, 3, 1, 0, cv::BORDER_DEFAULT );
+    Laplacian(cvGrey, cvLaplacian, CV_8UC1, 3, 1, 0, cv::BORDER_DEFAULT);
     cv::Vec4d m, stdv;
     cv::meanStdDev(cvLaplacian, m, stdv);
     double focusMeasure = (stdv.val[0]*stdv.val[0]) / m.val[0];
-
-
     double diff=oldFocusMeasure-focusMeasure;
     if(diff<0)
         diff=-diff;
@@ -157,16 +150,14 @@ void FeatureDetector::detectFeatures(int frame,
         return;
 
     oldFocusMeasure=focusMeasure;
+    */
 
 
-    (void) frame;
-    cvRgb=cvRgbTmp.clone();
     std::swap(oldDrawnDesc,drawnDesc);
-
-
     std::swap(oldCvKeypoints,cvKeypoints);
+
+
     cvKeypoints.clear();
-    oldCvRgb=cvRgb.clone();
 
     //store cv descriptors
     cv::Mat descrMat;
@@ -181,12 +172,12 @@ void FeatureDetector::detectFeatures(int frame,
 
     covEstim->load(cvGrey.data,cvRgb.data);
 
-
     Image<float3, Host> vertexes=_fusion->getAllVertex();
     for(uint i=0;i<allcvKeypoints.size();i++)
     {
         Eigen::Matrix2d cov2d;
         if( covEstim->calcCovariance(allcvKeypoints[i],cov2d) )
+        //if(1)
         {
             cv::KeyPoint point=allcvKeypoints[i];
 
@@ -229,4 +220,8 @@ void FeatureDetector::detectFeatures(int frame,
     covEstim->getDrawnData(drawnDesc);
     std::cout<<"Features Detected:"<<descr.size()<<std::endl;
     vertexes.release();
+
+    mask.release();
+    descrMat.release();
+    cvGrey.release();
 }

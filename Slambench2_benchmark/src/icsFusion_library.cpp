@@ -439,7 +439,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         prevGt=gtPose;
 
 #ifdef DRAW_MATCHES
-        loopCl->reInit();
+//        loopCl->reInit();
 #endif
 
     }

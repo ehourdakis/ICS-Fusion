@@ -15,13 +15,8 @@ keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f)
     prevDescr=new open3d::registration::Feature();
 
     max_correspondence_distance=0.01;
-
-
     matcher=cv::FlannBasedMatcher::create();
     ratio_thresh = 0.7f;
-
-
-
 }
 
 void keyptsMap::clear()
@@ -122,7 +117,6 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
     eigenPts.reserve(keypoints.size());
 
     descr->Resize(DESCR_SIZE,descriptors.size());
-    //descr->Resize(descriptors.size(),DESCR_SIZE);
 
     for(int i=0;i<keypoints.size();i++)
     {
@@ -154,7 +148,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         std::vector< std::vector<cv::DMatch> > knn_matches;
         cv::Mat queryDescr=toCvMat(descriptors);
         cv::Mat trainDescr=toCvMat(_descr);
-        cv::Ptr<cv::FlannBasedMatcher > matcher=cv::FlannBasedMatcher::create();
+        //cv::Ptr<cv::FlannBasedMatcher > matcher=cv::FlannBasedMatcher::create();
         matcher->knnMatch( queryDescr,trainDescr, knn_matches, 1 );
 
         for (size_t i = 0; i < knn_matches.size(); i++)
@@ -199,10 +193,6 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         std::cout<<"Ransac fitness:"<<results.fitness_<<std::endl;
         std::cout<<"Ransac rmse:"<<results.inlier_rmse_<<std::endl;
         std::cout<<"Correspondences:"<<good_matches.size()<<std::endl;
-
-
-
-
     }
 
 

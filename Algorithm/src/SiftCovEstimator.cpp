@@ -41,6 +41,12 @@ void SiftCovEstimator::load(void *data,void *rgb)
     if(_drawFrame!=nullptr)
         memcpy(_drawFrame->imageData ,rgb,_height*_width*3);
 
+
+    if(imgPyr!=nullptr)
+         release_pyr(&imgPyr,octaves,intervals);
+
+
+
     // create image pyramid (modified functions from SIFT implementation)
     IplImage* init_img = create_init_img( _frame, SIFT_IMG_DBL, SIFT_SIGMA );
     octaves = static_cast<int>(log(static_cast<float>(MIN( init_img->width, init_img->height )) ) / log(2.0f)) - 2;
@@ -51,9 +57,15 @@ void SiftCovEstimator::load(void *data,void *rgb)
 
 
     if(_estimator!=nullptr)
+    {
         delete _estimator;
+    }
 
     _estimator=new CovEstimator( (const IplImage***) imgPyr, DETECTOR_SIFT, octaves, intervals );
+
+    cvReleaseImage(&init_img);
+//    release_pyr(&imgPyr,octaves,intervals);
+
 }
 
 bool SiftCovEstimator::calcCovariance(const cv::KeyPoint &point, Eigen::Matrix2d &cov)

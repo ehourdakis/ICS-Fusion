@@ -21,7 +21,9 @@
 CloseLoop::CloseLoop(const kparams_t &p,sMatrix4 initPose)
     :params(p),
      _frame(-1),
-     firstKeyFrame(true)
+     firstKeyFrame(true),
+     prevKeyPoseIdx(-1),
+     passedFromLastKeyFrame(-1)
 {
     _fusion = new IcsFusion(params,initPose);
 
@@ -31,7 +33,6 @@ CloseLoop::CloseLoop(const kparams_t &p,sMatrix4 initPose)
 #else
     _isam=new Isam(params);
 #endif
-    firstPose=initPose;
 
     harris=new Harris();
 
@@ -141,7 +142,7 @@ bool CloseLoop::preprocess(float *depth,uchar3 *rgb)
 bool CloseLoop::processFrame()
 {
     _frame++;
-//    std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
+    //std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
 
     tracked=_fusion->tracking(_frame);
     bool integrated=_fusion->integration(_frame);
@@ -162,7 +163,6 @@ bool CloseLoop::processFrame()
         sMatrix6 cov;
         cov=cov*params.cov_small;
         _isam->init(pose,cov);
-        prevPose=_fusion->getPose();
          
         DepthHost rawDepth;
         _fusion->getDepthRaw(rawDepth);
@@ -175,7 +175,7 @@ bool CloseLoop::processFrame()
         covars.push_back(cov);
         poses.push_back(pose);
     }
-    else if(_frame>3 && tracked)
+    else if(_frame>3 && tracked )
     {
         sMatrix4 pose=_fusion->getPose();
         DepthHost rawDepth;
@@ -192,13 +192,13 @@ bool CloseLoop::processFrame()
         sMatrix6 icpCov =_fusion->calculate_ICP_COV();
         //float icpFitness=_fusion->getFitness();
         //std::cout<<"ICP Fitness:"<<icpFitness<<std::endl;
-//        std::cout<<"ICP cov:\n"<<icpCov<<std::endl;
+        //std::cout<<"ICP cov:\n"<<icpCov<<std::endl;
         //icpCov=icpCov*1000*(1/icpFitness);
 
-//        icpCov=icpCov*1000;
-
         covars.push_back(icpCov);
-        _isam->addFrame(pose,icpCov);        
+        _isam->addFrame(pose,icpCov);
+
+        passedFromLastKeyFrame++;
     }
 
     bool raycast=_fusion->raycasting(_frame);
@@ -269,9 +269,9 @@ void CloseLoop::getMatches(std::vector<float3> &prevPts,
 bool CloseLoop::processKeyFrame()
 {
     std::cout<<"[KEY FRAME="<<_frame<<"]"<<std::endl;
+//    clearFirsts(passedFromLastKeyFrame);
+//    passedFromLastKeyFrame=0;
 
-    lastKeyPts.clear();
-    lastDescr.clear();
 
     auto rgb=rgbs.rbegin();
     auto depth=depths.rbegin();
@@ -288,17 +288,49 @@ bool CloseLoop::processKeyFrame()
     if(_keyMap->isEmpty() )
     {
         _keyMap->addKeypoints(lastKeyPts,lastDescr,_frame);
-//        std::cout<<"Keypts added"<<std::endl;
         return true;
 
     }
     else
     {
         _keyMap->matching(lastKeyPts,lastDescr,_frame);
-//        std::cout<<"Keypts matched"<<std::endl;
     }
 
-    return optimize();
+    bool b=optimize();
+
+    clearFirsts(passedFromLastKeyFrame);
+    prevKeyPoseIdx=_frame;
+    passedFromLastKeyFrame=0;
+
+    return b;
+}
+
+void CloseLoop::clearFirsts(int idx)
+{
+    std::cout<<"Clear firsts:"<<idx<<std::endl;
+    for(int i=0;i<idx;i++)
+    {
+        std::cout<<"release"<<std::endl;
+        depths.front().release();
+        rgbs.front().release();
+        std::cout<<"end release"<<std::endl;
+
+        std::cout<<"pop"<<std::endl;
+        depths.pop_front();
+        rgbs.pop_front();
+        poses.pop_front();
+        covars.pop_front();
+        std::cout<<"end pop"<<std::endl;
+
+        std::cout<<"isam"<<std::endl;
+        _isam->popFront();
+        std::cout<<"end isam"<<std::endl;
+    }
+
+    _keyMap->clear();
+     _keyMap->addKeypoints(lastKeyPts,lastDescr,_frame);
+
+     std::cout<<"End clear firsts:"<<idx<<std::endl;
 }
 
 void CloseLoop::saveDescriptors(char *fileName)
@@ -471,7 +503,6 @@ void CloseLoop::fixMap()
 
 
     sMatrix4 kpose=_fusion->getPose();
-//    std::cout<<"K:"<<kpose.get_translation()<<std::endl;
     rposeIt=poses.rbegin();
 
 //    sMatrix4 p=kpose- *rposeIt;
@@ -487,6 +518,8 @@ sMatrix4 CloseLoop::getPose() const
 
 void CloseLoop::reInit()
 {
+    std::cout<<"reInit"<<std::endl;
+
     int size=poses.size()-1;
     auto depthIt=depths.begin();
     auto rgbIt=rgbs.begin();

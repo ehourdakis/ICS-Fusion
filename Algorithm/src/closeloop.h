@@ -82,12 +82,13 @@ class CloseLoop
             return _keyMap;
         }
 
+        void clearFirsts(int idx);
+
     private:
-        sMatrix4 firstPose;
-        sMatrix4 prevPose;
         IcsFusion *_fusion;
         PoseGraph *_isam;
         int prevKeyPoseIdx;
+        int passedFromLastKeyFrame;
 
         std::vector<float3> lastKeyPts;
         std::vector<FeatDescriptor> lastDescr;

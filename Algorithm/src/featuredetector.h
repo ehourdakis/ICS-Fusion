@@ -37,7 +37,7 @@ class FeatureDetector
         uchar3 *drawnDesc;
         uchar3 *oldDrawnDesc;
 
-        cv::Mat cvRgb,oldCvRgb;
+        //cv::Mat cvRgb,oldCvRgb;
         double focusThr;
         double oldFocusMeasure;
 

@@ -31,7 +31,7 @@ class SiftCovEstimator
         IplImage *_drawFrame;
         CovEstimator *_estimator;
 
-         IplImage*** imgPyr;
+        IplImage*** imgPyr;
 
         int _width;
         int _height;
