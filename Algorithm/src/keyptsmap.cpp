@@ -142,7 +142,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
             descr->data_(j,i)=descriptors[i].data[j];
         }
     }
-    std::cout<<"Keypts:"<<prevEigenPts.size()<<" "<<eigenPts.size()<<std::endl;
+//    std::cout<<"Keypts:"<<prevEigenPts.size()<<" "<<eigenPts.size()<<std::endl;
 
     if(prevEigenPts.size()>0 && eigenPts.size()>0)
     {
@@ -156,7 +156,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         std::vector< std::vector<cv::DMatch> > knn_matches;
         cv::Mat queryDescr=toCvMat(descriptors);
         cv::Mat trainDescr=toCvMat(_descr);
-        cv::Ptr<cv::FlannBasedMatcher > matcher2=cv::FlannBasedMatcher::create();
+        cv::Ptr<cv::FlannBasedMatcher > matcher=cv::FlannBasedMatcher::create();
         matcher->knnMatch( queryDescr,trainDescr, knn_matches, 1 );
 
         for (size_t i = 0; i < knn_matches.size(); i++)
@@ -166,11 +166,10 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
             corres.push_back(c);
         }
 
-        std::cout<<"RegistrationRANSACBasedOnFeatureMatching"<<std::endl;
-        //RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(cloud0,cloud1,*prevDescr,*descr,max_correspondence_distance);
-        RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance);
+//        std::cout<<"RegistrationRANSACBasedOnFeatureMatching"<<std::endl;
+//        RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance);
 
-        //RegistrationResult results=RegistrationRANSACBasedOnCorrespondence(cloud1,cloud0,corres,max_correspondence_distance);
+        RegistrationResult results=RegistrationRANSACBasedOnCorrespondence(cloud1,cloud0,corres,max_correspondence_distance);
 
         sMatrix4 tf;
         for(int i=0;i<4;i++)
@@ -183,7 +182,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 //        std::cout<<inverse(tf)<<std::endl;
 
         CorrespondenceSet corr=results.correspondence_set_;
-        if(results.fitness_>0.7)
+        if(results.fitness_>0.5)
         {
             for(int i=0;i<corr.size();i++)
             {
@@ -195,6 +194,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         }
         std::cout<<"Ransac fitness:"<<results.fitness_<<std::endl;
         std::cout<<"Ransac rmse:"<<results.inlier_rmse_<<std::endl;
+        std::cout<<"Correspondences:"<<good_matches.size()<<std::endl;
 
 
 

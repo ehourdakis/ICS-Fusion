@@ -72,6 +72,16 @@ class CloseLoop
         void saveIcpCov(char *fileName) const;
         void saveDescrCov(char *fileName) const;
 
+        std::vector<float3> getKeypts() const
+        {
+            return lastKeyPts;
+        }
+
+        keyptsMap *getKeyMap() const
+        {
+            return _keyMap;
+        }
+
     private:
         sMatrix4 firstPose;
         sMatrix4 prevPose;

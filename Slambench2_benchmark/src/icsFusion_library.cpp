@@ -81,7 +81,12 @@ sMatrix4 getGtTransformed(/*SLAMBenchLibraryHelper *lib*/ const slambench::TimeS
 // Functions Implementation
 // ===========================================================
 
-int lastKeyFrame=0;
+std::vector<float3> keyPts;
+std::vector<float3> prevKeyPts;
+int lastKeyFrame=-1;
+sMatrix4 prevGt;
+
+
 Eigen::Matrix4f sMatrix4ToEigen(const sMatrix4 &mat)
 {
     Eigen::Matrix4f ret;
@@ -332,8 +337,9 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
     }
     else if(frame>=3)
     {
-#if 0
         gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
+#if 0
+
         gtPoses.push_back(gtPose);
         char buf[32];
 
@@ -371,12 +377,43 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
     if( frame>0 && (frame%LOOP_CLOSURE_RATE)==0)
         _isKeyFrame=true;
 #endif
-
     if(_isKeyFrame)
     {
 
+        double outlierTH = 0.01;
+
         loopCl->processKeyFrame();
         loopCl->showKeypts(outputFeat);
+        prevKeyPts=keyPts;
+        keyPts=loopCl->getKeypts();
+
+        if(lastKeyFrame>0)
+        {
+            int outlierNum=0;
+            std::vector<cv::DMatch> good_matches=loopCl->getKeyMap()->goodMatches();
+            for(int i=0;i<good_matches.size();i++)
+            {
+                cv::DMatch m=good_matches[i];
+                float3 v1=prevKeyPts[m.trainIdx];
+                float3 v2=keyPts[m.queryIdx];
+
+                v1=prevGt*v1;
+                v2=gtPose*v2;
+                //v2=prevGt*v2;
+
+                float3 diff=make_float3(fabs(v1.x-v2.x),
+                                        fabs(v1.y-v2.y),
+                                        fabs(v1.z-v2.z) );
+
+//                std::cout<<prevKeyPts[m.trainIdx]<<std::endl;
+                if(diff.x>outlierTH || diff.y>outlierTH ||diff.z>outlierTH )
+                {
+//                    std::cout<<diff<<std::endl;
+                    outlierNum++;
+                }
+            }
+            std::cout<<"Number of outlier:"<<outlierNum<<std::endl;
+        }
 
 #if 0
         char buf[64];
@@ -392,15 +429,21 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         sprintf(buf,"data/feat/cov%d.txt",frame);
         loopCl->saveDescrCov(buf);
 
-        sprintf(buf,"data/feat/corr_from_%d_to%d.txt",lastKeyFrame, frame);
-        loopCl->saveCorrespondance(buf);
+        if(lastKeyFrame>0)
+        {
+            sprintf(buf,"data/feat/corr_from_%d_to%d.txt",lastKeyFrame, frame);
+            loopCl->saveCorrespondance(buf);
+        }
 #endif        
         lastKeyFrame=frame;
+        prevGt=gtPose;
 
 #ifdef DRAW_MATCHES
         loopCl->reInit();
 #endif
+
     }
+
     frame++;
 
     return true;

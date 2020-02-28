@@ -77,7 +77,7 @@ void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_ma
         return;
     }
 
-    std::cout<<"SS:"<<cvKeypoints.size()<<" "<<oldCvKeypoints.size()<<std::endl;
+//    std::cout<<"SS:"<<cvKeypoints.size()<<" "<<oldCvKeypoints.size()<<std::endl;
 
     cv::Mat cvOldDesc(_params.inputSize.y, _params.inputSize.x, CV_8UC3,oldDrawnDesc);
     cv::Mat cvNewDesc(_params.inputSize.y, _params.inputSize.x, CV_8UC3,drawnDesc);

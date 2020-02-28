@@ -69,7 +69,7 @@ bool CloseLoop::addTf(int idx,
 {
 
     sMatrix4 tf=inverse(tf2);
-    std::cout<<"T:"<<tf.get_translation()<<std::endl;
+//    std::cout<<"T:"<<tf.get_translation()<<std::endl;
     if(source_corr.size()!=target_corr.size())
         return false;
 //    if(fitness<0.2)
@@ -268,6 +268,8 @@ void CloseLoop::getMatches(std::vector<float3> &prevPts,
 
 bool CloseLoop::processKeyFrame()
 {
+    std::cout<<"[KEY FRAME="<<_frame<<"]"<<std::endl;
+
     lastKeyPts.clear();
     lastDescr.clear();
 
@@ -286,14 +288,14 @@ bool CloseLoop::processKeyFrame()
     if(_keyMap->isEmpty() )
     {
         _keyMap->addKeypoints(lastKeyPts,lastDescr,_frame);
-        std::cout<<"Keypts added"<<std::endl;
+//        std::cout<<"Keypts added"<<std::endl;
         return true;
 
     }
     else
     {
         _keyMap->matching(lastKeyPts,lastDescr,_frame);
-        std::cout<<"Keypts matched"<<std::endl;
+//        std::cout<<"Keypts matched"<<std::endl;
     }
 
     return optimize();
@@ -377,10 +379,8 @@ void CloseLoop::saveIcpCov(char *fileName) const
     {
         for(int j=0;j<6;j++)
         {
-            std::cout<<cov(i,j)<<" ";
             outFile<<cov(i,j)<<" ";
         }
-        std::cout<<std::endl;
         outFile<<std::endl;
     }
     outFile.close();
@@ -471,13 +471,13 @@ void CloseLoop::fixMap()
 
 
     sMatrix4 kpose=_fusion->getPose();
-    std::cout<<"K:"<<kpose.get_translation()<<std::endl;
+//    std::cout<<"K:"<<kpose.get_translation()<<std::endl;
     rposeIt=poses.rbegin();
 
 //    sMatrix4 p=kpose- *rposeIt;
 //    std::cout<<p<<std::endl;
     _fusion->setPose(*rposeIt);
-    std::cout<<"I:"<<rposeIt->get_translation()<<std::endl;
+//    std::cout<<"I:"<<rposeIt->get_translation()<<std::endl;
 }
 
 sMatrix4 CloseLoop::getPose() const
