@@ -190,10 +190,12 @@ bool CloseLoop::processFrame()
                 
         //calculate covariance before raycast
         sMatrix6 icpCov =_fusion->calculate_ICP_COV();
-        //float icpFitness=_fusion->getFitness();
+        float icpFitness=_fusion->getFitness();
         //std::cout<<"ICP Fitness:"<<icpFitness<<std::endl;
         //std::cout<<"ICP cov:\n"<<icpCov<<std::endl;
+
         //icpCov=icpCov*1000*(1/icpFitness);
+        icpCov=icpCov*1000;
 
         covars.push_back(icpCov);
         _isam->addFrame(pose,icpCov);
@@ -299,6 +301,7 @@ bool CloseLoop::processKeyFrame()
     bool b=optimize();
 
     clearFirsts(passedFromLastKeyFrame);
+    _keyMap->addKeypoints(lastKeyPts,lastDescr,_frame);
     prevKeyPoseIdx=_frame;
     passedFromLastKeyFrame=0;
 
@@ -307,30 +310,19 @@ bool CloseLoop::processKeyFrame()
 
 void CloseLoop::clearFirsts(int idx)
 {
-    std::cout<<"Clear firsts:"<<idx<<std::endl;
     for(int i=0;i<idx;i++)
     {
-        std::cout<<"release"<<std::endl;
         depths.front().release();
         rgbs.front().release();
-        std::cout<<"end release"<<std::endl;
-
-        std::cout<<"pop"<<std::endl;
         depths.pop_front();
         rgbs.pop_front();
         poses.pop_front();
         covars.pop_front();
-        std::cout<<"end pop"<<std::endl;
 
-        std::cout<<"isam"<<std::endl;
         _isam->popFront();
-        std::cout<<"end isam"<<std::endl;
     }
 
     _keyMap->clear();
-     _keyMap->addKeypoints(lastKeyPts,lastDescr,_frame);
-
-     std::cout<<"End clear firsts:"<<idx<<std::endl;
 }
 
 void CloseLoop::saveDescriptors(char *fileName)

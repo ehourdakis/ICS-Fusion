@@ -631,7 +631,7 @@ bool sb_update_outputs(SLAMBenchLibraryHelper *lib, const slambench::TimeStamp *
         int size_x= params.inputSize.x;
         int size_y= params.inputSize.y;
 #endif
-        volume_frame_output->AddPoint(ts, new slambench::values::FrameValue( size_x,
+        feat_frame_output->AddPoint(ts, new slambench::values::FrameValue( size_x,
                                                                              size_y,
                                                                              slambench::io::pixelformat::RGB_III_888,
                                                                              outputFeat));

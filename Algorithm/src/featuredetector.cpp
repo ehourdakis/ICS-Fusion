@@ -24,7 +24,7 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
                                          edgeThreshold,
                                          sigma);
 
-    float cov_thr=10;
+    float cov_thr=20;
     covEstim=new SiftCovEstimator(_params.inputSize.y,_params.inputSize.x,cov_thr,true);
     drawnDesc=(uchar3*)malloc(sizeof(uchar3)*_params.inputSize.x*_params.inputSize.y);
     oldDrawnDesc=(uchar3*)malloc(sizeof(uchar3)*_params.inputSize.x*_params.inputSize.y);
@@ -71,7 +71,7 @@ void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_ma
 {
     int s=_params.inputSize.x*_params.inputSize.y*3*2;
 
-    if(oldCvKeypoints.size()==0 || good_matches.size()==0)
+    if(oldCvKeypoints.size()==0 )
     {
         memset(out,0,s);
         return;

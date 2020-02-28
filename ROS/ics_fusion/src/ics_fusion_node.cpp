@@ -113,6 +113,7 @@ void publishPoints();
 
 int leftFeetValue=0;
 int rightFeetValue=0;
+int doubleSupport=0;
 int passedFromLastKeyFrame=0;
 
 //keypts vertex
@@ -218,7 +219,7 @@ void doLoopClosure()
 
     publishHarris();
 #ifdef DRAW_MATCHES
-    loopCl->reInit();
+//    loopCl->reInit();
 #endif
     std::cout<<"doLoopClosure ended"<<std::endl;
 }
@@ -301,7 +302,9 @@ bool hasStableContact()
             ret=true;
         else if( (rightFeetVal<-2) && (leftFeetVal>2))
             ret=true;
-    }  
+        else if(doubleSupport>3)
+            ret=true;
+    }
     return ret;
 }
 
@@ -616,6 +619,12 @@ void gemLeftCallback(const std_msgs::Float32 f)
         leftFeetValue--;
     else
         leftFeetValue=0;
+
+
+    if(f.data>0.3 && f.data<0.7)
+        doubleSupport++;
+    else
+        doubleSupport=0;
 }
 
 void gemRightCallback(const std_msgs::Float32 f)
@@ -626,6 +635,11 @@ void gemRightCallback(const std_msgs::Float32 f)
         rightFeetValue--;
     else
         rightFeetValue=0;
+
+    if(f.data>0.3 && f.data<0.6)
+        doubleSupport++;
+    else
+        doubleSupport=0;
 }
 
 void publishPoints()

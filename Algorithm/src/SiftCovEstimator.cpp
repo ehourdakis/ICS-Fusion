@@ -31,7 +31,8 @@ void SiftCovEstimator::clear()
     delete _drawFrame;
     _drawFrame=nullptr;
 
-    release_pyr( &imgPyr, octaves, intervals + 3 );
+    if(imgPyr!=nullptr)
+        release_pyr( &imgPyr, octaves, intervals + 2 );
 }
 
 void SiftCovEstimator::load(void *data,void *rgb)
@@ -43,7 +44,7 @@ void SiftCovEstimator::load(void *data,void *rgb)
 
 
     if(imgPyr!=nullptr)
-         release_pyr(&imgPyr,octaves,intervals);
+         release_pyr(&imgPyr,octaves,intervals + 2);
 
 
 

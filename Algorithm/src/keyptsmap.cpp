@@ -14,7 +14,7 @@ keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f)
     descr=new open3d::registration::Feature();
     prevDescr=new open3d::registration::Feature();
 
-    max_correspondence_distance=0.01;
+    max_correspondence_distance=0.05;
     matcher=cv::FlannBasedMatcher::create();
     ratio_thresh = 0.7f;
 }
