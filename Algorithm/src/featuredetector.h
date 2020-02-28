@@ -38,6 +38,8 @@ class FeatureDetector
         uchar3 *oldDrawnDesc;
 
         cv::Mat cvRgb,oldCvRgb;
+        double focusThr;
+        double oldFocusMeasure;
 
         cv::Ptr<cv::Feature2D> sift;
         cv::Ptr<cv::FlannBasedMatcher> matcher;

@@ -68,6 +68,10 @@ class CloseLoop
         void saveKeyPts(char *filename);
         void saveCorrespondance(char *fileName);
         void saveKeyMap(char *descrFile,char *poitsFile,char *frameFile);
+
+        void saveIcpCov(char *fileName) const;
+        void saveDescrCov(char *fileName) const;
+
     private:
         sMatrix4 firstPose;
         sMatrix4 prevPose;

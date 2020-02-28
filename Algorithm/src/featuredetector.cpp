@@ -13,18 +13,26 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
 
     int  	nfeatures = 500;
     int  	octaveLayers = 3;
-    double  contrastThreshold = 0.05;
-    double  edgeThreshold = 3;
+    double  contrastThreshold = 0.01;
+    double  edgeThreshold = 6;
     double  sigma = 1.6;
+
+    focusThr=45;
     sift = cv::xfeatures2d::SIFT::create(nfeatures,
                                          octaveLayers,
                                          contrastThreshold,
                                          edgeThreshold,
                                          sigma);
 
-    covEstim=new SiftCovEstimator(_params.inputSize.y,_params.inputSize.x,20,true);
+    float cov_thr=10;
+    covEstim=new SiftCovEstimator(_params.inputSize.y,_params.inputSize.x,cov_thr,true);
     drawnDesc=(uchar3*)malloc(sizeof(uchar3)*_params.inputSize.x*_params.inputSize.y);
     oldDrawnDesc=(uchar3*)malloc(sizeof(uchar3)*_params.inputSize.x*_params.inputSize.y);
+
+    memset(drawnDesc,0,_params.inputSize.x*_params.inputSize.y*3);
+    memset(oldDrawnDesc,0,_params.inputSize.x*_params.inputSize.y*3);
+
+    oldFocusMeasure=-1;
 }
 
 Eigen::MatrixXd FeatureDetector::computeCov2DTo3D(Eigen::MatrixXd cov2D,
@@ -63,11 +71,14 @@ void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_ma
 {
 
     int s=_params.inputSize.x*_params.inputSize.y*3*2;
-    if(oldCvKeypoints.size()==0 )
+    if(oldCvKeypoints.size()==0 || good_matches.size()==0)
     {
         memset(out,0,s);
         return;
     }
+
+    std::cout<<"SS:"<<cvKeypoints.size()<<" "<<oldCvKeypoints.size()<<std::endl;
+
     cv::Mat cvOldDesc(_params.inputSize.y, _params.inputSize.x, CV_8UC3,oldDrawnDesc);
     cv::Mat cvNewDesc(_params.inputSize.y, _params.inputSize.x, CV_8UC3,drawnDesc);
 
@@ -112,26 +123,57 @@ void FeatureDetector::detectFeatures(int frame,
                                      std::vector<float3> &keypts3D,
                                      std::vector<FeatDescriptor> &descr)
 {
+
+
+    keypts3D.clear();
+    descr.clear();
+
+    std::vector<cv::KeyPoint> allcvKeypoints;
+
+    cv::Mat cvRgbTmp = cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
+    cv::Mat cvGrey;
+    cv::cvtColor(cvRgbTmp, cvGrey, CV_BGR2GRAY);
+
+
+    cv::Mat cvLaplacian;
+    Laplacian( cvGrey, cvLaplacian, CV_8UC1, 3, 1, 0, cv::BORDER_DEFAULT );
+    cv::Vec4d m, stdv;
+    cv::meanStdDev(cvLaplacian, m, stdv);
+    double focusMeasure = (stdv.val[0]*stdv.val[0]) / m.val[0];
+
+
+    double diff=oldFocusMeasure-focusMeasure;
+    if(diff<0)
+        diff=-diff;
+    std::cout<<"BLUR:"<<focusMeasure<<" "<<diff<<std::endl;
+
+
+//    char buff[64];
+//    sprintf(buff,"/tmp/f%d.png",frame);
+//    imwrite( buff, cvLaplacian );
+
+    //if(focusMeasure<focusThr || (oldFocusMeasure>0 && diff>6 )  )
+    if(focusMeasure<focusThr )
+        return;
+
+    oldFocusMeasure=focusMeasure;
+
+
     (void) frame;
+    cvRgb=cvRgbTmp.clone();
     std::swap(oldDrawnDesc,drawnDesc);
 
 
     std::swap(oldCvKeypoints,cvKeypoints);
     cvKeypoints.clear();
-    oldCvRgb=cvRgb;
-    //cv::Mat cvRgb = cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
-    cvRgb = cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
-
-    cv::Mat cvGrey;
-    //convert image to grey scale
-    cv::cvtColor(cvRgb, cvGrey, CV_BGR2GRAY);
+    oldCvRgb=cvRgb.clone();
 
     //store cv descriptors
     cv::Mat descrMat;
     cv::Mat mask;
     calcMask(depth,mask);
 
-    std::vector<cv::KeyPoint> allcvKeypoints;
+
     sift->detectAndCompute(cvGrey,mask, allcvKeypoints,descrMat);
 
     keypts3D.reserve(allcvKeypoints.size());

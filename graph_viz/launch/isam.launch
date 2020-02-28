@@ -3,17 +3,17 @@
     
     <arg name="frame" default="0" />
     <arg name="scale" default="1000" />
-    <arg name="data_dir" default="/tmp/data" />
+    <arg name="data_dir" default="/home/tavu/disk/test_data/data" />
     
     <node pkg="graph_viz" name="isam_poses" type="isam_poses.py" args="$(arg scale)" output="screen">        
-        <param name="file_name" value="$(arg data_dir)/isam/f_$(arg frame)_graph" />
+        <param name="file_name" value="/tmp/f_$(arg frame)_graph" />
         <param name="rgb" value="1,1,0" type="str" />
         <param name="origin" value="0,0,0" type="str" />       
         <remap from="/isam_poses" to="/isam_poses_pre_optimization"/>
     </node>
     
     <node pkg="graph_viz" name="isam_poses_opt" type="isam_poses.py" args="$(arg scale)" output="screen">        
-        <param name="file_name" value="$(arg data_dir)/isam/f_$(arg frame)_graph_opt" />
+        <param name="file_name" value="/tmp/f_$(arg frame)_graph_opt" />
         <param name="rgb" value="1,0,1" type="str" />
         <param name="origin" value="0,0,0" type="str" />       
         <remap from="/isam_poses" to="/isam_poses_post_optimization"/>
@@ -21,8 +21,8 @@
     
     <node pkg="graph_viz" name="poses_from_files" type="poses_from_files.py" args="$(arg scale)" output="screen">        
         <param name="dir_name" value="/home/tavu/catkin_ws/src/ros_isam_test/data_2frames/gt/" />
-        <param name="start" value="10" type="int" />
-        <param name="end" value="50" type="int" />
+        <param name="start" value="4" type="int" />
+        <param name="end" value="75" type="int" />
         <param name="origin" value="4,4,4" type="str" />    
         <param name="rgb" value="1,0,0" type="str" /> 
         <param name="origin" value="0,0,0" type="str" />

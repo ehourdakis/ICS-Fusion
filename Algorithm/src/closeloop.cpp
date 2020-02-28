@@ -141,7 +141,7 @@ bool CloseLoop::preprocess(float *depth,uchar3 *rgb)
 bool CloseLoop::processFrame()
 {
     _frame++;
-    std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
+//    std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
 
     tracked=_fusion->tracking(_frame);
     bool integrated=_fusion->integration(_frame);
@@ -195,7 +195,7 @@ bool CloseLoop::processFrame()
 //        std::cout<<"ICP cov:\n"<<icpCov<<std::endl;
         //icpCov=icpCov*1000*(1/icpFitness);
 
-        icpCov=icpCov*1000;
+//        icpCov=icpCov*1000;
 
         covars.push_back(icpCov);
         _isam->addFrame(pose,icpCov);        
@@ -273,7 +273,15 @@ bool CloseLoop::processKeyFrame()
 
     auto rgb=rgbs.rbegin();
     auto depth=depths.rbegin();
-    _featDet->detectFeatures(_frame,*depth,*rgb,lastKeyPts,lastDescr);
+    std::vector<float3> pts;
+    std::vector<FeatDescriptor> descr;
+    _featDet->detectFeatures(_frame,*depth,*rgb,pts,descr);
+
+    if(pts.size()==0)
+        return false;
+
+    lastKeyPts=pts;
+    lastDescr=descr;
 
     if(_keyMap->isEmpty() )
     {
@@ -355,6 +363,49 @@ bool CloseLoop::optimize()
     _fusion->raycasting(_frame);
 #endif
     return true;
+}
+
+void CloseLoop::saveIcpCov(char *fileName) const
+{
+    if(!tracked)
+        return ;
+
+    std::ofstream outFile(fileName, std::ios::out);
+    sMatrix6 cov=covars.back();
+
+    for(int i=0;i<6;i++)
+    {
+        for(int j=0;j<6;j++)
+        {
+            std::cout<<cov(i,j)<<" ";
+            outFile<<cov(i,j)<<" ";
+        }
+        std::cout<<std::endl;
+        outFile<<std::endl;
+    }
+    outFile.close();
+
+}
+
+void CloseLoop::saveDescrCov(char *fileName) const
+{
+
+    std::ofstream outFile(fileName, std::ios::out);
+
+    for(int i=0;i<lastDescr.size();i++)
+    {
+        FeatDescriptor d=lastDescr[i];
+        sMatrix3 cov=d.cov;
+        for(int i=0;i<3;i++)
+        {
+            for(int j=0;j<3;j++)
+            {
+                outFile<<cov(i,j)<<" ";
+            }
+        }
+        outFile<<std::endl;
+    }
+    outFile.close();
 }
 
 void CloseLoop::removeOldNodes(int idx)

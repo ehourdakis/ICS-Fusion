@@ -214,7 +214,7 @@ void doLoopClosure()
         publishKeyPoints();
     }
 
-    std::cout<<inverse(prevKeyFramePose)*keyFramePose<<std::endl;
+   // std::cout<<inverse(prevKeyFramePose)*keyFramePose<<std::endl;
 
     publishHarris();
 #ifdef DRAW_MATCHES

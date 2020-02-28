@@ -14,7 +14,7 @@ keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f)
     descr=new open3d::registration::Feature();
     prevDescr=new open3d::registration::Feature();
 
-    max_correspondence_distance=0.01;
+    max_correspondence_distance=20;
 
 
     matcher=cv::FlannBasedMatcher::create();
@@ -39,6 +39,9 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
                              std::vector<FeatDescriptor> &descriptors,
                              int frame)
 {
+    _descr.insert(_descr.end(),
+                   descriptors.begin(),
+                   descriptors.end());
     /*
     _points.insert(_points.end(),
                    keypoints.begin(),
@@ -66,9 +69,14 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
 
     for(int i=0;i<keypoints.size();i++)
     {
-        Eigen::Vector3d v(keypoints[i].x,
-                          keypoints[i].y,
-                          keypoints[i].z);
+//        Eigen::Vector3d v(keypoints[i].x,
+//                          keypoints[i].y,
+//                          keypoints[i].z);
+
+        Eigen::Vector3d v(descriptors[i].x,
+                          descriptors[i].y,
+                          0);
+
         eigenPts.push_back(v);
 
         for(int j=0;j<DESCR_SIZE;j++)
@@ -118,9 +126,14 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 
     for(int i=0;i<keypoints.size();i++)
     {
-        Eigen::Vector3d v(keypoints[i].x,
-                          keypoints[i].y,
-                          keypoints[i].z);
+//        Eigen::Vector3d v(keypoints[i].x,
+//                          keypoints[i].y,
+//                          keypoints[i].z);
+
+        Eigen::Vector3d v(descriptors[i].x,
+                          descriptors[i].y,
+                          0);
+
         eigenPts.push_back(v);
 
         for(int j=0;j<DESCR_SIZE;j++)
@@ -139,9 +152,25 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         PointCloud cloud1=PointCloud(eigenPts);
 
 
+        CorrespondenceSet corres;
+        std::vector< std::vector<cv::DMatch> > knn_matches;
+        cv::Mat queryDescr=toCvMat(descriptors);
+        cv::Mat trainDescr=toCvMat(_descr);
+        cv::Ptr<cv::FlannBasedMatcher > matcher2=cv::FlannBasedMatcher::create();
+        matcher->knnMatch( queryDescr,trainDescr, knn_matches, 1 );
+
+        for (size_t i = 0; i < knn_matches.size(); i++)
+        {
+            cv::DMatch m=knn_matches[i][0];
+            Eigen::Vector2i c(m.queryIdx,m.trainIdx);
+            corres.push_back(c);
+        }
+
         std::cout<<"RegistrationRANSACBasedOnFeatureMatching"<<std::endl;
         //RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(cloud0,cloud1,*prevDescr,*descr,max_correspondence_distance);
         RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance);
+
+        //RegistrationResult results=RegistrationRANSACBasedOnCorrespondence(cloud1,cloud0,corres,max_correspondence_distance);
 
         sMatrix4 tf;
         for(int i=0;i<4;i++)
@@ -150,21 +179,31 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
                 tf(i,j)=results.transformation_(i,j);
         }
 
-        std::cout<<tf<<std::endl;
+//        std::cout<<tf<<std::endl;
 //        std::cout<<inverse(tf)<<std::endl;
 
         CorrespondenceSet corr=results.correspondence_set_;
-        for(int i=0;i<corr.size();i++)
+        if(results.fitness_>0.7)
         {
-            Eigen::Vector2i c=corr[i];
-//            cv::DMatch m( c(0),c(1),1 );
-            cv::DMatch m( c(0),c(1),1 );
-            good_matches.push_back(m);
+            for(int i=0;i<corr.size();i++)
+            {
+                Eigen::Vector2i c=corr[i];
+                cv::DMatch m( c(0),c(1),1 );
+                good_matches.push_back(m);
 
+            }
         }
+        std::cout<<"Ransac fitness:"<<results.fitness_<<std::endl;
+        std::cout<<"Ransac rmse:"<<results.inlier_rmse_<<std::endl;
+
+
 
 
     }
+
+
+
+
     return true;
 //    geometry::PointCloud cloud1=PointCloud();
 
