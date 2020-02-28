@@ -3,19 +3,19 @@
     
     <arg name="frame" default="0" />
     <arg name="scale" default="1000" />
-    <arg name="data_dir" default="/home/tavu/disk/test_data/data" />
+    <arg name="data_dir" default="/home/tavu/workspace/slambench2/data/isam/" />
     
     <node pkg="graph_viz" name="isam_poses" type="isam_poses.py" args="$(arg scale)" output="screen">        
         <param name="file_name" value="/tmp/f_$(arg frame)_graph" />
         <param name="rgb" value="1,1,0" type="str" />
-        <param name="origin" value="0,0,0" type="str" />       
+        <param name="origin" value="4,4,4" type="str" />       
         <remap from="/isam_poses" to="/isam_poses_pre_optimization"/>
     </node>
     
     <node pkg="graph_viz" name="isam_poses_opt" type="isam_poses.py" args="$(arg scale)" output="screen">        
         <param name="file_name" value="/tmp/f_$(arg frame)_graph_opt" />
         <param name="rgb" value="1,0,1" type="str" />
-        <param name="origin" value="0,0,0" type="str" />       
+        <param name="origin" value="4,4,4" type="str" />       
         <remap from="/isam_poses" to="/isam_poses_post_optimization"/>
     </node>
     

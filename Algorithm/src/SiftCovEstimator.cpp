@@ -64,7 +64,7 @@ void SiftCovEstimator::load(void *data,void *rgb)
 
     _estimator=new CovEstimator( (const IplImage***) imgPyr, DETECTOR_SIFT, octaves, intervals );
 
-    cvReleaseImage(&init_img);
+//     cvReleaseImage(&init_img);
 //    release_pyr(&imgPyr,octaves,intervals);
 
 }

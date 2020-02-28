@@ -87,6 +87,7 @@ CvMat* CovEstimator::getCovAt( float x, float y, float scale )
     }
 
     cvSVD(cov,evals, evecs);
+    //SVD::compute(cov,evals, evecs);
     ev1 = CV_MAT_ELEM(*evals, float, 0, 0);
     ev2 = CV_MAT_ELEM(*evals, float, 1, 0);
     if( ev1 < 0 && ev2 < 0 )

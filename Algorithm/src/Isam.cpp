@@ -192,16 +192,16 @@ double Isam::optimize(int frame)
 {
     //std::cout<<"Start isam optimization"<<std::endl;
     
-//    char buf[32];
-//    sprintf(buf,"data/isam/f_%d_graph",frame);
-//    slam->save(buf);
+    char buf[32];
+    sprintf(buf,"/tmp/f_%d_graph",frame);
+    slam->save(buf);
 
     slam->batch_optimization();
 
-//    sprintf(buf,"data/isam/f_%d_graph_opt",frame);
-//    slam->save(buf);
+    sprintf(buf,"/tmp/f_%d_graph_opt",frame);
+    slam->save(buf);
 
-    //slam->print_stats();
+//    slam->print_stats();
     
     double error=slam->chi2();    
 

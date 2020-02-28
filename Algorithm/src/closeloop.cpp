@@ -195,7 +195,8 @@ bool CloseLoop::processFrame()
         //std::cout<<"ICP cov:\n"<<icpCov<<std::endl;
 
         //icpCov=icpCov*1000*(1/icpFitness);
-        icpCov=icpCov*1000;
+
+        //icpCov=icpCov*1e4;
 
         covars.push_back(icpCov);
         _isam->addFrame(pose,icpCov);
@@ -295,17 +296,18 @@ bool CloseLoop::processKeyFrame()
     }
     else
     {
-        _keyMap->matching(lastKeyPts,lastDescr,_frame);
+        if(_keyMap->matching(lastKeyPts,lastDescr,_frame) )
+        {
+            bool b=optimize();
+            clearFirsts(passedFromLastKeyFrame);
+            _keyMap->addKeypoints(lastKeyPts,lastDescr,_frame);
+            prevKeyPoseIdx=_frame;
+            passedFromLastKeyFrame=0;
+        }
     }
 
-    bool b=optimize();
-
-    clearFirsts(passedFromLastKeyFrame);
-    _keyMap->addKeypoints(lastKeyPts,lastDescr,_frame);
-    prevKeyPoseIdx=_frame;
-    passedFromLastKeyFrame=0;
-
-    return b;
+    
+    return false;
 }
 
 void CloseLoop::clearFirsts(int idx)
@@ -378,7 +380,7 @@ bool CloseLoop::optimize()
     double err=_isam->optimize(_frame);
 
     std::cout<<"Optimization error:"<<err<<std::endl;
-    if(err>params.optim_thr )
+    if(err>params.optim_thr && false)
     {
         std::cout<<"Aborting optimization..."<<std::endl;
         return false;

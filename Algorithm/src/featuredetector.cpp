@@ -17,14 +17,15 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
     double  edgeThreshold = 6;
     double  sigma = 1.6;
 
-    focusThr=45;
+    focusThr=20;
     sift = cv::xfeatures2d::SIFT::create(nfeatures,
                                          octaveLayers,
                                          contrastThreshold,
                                          edgeThreshold,
                                          sigma);
 
-    float cov_thr=20;
+    float cov_thr=40;
+
     covEstim=new SiftCovEstimator(_params.inputSize.y,_params.inputSize.x,cov_thr,true);
     drawnDesc=(uchar3*)malloc(sizeof(uchar3)*_params.inputSize.x*_params.inputSize.y);
     oldDrawnDesc=(uchar3*)malloc(sizeof(uchar3)*_params.inputSize.x*_params.inputSize.y);
@@ -46,6 +47,9 @@ Eigen::MatrixXd FeatureDetector::computeCov2DTo3D(Eigen::MatrixXd cov2D,
 
     Eigen::MatrixXd cov3D = Eigen::MatrixXd::Zero(3,3);
 
+    
+    //std::cout<<cov2D(0,0)<<" "<<cov2D(0,1)<<std::endl;
+    //std::cout<<cov2D(1,0)<<" "<<cov2D(1,1)<<std::endl;
 
     Eigen::MatrixXd F = Eigen::MatrixXd::Zero(3,2);
     F(0,0) = depth / fx;
@@ -193,7 +197,12 @@ void FeatureDetector::detectFeatures(int frame,
             d.x=(float)point.pt.x;
             d.y=(float)point.pt.y;
 
-            //std::cout<<cov2d<<std::endl;
+            
+            cov2d(0,0)=d.s2*d.s2;
+            cov2d(1,1)=d.s2*d.s2;
+            cov2d(0,1)=0.0;
+            cov2d(1,0)=0.0;
+            
 
             Eigen::MatrixXd eigenCov=computeCov2DTo3D(cov2d,
                                    vert.z,
@@ -210,6 +219,7 @@ void FeatureDetector::detectFeatures(int frame,
                     d.cov(i,j)=eigenCov(i,j);
                 }
             }
+
 
             cvKeypoints.push_back(point);
             keypts3D.push_back(vert);

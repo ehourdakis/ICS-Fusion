@@ -3,7 +3,7 @@
 
     <arg name="frame" default="300" />
     <arg name="scale" default="1000" />
-    <arg name="data_dir" default="/home/tavu/disk/data/slambench_data/" />
+    <arg name="data_dir" default="/home/tavu/disk/data/slambench_data" />
     
 <!--    <node pkg="graph_viz" name="gt_poses" type="publish_poses.py" args="$(arg scale)" output="screen">
         <param name="file_name" value="$(arg data_dir)/gt/f_$(arg frame)_poses" />
