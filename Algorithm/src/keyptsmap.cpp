@@ -14,7 +14,7 @@ keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f)
     descr=new open3d::registration::Feature();
     prevDescr=new open3d::registration::Feature();
 
-    max_correspondence_distance=20;
+    max_correspondence_distance=0.01;
 
 
     matcher=cv::FlannBasedMatcher::create();
@@ -69,13 +69,13 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
 
     for(int i=0;i<keypoints.size();i++)
     {
-//        Eigen::Vector3d v(keypoints[i].x,
-//                          keypoints[i].y,
-//                          keypoints[i].z);
+        Eigen::Vector3d v(keypoints[i].x,
+                          keypoints[i].y,
+                          keypoints[i].z);
 
-        Eigen::Vector3d v(descriptors[i].x,
-                          descriptors[i].y,
-                          0);
+//        Eigen::Vector3d v(descriptors[i].x,
+//                          descriptors[i].y,
+//                          0);
 
         eigenPts.push_back(v);
 
@@ -126,23 +126,21 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 
     for(int i=0;i<keypoints.size();i++)
     {
-//        Eigen::Vector3d v(keypoints[i].x,
-//                          keypoints[i].y,
-//                          keypoints[i].z);
+        Eigen::Vector3d v(keypoints[i].x,
+                          keypoints[i].y,
+                          keypoints[i].z);
 
-        Eigen::Vector3d v(descriptors[i].x,
-                          descriptors[i].y,
-                          0);
+//        Eigen::Vector3d v(descriptors[i].x,
+//                          descriptors[i].y,
+//                          0);
 
         eigenPts.push_back(v);
 
         for(int j=0;j<DESCR_SIZE;j++)
         {
-            //descr->data_(i,j)=descriptors[i].data[j];
             descr->data_(j,i)=descriptors[i].data[j];
         }
     }
-//    std::cout<<"Keypts:"<<prevEigenPts.size()<<" "<<eigenPts.size()<<std::endl;
 
     if(prevEigenPts.size()>0 && eigenPts.size()>0)
     {
@@ -163,13 +161,20 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         {
             cv::DMatch m=knn_matches[i][0];
             Eigen::Vector2i c(m.queryIdx,m.trainIdx);
+
             corres.push_back(c);
         }
 
-//        std::cout<<"RegistrationRANSACBasedOnFeatureMatching"<<std::endl;
-//        RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance);
+        std::vector<std::reference_wrapper<const CorrespondenceChecker>> checkers = {};
+        const RANSACConvergenceCriteria criteria =RANSACConvergenceCriteria(4000000, 500);
+        RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(
+                    cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance,
+                    TransformationEstimationPointToPoint(false),
+                    4,//ransac_n
+                    checkers,
+                    criteria );
 
-        RegistrationResult results=RegistrationRANSACBasedOnCorrespondence(cloud1,cloud0,corres,max_correspondence_distance);
+        //RegistrationResult results=RegistrationRANSACBasedOnCorrespondence(cloud1,cloud0,corres,max_correspondence_distance);
 
         sMatrix4 tf;
         for(int i=0;i<4;i++)
@@ -178,11 +183,10 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
                 tf(i,j)=results.transformation_(i,j);
         }
 
-//        std::cout<<tf<<std::endl;
-//        std::cout<<inverse(tf)<<std::endl;
+        //std::cout<<tf<<std::endl;
 
         CorrespondenceSet corr=results.correspondence_set_;
-        if(results.fitness_>0.5)
+        if(results.fitness_>0.1)
         {
             for(int i=0;i<corr.size();i++)
             {
