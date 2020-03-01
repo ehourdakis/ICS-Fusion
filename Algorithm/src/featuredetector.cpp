@@ -49,7 +49,7 @@ void FeatureDetector::extractNARFkeypoints(DepthHost &depth,
 {
     float support_size = 0.2f;
     int max_no_of_threads = 8;
-    float min_interest_value = 0.1;
+    float min_interest_value = 0.01;
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud (new pcl::PointCloud<pcl::PointXYZ>);
       
@@ -74,18 +74,19 @@ void FeatureDetector::extractNARFkeypoints(DepthHost &depth,
 
       float noise_level = 0.0;
       float min_range = 0.0f;
-      int border_size = 5;
+      int border_size = 10;
       
       boost::shared_ptr<pcl::RangeImagePlanar> range_image_ptr (new pcl::RangeImagePlanar);
       pcl::RangeImagePlanar& range_image_planar = *range_image_ptr;   
       
-      float center_x = depth.size.x/2;
-      float center_y = depth.size.y/2;
+      float center_x = _params.inputSize.x/2;
+      float center_y = _params.inputSize.y/2;
 
       float fx=_params.camera.x;
-      float fy=_params.camera.x;
-      
-      range_image_planar.setDepthImage (depth.data(), depth.size.x, depth.size.y, center_x, center_y, fx, fy);
+      float fy=_params.camera.y;
+    
+      //range_image_planar.setDepthImage (depth.data(), _params.inputSize.x, _params.inputSize.y, center_x, center_y, fx, fy);
+      range_image_planar.setDepthImage (depth.data(), _params.inputSize.x, _params.inputSize.y, center_x, center_y, fx, fy);
       range_image_planar.setUnseenToMaxRange();
 
   // --------------------------------
@@ -118,8 +119,8 @@ void FeatureDetector::extractNARFkeypoints(DepthHost &depth,
       keypoint_indices2.resize (keypoint_indices.points.size ());
       for (size_t i=0; i<keypoint_indices.points.size (); ++i)
       {
-          
         int idx=keypoint_indices.points[i];
+        
         keypoint_indices2[i]=keypoint_indices.points[i];
       }
     
@@ -127,26 +128,42 @@ void FeatureDetector::extractNARFkeypoints(DepthHost &depth,
       
     pcl::NarfDescriptor narf_descriptor (&range_image_planar, &keypoint_indices2);
     narf_descriptor.getParameters ().support_size = support_size;
-  narf_descriptor.getParameters ().rotation_invariant = true;
-  pcl::PointCloud<pcl::Narf36> narf_descriptors;
-  narf_descriptor.compute (narf_descriptors);
-  std::cout << "Extracted "<<narf_descriptors.size ()<<" descriptors for "
+    narf_descriptor.getParameters ().rotation_invariant = false;
+    pcl::PointCloud<pcl::Narf36> narf_descriptors;
+    narf_descriptor.compute (narf_descriptors);
+    std::cout << "Extracted "<<narf_descriptors.size ()<<" descriptors for "
                       <<keypoint_indices.points.size ()<< " keypoints.\n";
-                      
+
+    sMatrix4 K=getCameraMatrix(_params.camera);
+//     K(0,0)=_params.camera.x;
+//     K(1,1)=_params.camera.y;
+//     K(0,2)=_params.camera.z;
+//     K(1,2)=_params.camera.w;
+    
+    
     for(int i=0;i<narf_descriptors.size();i++)
     {
         pcl::Narf36 narfd=narf_descriptors[i];
         float3 vert=make_float3(narfd.x,narfd.y,narfd.z);
+        
+        float3 tmp=rotate(K,vert);
+        
+        int pix_x = int(tmp.x/tmp.z);
+        int pix_y = int(tmp.y/tmp.z);
+        
         keypts3D.push_back(vert);
         FeatDescriptor fd;
         
-        fd.y=i/_params.inputSize.x;
-        fd.x=i%_params.inputSize.x;
+//         std::cout<<vert<<std::endl;
+        int idx=keypoint_indices2[i];
+        fd.y=pix_x;
+        fd.x=pix_y;
         
+//         std::cout<<"I:"<<fd.y<<" "<<fd.x<<std::endl;
         memcpy(fd.data,narfd.descriptor,sizeof(float)*36);
         descr.push_back(fd);
         
-         cv::Point2f point2d (fd.x,fd.y);
+         cv::Point2f point2d (fd.y,fd.x);
         keypoints_2d.push_back(point2d);
         
     }
