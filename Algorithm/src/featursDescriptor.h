@@ -3,7 +3,8 @@
 
 #include <opencv2/core/core.hpp>
 
-#define DESCR_SIZE 128
+// #define DESCR_SIZE 128
+#define DESCR_SIZE 36
 #include"utils.h"
 struct FeatDescriptor
 {

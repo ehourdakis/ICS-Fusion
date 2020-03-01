@@ -78,6 +78,29 @@ set(cpp_srcs
 
 )
 
+set(PCL_LIB
+libdapclient.a
+libdapclient.so
+libpcl_common.so
+libpcl_features.so
+libpcl_filters.so
+libpcl_io_ply.so
+libpcl_io.so
+libpcl_kdtree.so
+libpcl_keypoints.so
+libpcl_octree.so
+libpcl_outofcore.so
+libpcl_people.so
+libpcl_recognition.so
+libpcl_registration.so
+libpcl_sample_consensus.so
+libpcl_search.so
+libpcl_segmentation.so
+libpcl_surface.so
+libpcl_tracking.so
+libpcl_visualization.so
+)
+
 
 SET( CUDA_PROPAGATE_HOST_FLAGS OFF )
 
@@ -117,5 +140,6 @@ target_link_libraries(ics_fusion_lib
     Open3D.a
     qhull
     libqhullcpp.a
+    ${PCL_LIB}
 #    OpenMP::OpenMP_CXX
 )

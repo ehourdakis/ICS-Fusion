@@ -33,10 +33,17 @@ class FeatureDetector
         
         void saveImage(char *filename) const;
     private:
+        void extractNARFkeypoints(DepthHost &depth,
+                                           std::vector<cv::KeyPoint> &keypoints_narf,
+                                           std::vector<float3> &keypts3D,
+                                           std::vector<FeatDescriptor> &descr);
+        
         cv::Mat cvOutput;
         uchar3 *drawnDesc;
         uchar3 *oldDrawnDesc;
-
+        
+        cv::Mat cvRgb;
+        cv::Mat oldCvRgb;
         //cv::Mat cvRgb,oldCvRgb;
         double focusThr;
         double oldFocusMeasure;

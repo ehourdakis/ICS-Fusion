@@ -5,6 +5,12 @@
 #include <opencv2/features2d.hpp>
 #include"defs.h"
 #include <algorithm>
+
+#include <pcl/range_image/range_image_planar.h>
+#include <pcl/features/range_image_border_extractor.h>
+#include <pcl/keypoints/narf_keypoint.h>
+#include <pcl/features/narf_descriptor.h>
+
 FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
     :_fusion(f),
      _params(p),
@@ -34,6 +40,118 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
     memset(oldDrawnDesc,0,_params.inputSize.x*_params.inputSize.y*3);
 
     oldFocusMeasure=-1;
+}
+
+void FeatureDetector::extractNARFkeypoints(DepthHost &depth,
+                                           std::vector<cv::KeyPoint> &keypoints_narf,
+                                           std::vector<float3> &keypts3D,
+                                           std::vector<FeatDescriptor> &descr)
+{
+    float support_size = 0.2f;
+    int max_no_of_threads = 8;
+    float min_interest_value = 0.1;
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+      
+//       convert_cv2pcl_cloud(cloud, pcl_cloud);
+//       
+//       
+//       pcl::PointCloud<pcl::PointWithViewpoint> far_ranges;
+//       Eigen::Affine3f scene_sensor_pose (Eigen::Affine3f::Identity ());
+//   // -----------------------------------------------
+//   // -----Create RangeImage from the DepthImage-----
+//   // -----------------------------------------------
+// 
+//       std::vector<float> source_depth_data_;
+//       int width = cloud.cols, height = cloud.rows;
+//       source_depth_data_.resize(width * height);
+//       float *depth_buffer = (float *) &source_depth_data_[0];  
+// 
+//       //std::cout << "Giving colors3\n";
+//       for (int i=0; i<width*height; i++) {
+//         depth_buffer[i]    = pcl_cloud->points[i].z;
+//       }
+
+      float noise_level = 0.0;
+      float min_range = 0.0f;
+      int border_size = 5;
+      
+      boost::shared_ptr<pcl::RangeImagePlanar> range_image_ptr (new pcl::RangeImagePlanar);
+      pcl::RangeImagePlanar& range_image_planar = *range_image_ptr;   
+      
+      float center_x = depth.size.x/2;
+      float center_y = depth.size.y/2;
+
+      float fx=_params.camera.x;
+      float fy=_params.camera.x;
+      
+      range_image_planar.setDepthImage (depth.data(), depth.size.x, depth.size.y, center_x, center_y, fx, fy);
+      range_image_planar.setUnseenToMaxRange();
+
+  // --------------------------------
+  // -----Extract NARF keypoints-----
+  // --------------------------------
+      pcl::RangeImageBorderExtractor range_image_border_extractor;
+      pcl::NarfKeypoint narf_keypoint_detector (&range_image_border_extractor);
+      narf_keypoint_detector.setRangeImage (&range_image_planar);
+      narf_keypoint_detector.getParameters ().support_size = support_size;
+      narf_keypoint_detector.getParameters ().max_no_of_threads = max_no_of_threads;
+      narf_keypoint_detector.getParameters ().min_interest_value = min_interest_value;
+//      narf_keypoint_detector.getParameters ().add_points_on_straight_edges = true;
+      narf_keypoint_detector.getParameters ().calculate_sparse_interest_image = true;
+      narf_keypoint_detector.getParameters ().use_recursive_scale_reduction = true;
+      
+      pcl::PointCloud<int> keypoint_indices;
+//       double keypoint_extraction_start_time = pcl::getTime();
+      narf_keypoint_detector.compute (keypoint_indices);
+//       double keypoint_extraction_time = pcl::getTime()-keypoint_extraction_start_time;
+      std::cout << "Found "<<keypoint_indices.points.size ()<<" key points. "<<std::endl;
+//               << "This took "<<1000.0*keypoint_extraction_time<<"ms.\n";
+
+     
+   
+      
+      
+      // find corresponding index to keypoint 3D coords
+      std::vector<cv::Point2f> keypoints_2d;
+      std::vector<int> keypoint_indices2;
+      keypoint_indices2.resize (keypoint_indices.points.size ());
+      for (size_t i=0; i<keypoint_indices.points.size (); ++i)
+      {
+          
+        int idx=keypoint_indices.points[i];
+        keypoint_indices2[i]=keypoint_indices.points[i];
+      }
+    
+     
+      
+    pcl::NarfDescriptor narf_descriptor (&range_image_planar, &keypoint_indices2);
+    narf_descriptor.getParameters ().support_size = support_size;
+  narf_descriptor.getParameters ().rotation_invariant = true;
+  pcl::PointCloud<pcl::Narf36> narf_descriptors;
+  narf_descriptor.compute (narf_descriptors);
+  std::cout << "Extracted "<<narf_descriptors.size ()<<" descriptors for "
+                      <<keypoint_indices.points.size ()<< " keypoints.\n";
+                      
+    for(int i=0;i<narf_descriptors.size();i++)
+    {
+        pcl::Narf36 narfd=narf_descriptors[i];
+        float3 vert=make_float3(narfd.x,narfd.y,narfd.z);
+        keypts3D.push_back(vert);
+        FeatDescriptor fd;
+        
+        fd.y=i/_params.inputSize.x;
+        fd.x=i%_params.inputSize.x;
+        
+        memcpy(fd.data,narfd.descriptor,sizeof(float)*36);
+        descr.push_back(fd);
+        
+         cv::Point2f point2d (fd.x,fd.y);
+        keypoints_2d.push_back(point2d);
+        
+    }
+
+    cv::KeyPoint::convert(keypoints_2d, keypoints_narf);
 }
 
 Eigen::MatrixXd FeatureDetector::computeCov2DTo3D(Eigen::MatrixXd cov2D,
@@ -84,7 +202,8 @@ void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_ma
     cv::Mat cvOldDesc(_params.inputSize.y, _params.inputSize.x, CV_8UC3,oldDrawnDesc);
     cv::Mat cvNewDesc(_params.inputSize.y, _params.inputSize.x, CV_8UC3,drawnDesc);
 
-    cv::drawMatches( cvNewDesc, cvKeypoints, cvOldDesc, oldCvKeypoints, good_matches, cvOutput, cv::Scalar::all(-1),
+//     good_matches.clear();
+    cv::drawMatches( cvRgb, cvKeypoints, oldCvRgb, oldCvKeypoints, good_matches, cvOutput, cv::Scalar::all(-1),
                  cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DEFAULT );
 
 
@@ -125,12 +244,12 @@ void FeatureDetector::detectFeatures(int frame,
 {
     (void) frame;
     keypts3D.clear();
-    descr.clear();
-    std::vector<cv::KeyPoint> allcvKeypoints;
+    descr.clear();    
 
-    cv::Mat cvRgb=cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
-    cv::Mat cvGrey;
-    cv::cvtColor(cvRgb, cvGrey, CV_BGR2GRAY);
+    oldCvRgb=cvRgb;
+    cvRgb=cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data()).clone();
+//     cv::Mat cvGrey;
+//     cv::cvtColor(cvRgb, cvGrey, CV_BGR2GRAY);
 
 
     /*
@@ -160,78 +279,14 @@ void FeatureDetector::detectFeatures(int frame,
     std::swap(oldDrawnDesc,drawnDesc);
     std::swap(oldCvKeypoints,cvKeypoints);
 
-
     cvKeypoints.clear();
+    
+    extractNARFkeypoints(depth,cvKeypoints,keypts3D,descr);
 
-    //store cv descriptors
-    cv::Mat descrMat;
-    cv::Mat mask;
-    calcMask(depth,mask);
-
-
-    sift->detectAndCompute(cvGrey,mask, allcvKeypoints,descrMat);
-
-    keypts3D.reserve(allcvKeypoints.size());
-    descr.reserve(allcvKeypoints.size());
-
-    covEstim->load(cvGrey.data,cvRgb.data);
-
-    Image<float3, Host> vertexes=_fusion->getAllVertex();
-    for(uint i=0;i<allcvKeypoints.size();i++)
-    {
-        Eigen::Matrix2d cov2d;
-        if( covEstim->calcCovariance(allcvKeypoints[i],cov2d) )
-        //if(1)
-        {
-            cv::KeyPoint point=allcvKeypoints[i];
-
-            uint2 px=make_uint2((uint) (point.pt.x+0.5),
-                                (uint) (point.pt.y+0.5) );
-
-            float3 vert=vertexes[px];
-
-            FeatDescriptor d;
-            fromCvMatRow(d,descrMat,i);
-            d.s2=point.size/2;
-
-            d.x=(float)point.pt.x;
-            d.y=(float)point.pt.y;
-
-            
-            cov2d(0,0)=d.s2*d.s2;
-            cov2d(1,1)=d.s2*d.s2;
-            cov2d(0,1)=0.0;
-            cov2d(1,0)=0.0;
-            
-
-            Eigen::MatrixXd eigenCov=computeCov2DTo3D(cov2d,
-                                   vert.z,
-                                   _params.camera.x,
-                                   _params.camera.y,
-                                   _params.camera.z,
-                                   _params.camera.w,
-                                   _params.cov_z);
-
-            for(int i=0;i<3;i++)
-            {
-                for(int j=0;j<3;j++)
-                {
-                    d.cov(i,j)=eigenCov(i,j);
-                }
-            }
-
-
-            cvKeypoints.push_back(point);
-            keypts3D.push_back(vert);
-            descr.push_back(d);
-        }
-    }
-
-    covEstim->getDrawnData(drawnDesc);
     std::cout<<"Features Detected:"<<descr.size()<<std::endl;
-    vertexes.release();
+//     vertexes.release();
 
-    mask.release();
-    descrMat.release();
-    cvGrey.release();
+//     mask.release();
+//     descrMat.release();
+//     cvGrey.release();
 }
