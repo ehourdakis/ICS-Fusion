@@ -1319,6 +1319,7 @@ __global__ void point2PointCovFirstTerm(const float3 *vert,
     {
         for(int i=0;i<36;i++)
             ret.data[i]=cov_big;
+//         printf("ASDFGSDFHSFHSDFH2\n");
         outData[idx]=ret;
         return;
     }

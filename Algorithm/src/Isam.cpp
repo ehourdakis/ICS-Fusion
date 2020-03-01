@@ -172,6 +172,12 @@ void Isam::addFixPose(const sMatrix4 &fixPose)
 
 void Isam::addPoseConstrain(int p1,int p2,const sMatrix4 &delta, const sMatrix6 &cov)
 {
+    if(p1<0)
+        p1=poseSize()+p1;
+    
+    if(p2<0)
+        p2=poseSize()+p2;
+    
     Eigen::MatrixXd eigenCov=toEigen(cov);
 
     Noise noise = isam::Covariance(eigenCov);

@@ -372,7 +372,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
 
 #ifdef LOOP_CLOSURE_RATE
 
-    if(frame==4)
+    if(frame==3)
         _isKeyFrame=true;
     if( frame>0 && (frame%LOOP_CLOSURE_RATE)==0)
         _isKeyFrame=true;
@@ -389,6 +389,9 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
 
         if(lastKeyFrame>0)
         {
+            sMatrix4 delta=inverse(prevGt)*gtPose;
+            std::cout<<delta<<std::endl;
+                
             int outlierNum=0;
             std::vector<cv::DMatch> good_matches=loopCl->getKeyMap()->goodMatches();
             for(int i=0;i<good_matches.size();i++)
@@ -399,6 +402,9 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
 
                 v1=prevGt*v1;
                 v2=gtPose*v2;
+                
+
+                
                 //v2=prevGt*v2;
 
                 float3 diff=make_float3(fabs(v1.x-v2.x),

@@ -11,6 +11,7 @@
 #include <opencv2/xfeatures2d/nonfree.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <map>
+#include"kparams.h"
 
 //Open3d
 #include<Open3D/Registration/Feature.h>
@@ -18,7 +19,7 @@
 class keyptsMap
 {
     public:
-        keyptsMap(PoseGraph *isam,IcsFusion *f);
+        keyptsMap(PoseGraph *isam,IcsFusion *f,const kparams_t &p);
         void addKeypoints(std::vector<float3> &keypoints,
                            std::vector<FeatDescriptor> &descriptors,int frame);
 
@@ -38,7 +39,8 @@ class keyptsMap
         std::vector<cv::DMatch> goodMatches();
         void saveMap(char *descrFile,char *poitsFile,char *frameFile);
     private:
-
+        int prevFrame;
+        const kparams_t &params;
         double max_correspondence_distance;
 
         std::vector<Eigen::Vector3d> eigenPts;

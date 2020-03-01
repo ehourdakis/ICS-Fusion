@@ -4,12 +4,14 @@
 #include<Open3D/Registration/Registration.h>
 #include<Open3D/Geometry/PointCloud.h>
 #include<Open3D/Registration/CorrespondenceChecker.h>
+#include"kernelscalls.h"
 //#define COV 1.0e-5;
 
 
-keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f)
+keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f,const kparams_t &p)
     :_isam(isam),
-      _fusion(f)
+      _fusion(f),
+      params(p)
 {
     descr=new open3d::registration::Feature();
     prevDescr=new open3d::registration::Feature();
@@ -39,6 +41,9 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
     _descr.insert(_descr.end(),
                    descriptors.begin(),
                    descriptors.end());
+     _points.insert(_points.end(),
+                   keypoints.begin(),
+                   keypoints.end());
     /*
     _points.insert(_points.end(),
                    keypoints.begin(),
@@ -75,21 +80,22 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
 //                           0);
 
         eigenPts.push_back(v);
-        int lidx=_isam->addLandmark(keypoints[i]);
-        lanmarks.push_back(lidx);
+//         int lidx=_isam->addLandmark(keypoints[i]);
+//         lanmarks.push_back(lidx);
         //sMatrix3 cov=descriptors[i].cov;
         sMatrix3 cov;
 //         cov=cov*descriptors[i].s2*descriptors[i].s2;
         
         cov=cov*0.1;
         //std::cout<<cov<<std::endl;
-        _isam->connectLandmark(keypoints[i],lidx,-1,cov);
+//         _isam->connectLandmark(keypoints[i],lidx,-1,cov);
 
         for(int j=0;j<DESCR_SIZE;j++)
         {
             descr->data_(j,i)=descriptors[i].data[j];
         }
     }
+    prevFrame=frame;
 }
 
 void keyptsMap::getMatches(const std::vector<float3> &keypoints,
@@ -146,6 +152,9 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
             descr->data_(j,i)=descriptors[i].data[j];
         }
     }
+    
+    std::vector<int> prev_corr;
+    std::vector<int> next_corr; 
 
     if(prevEigenPts.size()>0 && eigenPts.size()>0)
     {
@@ -168,6 +177,11 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
             Eigen::Vector2i c(m.queryIdx,m.trainIdx);
 
             corres.push_back(c);
+            
+            //source_corr.push_back(m.queryIdx);
+            //target_corr.push_back(m.trainIdx);
+            
+
         }
 
 
@@ -185,20 +199,20 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         correspondence_checker.push_back(correspondence_checker_distance);
         //correspondence_checker.push_back(correspondence_checker_normal);
 
-        //const RANSACConvergenceCriteria criteria =RANSACConvergenceCriteria(4000000, 500);
+        const RANSACConvergenceCriteria criteria =RANSACConvergenceCriteria(4000000, 500);
 
 
-//         RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(
-//                     cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance,
-//                     TransformationEstimationPointToPoint(false),
-//                     4,//ransac_n
-//                     correspondence_checker,
-//                     criteria );
+        RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(
+                     cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance,
+                     TransformationEstimationPointToPoint(false),
+                     4,//ransac_n
+                     correspondence_checker,
+                     criteria );
 
         //RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance);
 
 
-        RegistrationResult results=RegistrationRANSACBasedOnCorrespondence(cloud1,cloud0,corres,max_correspondence_distance);
+//         RegistrationResult results=RegistrationRANSACBasedOnCorrespondence(cloud1,cloud0,corres,max_correspondence_distance);
 
         sMatrix4 tf;
         for(int i=0;i<4;i++)
@@ -211,7 +225,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 
         CorrespondenceSet corr=results.correspondence_set_;
 
-        _isam->clearLandmarks();
+//         _isam->clearLandmarks();
 
         if(corr.size()==0)
             return false;
@@ -245,23 +259,53 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 //                 int lidx=lanmarks[c(1)];
             sMatrix3 cov1=d1.cov;
             sMatrix3 cov2=d2.cov;
+            
+            prev_corr.push_back(c(1));
+            next_corr.push_back(c(0));
+            
 //                 sMatrix3 cov;
 //                 cov=cov*0.1;
-            int lidx=_isam->addLandmark(p1);
+//             int lidx=_isam->addLandmark(p1);
             
             
             //std::cout<<cov<<std::endl;
             //_isam->connectLandmark(pt,lidx,-1,cov);
-            _isam->connectLandmark(p1,lidx,0,cov1);
-            _isam->connectLandmark(p2,lidx,-1,cov2);
+//             _isam->connectLandmark(p1,lidx,0,cov1);
+//             _isam->connectLandmark(p2,lidx,-1,cov2);
         }
         
         std::cout<<"Ransac fitness:"<<results.fitness_<<std::endl;
         std::cout<<"Ransac rmse:"<<results.inlier_rmse_<<std::endl;
         std::cout<<"Correspondences:"<<good_matches.size()<<std::endl;
+        std::cout<<tf<<std::endl;
+        
+        
+            sMatrix6 cov=calculatePoint2PointCov(keypoints,
+                                         keypoints.size(),
+                                         _points,
+                                         _points.size(),
+                                         next_corr,
+                                         prev_corr,
+                                         tf,
+                                         params);
+        
+        /*
+                    sMatrix6 cov=calculatePoint2PointCov(_points,
+                                         _points.size(),
+                                         keypoints,
+                                         keypoints.size(),
+                                         prev_corr,
+                                         next_corr,
+                                         tf,
+                                         params);
+        */
+            sMatrix6 c;
+            c=c*0.01;
+            std::cout<<cov<<std::endl;
+            std::cout<<"EDO:"<<prevFrame<<" "<<frame<<_isam->poseSize()<< std::endl;
+             _isam->addPoseConstrain(0,-1,tf,cov);
+             std::cout<<"EDO2222:"<<std::endl;
     }
-
-
 
 
     return true;

@@ -37,7 +37,7 @@ CloseLoop::CloseLoop(const kparams_t &p,sMatrix4 initPose)
     harris=new Harris();
 
     _featDet=new FeatureDetector(p,_fusion,_isam);
-    _keyMap=new keyptsMap(_isam,_fusion);
+    _keyMap=new keyptsMap(_isam,_fusion,params);
 }
 
 //For testing purposes only.
@@ -300,7 +300,7 @@ bool CloseLoop::processKeyFrame()
         {
             bool b=optimize();
             clearFirsts(passedFromLastKeyFrame);
-            _keyMap->addKeypoints(lastKeyPts,lastDescr,_frame);
+            _keyMap->addKeypoints(lastKeyPts,lastDescr,0);
             prevKeyPoseIdx=_frame;
             passedFromLastKeyFrame=0;
         }
