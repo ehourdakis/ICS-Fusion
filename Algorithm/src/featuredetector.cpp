@@ -198,10 +198,10 @@ void FeatureDetector::detectFeatures(int frame,
             d.y=(float)point.pt.y;
 
             
-            cov2d(0,0)=d.s2*d.s2;
-            cov2d(1,1)=d.s2*d.s2;
-            cov2d(0,1)=0.0;
-            cov2d(1,0)=0.0;
+//            cov2d(0,0)=d.s2*d.s2;
+//            cov2d(1,1)=d.s2*d.s2;
+//            cov2d(0,1)=0.0;
+//            cov2d(1,0)=0.0;
             
 
             Eigen::MatrixXd eigenCov=computeCov2DTo3D(cov2d,

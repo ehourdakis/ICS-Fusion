@@ -390,7 +390,7 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         if(lastKeyFrame>0)
         {
             sMatrix4 delta=inverse(prevGt)*gtPose;
-            std::cout<<delta<<std::endl;
+//            std::cout<<delta<<std::endl;
                 
             int outlierNum=0;
             std::vector<cv::DMatch> good_matches=loopCl->getKeyMap()->goodMatches();
@@ -443,10 +443,6 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
 #endif        
         lastKeyFrame=frame;
         prevGt=gtPose;
-
-#ifdef DRAW_MATCHES
-//        loopCl->reInit();
-#endif
 
     }
 
