@@ -72,8 +72,8 @@ void FeatureDetector::extractNARFkeypoints(DepthHost &depth,
 //         depth_buffer[i]    = pcl_cloud->points[i].z;
 //       }
 
-      float noise_level = 0.0;
-      float min_range = 0.0f;
+      float noise_level = 0.1;
+      float min_range = 0.01f;
       int border_size = 10;
       
       boost::shared_ptr<pcl::RangeImagePlanar> range_image_ptr (new pcl::RangeImagePlanar);
@@ -95,11 +95,13 @@ void FeatureDetector::extractNARFkeypoints(DepthHost &depth,
       pcl::RangeImageBorderExtractor range_image_border_extractor;
       pcl::NarfKeypoint narf_keypoint_detector (&range_image_border_extractor);
       narf_keypoint_detector.setRangeImage (&range_image_planar);
+      narf_keypoint_detector.getParameters ().max_no_of_interest_points=200;
+      narf_keypoint_detector.getParameters ().min_distance_between_interest_points=0.3;
       narf_keypoint_detector.getParameters ().support_size = support_size;
       narf_keypoint_detector.getParameters ().max_no_of_threads = max_no_of_threads;
       narf_keypoint_detector.getParameters ().min_interest_value = min_interest_value;
-//      narf_keypoint_detector.getParameters ().add_points_on_straight_edges = true;
-      narf_keypoint_detector.getParameters ().calculate_sparse_interest_image = true;
+      narf_keypoint_detector.getParameters ().add_points_on_straight_edges = true;
+      //narf_keypoint_detector.getParameters ().calculate_sparse_interest_image = true;
       narf_keypoint_detector.getParameters ().use_recursive_scale_reduction = true;
       
       pcl::PointCloud<int> keypoint_indices;
@@ -128,7 +130,7 @@ void FeatureDetector::extractNARFkeypoints(DepthHost &depth,
       
     pcl::NarfDescriptor narf_descriptor (&range_image_planar, &keypoint_indices2);
     narf_descriptor.getParameters ().support_size = support_size;
-    narf_descriptor.getParameters ().rotation_invariant = false;
+    narf_descriptor.getParameters ().rotation_invariant = true;
     pcl::PointCloud<pcl::Narf36> narf_descriptors;
     narf_descriptor.compute (narf_descriptors);
     std::cout << "Extracted "<<narf_descriptors.size ()<<" descriptors for "
@@ -163,9 +165,8 @@ void FeatureDetector::extractNARFkeypoints(DepthHost &depth,
         memcpy(fd.data,narfd.descriptor,sizeof(float)*36);
         descr.push_back(fd);
         
-         cv::Point2f point2d (fd.y,fd.x);
+        cv::Point2f point2d (fd.y,fd.x);
         keypoints_2d.push_back(point2d);
-        
     }
 
     cv::KeyPoint::convert(keypoints_2d, keypoints_narf);
