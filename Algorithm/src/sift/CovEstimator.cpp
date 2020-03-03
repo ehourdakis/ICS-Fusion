@@ -14,6 +14,16 @@ const IplImage* CovEstimator::getImageFromPyramid(int octv, int intvl) {
 	return detecPyr[octv][intvl];
 }
 
+void transpose(CvMat *src, CvMat *dest)
+{
+    for(int i=0;i<src->rows;i++)
+    {
+        for(int j=0;j<src->cols;j++)
+        {
+             CV_MAT_ELEM(*dest, float, j, i) = CV_MAT_ELEM(*src, float, i, j);
+        }
+    }
+}
 
 CvMat* CovEstimator::getCovAt( float x, float y, float scale )
 {
@@ -86,14 +96,16 @@ CvMat* CovEstimator::getCovAt( float x, float y, float scale )
 
     }
 
-    cvSVD(cov,evals, evecs);
-    //SVD::compute(cov,evals, evecs);
+    cvEigenVV(cov, evecs, evals, DBL_EPSILON, 0, 0);
+
     ev1 = CV_MAT_ELEM(*evals, float, 0, 0);
     ev2 = CV_MAT_ELEM(*evals, float, 1, 0);
     if( ev1 < 0 && ev2 < 0 )
     {
         ev1 = -ev1;
         ev2 = -ev2;
+
+        cvScale(cov, cov, -1);
     }
     if( ev1 < ev2 )
     {
@@ -105,6 +117,19 @@ CvMat* CovEstimator::getCovAt( float x, float y, float scale )
     {
         cout << "COV Eigenvalue of Hessian is negativ or zero(!)" << endl;
     }
+
+    //TODO change evals, evecs instead of re run the composition
+    cvEigenVV(cov, evecs, evals, DBL_EPSILON, 0, 0);
+
+    /*
+    std::cout<<"evals2"<<std::endl;
+    std::cout<<cv::cvarrToMat(evals)<<std::endl;
+    std::cout<<cv::cvarrToMat(evals2)<<std::endl;
+
+    std::cout<<"evecs2"<<std::endl;
+    std::cout<<cv::cvarrToMat(evecs)<<std::endl;
+    std::cout<<cv::cvarrToMat(evecs2)<<std::endl;
+    */
 
     return cov;
 }

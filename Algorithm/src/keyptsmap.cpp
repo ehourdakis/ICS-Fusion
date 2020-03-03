@@ -240,11 +240,11 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
             
 //            sMatrix3 cov;
 //            cov=cov*0.0001;
-            std::cout<<cov2<<std::endl;
-//            int lidx=_isam->addLandmark(p1);
+//            std::cout<<cov2<<std::endl;
+            int lidx=_isam->addLandmark(p1);
             
-//            _isam->connectLandmark(p1,lidx,0,cov1);
-//            _isam->connectLandmark(p2,lidx,-1,cov2);
+            _isam->connectLandmark(p1,lidx,0,cov1);
+            _isam->connectLandmark(p2,lidx,-1,cov2);
         }
         
         std::cout<<"Ransac fitness:"<<results.fitness_<<std::endl;
@@ -275,7 +275,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 //            sMatrix6 c;
 //            c=c*0.01;
             std::cout<<cov<<std::endl;
-            _isam->addPoseConstrain(0,-1,tf,cov);
+//            _isam->addPoseConstrain(0,-1,tf,cov);
     }
 
 
