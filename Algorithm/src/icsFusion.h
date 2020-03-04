@@ -113,6 +113,7 @@ class IcsFusion
         bool reIntegration(sMatrix4 pose,const Host &depth,const Host &rgb);
         void getImageRaw(RgbHost &to) const;
         void getDepthRaw(DepthHost &data) const;
+        void getDepthFiltered(DepthHost &to) const;
         
         
         void getIcpValues(Image<float3, Host> &depthVertex,

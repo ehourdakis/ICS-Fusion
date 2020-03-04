@@ -127,7 +127,7 @@ bool CloseLoop::addTf(int idx,
 }
 
 bool CloseLoop::preprocess(uint16_t *depth,uchar3 *rgb)
-{
+{    
     _fusion->preprocessing(depth,rgb);
     return true;
 }
@@ -280,7 +280,10 @@ bool CloseLoop::processKeyFrame()
     auto depth=depths.rbegin();
     std::vector<float3> pts;
     std::vector<FeatDescriptor> descr;
-    _featDet->detectFeatures(_frame,*depth,*rgb,pts,descr);
+    DepthHost depthFiltered;
+    _fusion->getDepthFiltered(depthFiltered);
+    _featDet->detectFeatures(_frame,depthFiltered,*rgb,pts,descr);
+    //_featDet->detectFeatures(_frame,*depth,*rgb,pts,descr);
 
     if(pts.size()==0)
         return false;

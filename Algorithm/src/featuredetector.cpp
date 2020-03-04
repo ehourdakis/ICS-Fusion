@@ -17,7 +17,7 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
      _isam(isam)
 {
 
-    int  	nfeatures = 500;
+    int  	nfeatures = 200;
     int  	octaveLayers = 3;
     double  contrastThreshold = 0.01;
     double  edgeThreshold = 6;
@@ -47,11 +47,12 @@ void FeatureDetector::extractNARFkeypoints(DepthHost &depth,
                                            std::vector<float3> &keypts3D,
                                            std::vector<FeatDescriptor> &descr)
 {
-    float support_size = 0.2f;
+    int  	nfeatures = 400;
+    float support_size = 0.5f;
     int max_no_of_threads = 8;
-    float min_interest_value = 0.01;
+    float min_interest_value = 0.3;
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+//    pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud (new pcl::PointCloud<pcl::PointXYZ>);
       
 //       convert_cv2pcl_cloud(cloud, pcl_cloud);
 //       
@@ -72,9 +73,9 @@ void FeatureDetector::extractNARFkeypoints(DepthHost &depth,
 //         depth_buffer[i]    = pcl_cloud->points[i].z;
 //       }
 
-      float noise_level = 0.1;
-      float min_range = 0.01f;
-      int border_size = 10;
+      //float noise_level = 0.02;
+      //float min_range = 0.01f;
+      //int border_size = 10;
       
       boost::shared_ptr<pcl::RangeImagePlanar> range_image_ptr (new pcl::RangeImagePlanar);
       pcl::RangeImagePlanar& range_image_planar = *range_image_ptr;   
@@ -87,7 +88,7 @@ void FeatureDetector::extractNARFkeypoints(DepthHost &depth,
     
       //range_image_planar.setDepthImage (depth.data(), _params.inputSize.x, _params.inputSize.y, center_x, center_y, fx, fy);
       range_image_planar.setDepthImage (depth.data(), _params.inputSize.x, _params.inputSize.y, center_x, center_y, fx, fy);
-      range_image_planar.setUnseenToMaxRange();
+//      range_image_planar.setUnseenToMaxRange();
 
   // --------------------------------
   // -----Extract NARF keypoints-----
@@ -95,12 +96,12 @@ void FeatureDetector::extractNARFkeypoints(DepthHost &depth,
       pcl::RangeImageBorderExtractor range_image_border_extractor;
       pcl::NarfKeypoint narf_keypoint_detector (&range_image_border_extractor);
       narf_keypoint_detector.setRangeImage (&range_image_planar);
-      narf_keypoint_detector.getParameters ().max_no_of_interest_points=200;
-      narf_keypoint_detector.getParameters ().min_distance_between_interest_points=0.3;
+      narf_keypoint_detector.getParameters ().max_no_of_interest_points=nfeatures;
+      narf_keypoint_detector.getParameters ().min_distance_between_interest_points=0.5;
       narf_keypoint_detector.getParameters ().support_size = support_size;
       narf_keypoint_detector.getParameters ().max_no_of_threads = max_no_of_threads;
       narf_keypoint_detector.getParameters ().min_interest_value = min_interest_value;
-      narf_keypoint_detector.getParameters ().add_points_on_straight_edges = true;
+      narf_keypoint_detector.getParameters ().add_points_on_straight_edges = false;
       //narf_keypoint_detector.getParameters ().calculate_sparse_interest_image = true;
       narf_keypoint_detector.getParameters ().use_recursive_scale_reduction = true;
       
@@ -217,11 +218,10 @@ void FeatureDetector::getFeatImage(uchar3 *out, std::vector<cv::DMatch> &good_ma
         return;
     }
 
-    cv::Mat cvOldDesc(_params.inputSize.y, _params.inputSize.x, CV_8UC3,oldDrawnDesc);
-    cv::Mat cvNewDesc(_params.inputSize.y, _params.inputSize.x, CV_8UC3,drawnDesc);
 
-//     good_matches.clear();
-    cv::drawMatches( cvRgb, cvKeypoints, oldCvRgb, oldCvKeypoints, good_matches, cvOutput, cv::Scalar::all(-1),
+    std::vector<cv::DMatch> good_matches2;
+
+    cv::drawMatches( cvDepth, cvKeypoints, oldCvDepth, oldCvKeypoints, good_matches, cvOutput, cv::Scalar::all(-1),
                  cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DEFAULT );
 
 
@@ -265,10 +265,11 @@ void FeatureDetector::detectFeatures(int frame,
     descr.clear();    
 
     oldCvRgb=cvRgb;
+    oldCvDepth=cvDepth.clone();
     cvRgb=cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data()).clone();
-//     cv::Mat cvGrey;
-//     cv::cvtColor(cvRgb, cvGrey, CV_BGR2GRAY);
+    cv::Mat cvDepthRaw=cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_32FC1, depth.data()).clone();
 
+    cvDepthRaw.convertTo(cvDepth,CV_8UC1,-255.0f / 8.0f, 255.0f);
 
     /*
     cv::Mat cvLaplacian;

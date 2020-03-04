@@ -600,6 +600,15 @@ void IcsFusion::getDepthRaw(DepthHost &to) const
     to.size=rawDepth.size;
 }
 
+void IcsFusion::getDepthFiltered(DepthHost &to) const
+{
+
+    uint s=(uint)scaledDepth[0].size.x*scaledDepth[0].size.y*sizeof(float);
+    to.alloc(scaledDepth[0].size);
+    cudaMemcpy(to.data(), scaledDepth[0].data(),s,cudaMemcpyDeviceToHost);
+    to.size=scaledDepth[0].size;
+}
+
 void IcsFusion::getIcpValues(Image<float3, Host> &depthVertex,
                              Image<float3, Host> &raycastVertex,
                              Image<float3, Host> &raycastNormals,

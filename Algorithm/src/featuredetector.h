@@ -44,6 +44,11 @@ class FeatureDetector
         
         cv::Mat cvRgb;
         cv::Mat oldCvRgb;
+
+        cv::Mat cvDepth;
+        cv::Mat oldCvDepth;
+
+
         //cv::Mat cvRgb,oldCvRgb;
         double focusThr;
         double oldFocusMeasure;
