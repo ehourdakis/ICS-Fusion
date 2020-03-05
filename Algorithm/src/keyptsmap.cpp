@@ -16,8 +16,8 @@ keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f,const kparams_t &p)
     descr=new open3d::registration::Feature();
     prevDescr=new open3d::registration::Feature();
 
-   max_correspondence_distance=0.1;
-//    max_correspondence_distance=10;
+//   max_correspondence_distance=0.1;
+    max_correspondence_distance=10;
 }
 
 void keyptsMap::clear()
@@ -41,6 +41,7 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
      _points.insert(_points.end(),
                    keypoints.begin(),
                    keypoints.end());
+
     /*
     _points.insert(_points.end(),
                    keypoints.begin(),
@@ -63,29 +64,19 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
     prevPose=_fusion->getPose();
     */
 
-    descr->Resize(DESCR_SIZE,descriptors.size());
-    //descr->Resize(descriptors.size(),DESCR_SIZE);
+    descr->Resize(DESCR_SIZE,descriptors.size());    
 
     for(int i=0;i<keypoints.size();i++)
     {
-         Eigen::Vector3d v(keypoints[i].x,
-                           keypoints[i].y,
-                           keypoints[i].z);
+//         Eigen::Vector3d v(keypoints[i].x,
+//                           keypoints[i].y,
+//                           keypoints[i].z);
 
-//         Eigen::Vector3d v(descriptors[i].x,
-//                           descriptors[i].y,
-//                           0);
+        Eigen::Vector3d v(descriptors[i].x,
+                           descriptors[i].y,
+                           0);
 
         eigenPts.push_back(v);
-//         int lidx=_isam->addLandmark(keypoints[i]);
-//         lanmarks.push_back(lidx);
-        //sMatrix3 cov=descriptors[i].cov;
-        sMatrix3 cov;
-//         cov=cov*descriptors[i].s2*descriptors[i].s2;
-        
-        cov=cov*0.1;
-        //std::cout<<cov<<std::endl;
-//         _isam->connectLandmark(keypoints[i],lidx,-1,cov);
 
         for(int j=0;j<DESCR_SIZE;j++)
         {
@@ -134,13 +125,15 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 
     for(int i=0;i<keypoints.size();i++)
     {
+        /*
         Eigen::Vector3d v(keypoints[i].x,
                            keypoints[i].y,
                            keypoints[i].z);
+        */
 
-//         Eigen::Vector3d v(descriptors[i].x,
-//                           descriptors[i].y,
-//                           0);
+       Eigen::Vector3d v(descriptors[i].x,
+                         descriptors[i].y,
+                         0);
 
         eigenPts.push_back(v);
 
@@ -161,14 +154,6 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         PointCloud cloud1=PointCloud(eigenPts);
 
 
-        CorrespondenceSet corres;
-        std::vector< std::vector<cv::DMatch> > knn_matches;
-
-
-
-//        CorrespondenceCheckerBasedOnDistance checker(max_correspondence_distance);
-//        std::vector<std::reference_wrapper<const CorrespondenceChecker>> checkers = {checker};
-
         std::vector<std::reference_wrapper<const CorrespondenceChecker>>
             correspondence_checker;
         auto correspondence_checker_edge_length =
@@ -178,17 +163,19 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 
         correspondence_checker.push_back(correspondence_checker_edge_length);
         correspondence_checker.push_back(correspondence_checker_distance);
-        //correspondence_checker.push_back(correspondence_checker_normal);
 
         const RANSACConvergenceCriteria criteria =RANSACConvergenceCriteria(4000000, 500);
 
 
         RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(
                      cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance,
-                     TransformationEstimationPointToPoint(true),
+                     TransformationEstimationPointToPoint(false),
                      4,//ransac_n
                      correspondence_checker,
                      criteria );
+
+//        RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(
+//                            cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance);
 
         sMatrix4 tf;
         for(int i=0;i<4;i++)
@@ -203,9 +190,12 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 
         _isam->clearLandmarks();
 
+        std::cout<<"Ransac fitness:"<<results.fitness_<<std::endl;
+        std::cout<<"Ransac rmse:"<<results.inlier_rmse_<<std::endl;
+
         if(corr.size()==0)
             return false;
-        if(results.fitness_<0.5)
+        if(results.fitness_<0.4)
             return false;
 
         
@@ -215,23 +205,12 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
             cv::DMatch m( c(0),c(1),1 );
             good_matches.push_back(m);
 
-            Eigen::Vector3d v1=prevEigenPts[c(1)];
-            Eigen::Vector3d v2=eigenPts[c(0)];
-
-//                 float3 pt=keypoints[c(0)];
             FeatDescriptor d1=_descr[c(1)];
             FeatDescriptor d2=descriptors[c(0)];
-            
+                        
+            float3 p1=keypoints[c(1)];
+            float3 p2=_points[c(0)];
 
-            
-            float3 p1=make_float3( (float)v1(0),
-                                   (float)v1(1),
-                                   (float)v1(2) );
-
-            float3 p2=make_float3( (float)v2(0),
-                                   (float)v2(1),
-                                   (float)v2(2) );
-//                 int lidx=lanmarks[c(1)];
             sMatrix3 cov1=d1.cov;
             sMatrix3 cov2=d2.cov;
             
@@ -243,13 +222,11 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 //            std::cout<<cov2<<std::endl;
             int lidx=_isam->addLandmark(p1);
             
-            _isam->connectLandmark(p1,lidx,0,cov1);
+            _isam->connectLandmark(p1,lidx,prevFrame,cov1);
             _isam->connectLandmark(p2,lidx,-1,cov2);
         }
-        
-        std::cout<<"Ransac fitness:"<<results.fitness_<<std::endl;
-        std::cout<<"Ransac rmse:"<<results.inlier_rmse_<<std::endl;
         std::cout<<"Correspondences:"<<good_matches.size()<<std::endl;
+
 //        std::cout<<tf<<std::endl;
         
         
@@ -274,8 +251,8 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         */
 //            sMatrix6 c;
 //            c=c*0.01;
-            std::cout<<cov<<std::endl;
-//            _isam->addPoseConstrain(0,-1,tf,cov);
+//            std::cout<<cov<<std::endl;
+//           _isam->addPoseConstrain(prevFrame,-1,tf,cov);
     }
 
 

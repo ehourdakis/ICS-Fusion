@@ -200,8 +200,6 @@ void readIteFusionParams(ros::NodeHandle &n_p)
 
 void doLoopClosure()
 {
-    std::cout<<"doLoopClosure"<<std::endl;
-
     passedFromLastKeyFrame=0;
     loopCl->processKeyFrame();
 
@@ -217,11 +215,7 @@ void doLoopClosure()
 
    // std::cout<<inverse(prevKeyFramePose)*keyFramePose<<std::endl;
 
-    publishHarris();
-#ifdef DRAW_MATCHES
-//    loopCl->reInit();
-#endif
-    std::cout<<"doLoopClosure ended"<<std::endl;
+    publishHarris();  
 }
 
 void publishKeyPoints()
@@ -302,8 +296,8 @@ bool hasStableContact()
             ret=true;
         else if( (rightFeetVal<-2) && (leftFeetVal>2))
             ret=true;
-        else if(doubleSupport>3)
-            ret=true;
+//        else if(doubleSupport>3)
+//            ret=true;
     }
     return ret;
 }
@@ -756,13 +750,15 @@ int main(int argc, char **argv)
   
     ROS_INFO("Waiting depth message");
 
-    message_filters::Subscriber<sensor_msgs::Image> rgb_sub(n_p, rgb_topic, 1);
-    message_filters::Subscriber<sensor_msgs::Image> depth_sub(n_p, depth_topic, 1);
+    message_filters::Subscriber<sensor_msgs::Image> rgb_sub(n_p, rgb_topic, 100);
+    message_filters::Subscriber<sensor_msgs::Image> depth_sub(n_p, depth_topic, 100);
 
 
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> MySyncPolicy;
 
-    message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), rgb_sub, depth_sub);
+
+    message_filters::Synchronizer<MySyncPolicy> sync( MySyncPolicy(100), rgb_sub, depth_sub);
+
     sync.registerCallback(boost::bind(&imageAndDepthCallback, _1, _2));
   
     ros::spin();

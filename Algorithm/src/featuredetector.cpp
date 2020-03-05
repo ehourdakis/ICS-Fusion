@@ -11,10 +11,10 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
      _isam(isam)
 {
 
-    int  	nfeatures = 500;
+    int  	nfeatures = 100;
     int  	octaveLayers = 3;
     double  contrastThreshold = 0.01;
-    double  edgeThreshold = 6;
+    double  edgeThreshold = 10;
     double  sigma = 1.6;
 
     focusThr=20;
@@ -24,7 +24,7 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
                                          edgeThreshold,
                                          sigma);
 
-    float cov_thr=40;
+    float cov_thr=30;
 
     covEstim=new SiftCovEstimator(_params.inputSize.y,_params.inputSize.x,cov_thr,true);
     drawnDesc=(uchar3*)malloc(sizeof(uchar3)*_params.inputSize.x*_params.inputSize.y);
@@ -128,11 +128,14 @@ void FeatureDetector::detectFeatures(int frame,
     descr.clear();
     std::vector<cv::KeyPoint> allcvKeypoints;
 
-    cv::Mat cvRgb=cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data());
+    cv::Mat cvRgb=cv::Mat(_params.inputSize.y, _params.inputSize.x, CV_8UC3, rgb.data()).clone();
     cv::Mat cvGrey;
     cv::cvtColor(cvRgb, cvGrey, CV_BGR2GRAY);
 
 
+    char buff[64];
+    sprintf(buff,"/home/tavu/disk/data/images/image%d.jpg",frame);
+    imwrite( buff, cvRgb );
     /*
     cv::Mat cvLaplacian;
     Laplacian(cvGrey, cvLaplacian, CV_8UC1, 3, 1, 0, cv::BORDER_DEFAULT);
