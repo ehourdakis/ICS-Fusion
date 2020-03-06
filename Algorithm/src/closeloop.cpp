@@ -57,75 +57,6 @@ int CloseLoop::getPoseGraphIdx() const
     return _isam->poseSize()-1;
 }
 
-
-bool CloseLoop::addTf(int idx,
-                      int prevIdx,
-                      const sMatrix4 &tf2,
-                      float fitness, 
-                      float rmse,
-                      const std::vector<int> &source_corr, 
-                      const std::vector<int> &target_corr,
-                      const std::vector<float3> &source_vert,
-                      const std::vector<float3> &target_vert)
-{
-
-    sMatrix4 tf=inverse(tf2);
-//    std::cout<<"T:"<<tf.get_translation()<<std::endl;
-    if(source_corr.size()!=target_corr.size())
-        return false;
-//    if(fitness<0.2)
-//        return false;
-
-    sMatrix6 cov=calculatePoint2PointCov(target_vert,
-                                         target_vert.size(),
-                                         source_vert,
-                                         source_vert.size(),
-                                         source_corr,
-                                         target_corr,
-                                         tf,
-                                         params);
-#if 0
-    sMatrix3 trCov;
-    trCov=trCov*1e-10;
-    /*
-    for(int i=0;i<3;i++)
-    {
-        for(int j=0;j<3;j++)
-        {
-            trCov(i,j)=cov(i,j);
-        }
-    }
-    */
-    int size=target_corr.size();
-    /*
-    cov=cov*(1/fitness);
-    std::cout<<"FITNESS:"<<fitness<<std::endl;
-    std::cout<<"RMSE:"<<rmse<<std::endl;
-    */
-    for(int i=0;i<size;i++)
-    {
-        int sourceIdx=source_corr[i];
-        int targetIdx=target_corr[i];
-
-        std::cout<<"S "<<sourceIdx<<" "<<targetIdx<<" "<<source_vert.size()<<" "<<target_vert.size()<<std::endl;
-        float3 sourceV=source_vert[sourceIdx];
-        float3 targetV=target_vert[targetIdx];
-
-        int lidx=_isam->addLandmark(sourceV);
-        _isam->connectLandmark(sourceV,lidx,idx,trCov);
-        _isam->connectLandmark(targetV,lidx,0,trCov);
-    }
-#endif
-    _isam->addPoseConstrain(0,idx,tf,cov);
-
-     optimize();
-
-     _isam->clearLandmarks();
-
-     removeOldNodes(idx);
-     return true;
-}
-
 bool CloseLoop::preprocess(uint16_t *depth,uchar3 *rgb)
 {
     _fusion->preprocessing(depth,rgb);
@@ -233,31 +164,6 @@ void CloseLoop::saveImage(char *filename)
     _featDet->saveImage(filename);
 }
 
-bool CloseLoop::findKeyPts(std::vector<int> &evaluation_points,
-                           Image<float3, Host> vertices,
-                           std::vector<float3> &keyVert)
-{
-    evaluation_points.clear();
-    keyVert.clear();
-
-    RgbHost rgb=rgbs.back();    
-    harris->detectCorners(vertices,
-                          rgb,
-                          evaluation_points,
-                          keyVert);
-
-
-    if(evaluation_points.size()<4 || evaluation_points.size()>200000)
-    {
-        evaluation_points.clear();
-        keyVert.clear();
-        std::cout<<"Error detecting keypts:"<<std::endl;
-        return false;
-    }
-
-    return true;
-}
-
 Image<float3, Host> CloseLoop::getAllVertex() const
 {
     return _fusion->getAllVertex();
@@ -272,9 +178,6 @@ void CloseLoop::getMatches(std::vector<float3> &prevPts,
 bool CloseLoop::processKeyFrame()
 {
     std::cout<<"[KEY FRAME="<<_frame<<"]"<<std::endl;
-//    clearFirsts(passedFromLastKeyFrame);
-//    passedFromLastKeyFrame=0;
-
 
     auto rgb=rgbs.rbegin();
     auto depth=depths.rbegin();
@@ -290,7 +193,7 @@ bool CloseLoop::processKeyFrame()
 
     if(_keyMap->isEmpty() )
     {
-        _keyMap->addKeypoints(lastKeyPts,lastDescr,0);
+        _keyMap->addKeypoints(lastKeyPts,lastDescr,passedFromLastKeyFrame);
         return true;
 
     }
@@ -303,6 +206,7 @@ bool CloseLoop::processKeyFrame()
             _keyMap->addKeypoints(lastKeyPts,lastDescr,0);
             prevKeyPoseIdx=_frame;
             passedFromLastKeyFrame=0;
+            return b;
         }
     }
 

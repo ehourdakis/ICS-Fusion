@@ -47,10 +47,6 @@ Eigen::MatrixXd FeatureDetector::computeCov2DTo3D(Eigen::MatrixXd cov2D,
 
     Eigen::MatrixXd cov3D = Eigen::MatrixXd::Zero(3,3);
 
-    
-    //std::cout<<cov2D(0,0)<<" "<<cov2D(0,1)<<std::endl;
-    //std::cout<<cov2D(1,0)<<" "<<cov2D(1,1)<<std::endl;
-
     Eigen::MatrixXd F = Eigen::MatrixXd::Zero(3,2);
     F(0,0) = depth / fx;
     F(1,1) = depth / fy;
@@ -132,10 +128,11 @@ void FeatureDetector::detectFeatures(int frame,
     cv::Mat cvGrey;
     cv::cvtColor(cvRgb, cvGrey, CV_BGR2GRAY);
 
-
+#if 0
     char buff[64];
     sprintf(buff,"/home/tavu/disk/data/images/image%d.jpg",frame);
     imwrite( buff, cvRgb );
+#endif
     /*
     cv::Mat cvLaplacian;
     Laplacian(cvGrey, cvLaplacian, CV_8UC1, 3, 1, 0, cv::BORDER_DEFAULT);
@@ -184,7 +181,6 @@ void FeatureDetector::detectFeatures(int frame,
     {
         Eigen::Matrix2d cov2d;
         if( covEstim->calcCovariance(allcvKeypoints[i],cov2d) )
-        //if(1)
         {
             cv::KeyPoint point=allcvKeypoints[i];
 
@@ -199,13 +195,6 @@ void FeatureDetector::detectFeatures(int frame,
 
             d.x=(float)point.pt.x;
             d.y=(float)point.pt.y;
-
-            
-//            cov2d(0,0)=d.s2*d.s2;
-//            cov2d(1,1)=d.s2*d.s2;
-//            cov2d(0,1)=0.0;
-//            cov2d(1,0)=0.0;
-            
 
             Eigen::MatrixXd eigenCov=computeCov2DTo3D(cov2d,
                                    vert.z,
@@ -222,8 +211,6 @@ void FeatureDetector::detectFeatures(int frame,
                     d.cov(i,j)=eigenCov(i,j);
                 }
             }
-
-
             cvKeypoints.push_back(point);
             keypts3D.push_back(vert);
             descr.push_back(d);
@@ -231,7 +218,7 @@ void FeatureDetector::detectFeatures(int frame,
     }
 
     covEstim->getDrawnData(drawnDesc);
-    std::cout<<"Features Detected:"<<descr.size()<<std::endl;
+    //std::cout<<"Features Detected:"<<descr.size()<<std::endl;
     vertexes.release();
 
     mask.release();

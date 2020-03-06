@@ -31,7 +31,6 @@ class CloseLoop
         bool preprocess(float *depth,uchar3 *rgb);
 
         bool processFrame();
-//         bool processKeyFrame();
         bool addFrameWithPose(uint16_t *depth,uchar3 *rgb,sMatrix4 gt);
 
         IcsFusion* fusion() const
@@ -43,20 +42,10 @@ class CloseLoop
         bool optimize();
         float findTransformation(sMatrix4 &tr);
         
-        bool findKeyPts(std::vector<int> &evaluation_points, Image<float3, Host> vertices, std::vector<float3> &keyVert);
         Image<float3, Host> getAllVertex() const;
         
         int getPoseGraphIdx() const;
         void reInit();
-        bool addTf(int idx,
-                   int prevIdx,
-                   const sMatrix4 &tf,
-                   float fitness,
-                   float rmse,
-                   const std::vector<int> &source_corr,
-                   const std::vector<int> &target_corr,
-                   const std::vector<float3> &keyVert,
-                   const std::vector<float3> &prevKeyVert);
 
         void getIsamPoses(std::vector<sMatrix4> &vec);
         void showKeypts(uchar3 *out);

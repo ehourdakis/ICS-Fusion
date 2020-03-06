@@ -42,27 +42,6 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
                    keypoints.begin(),
                    keypoints.end());
 
-    /*
-    _points.insert(_points.end(),
-                   keypoints.begin(),
-                   keypoints.end());
-    _descr.insert(_descr.end(),
-                   descriptors.begin(),
-                   descriptors.end());
-
-    for(uint i=0;i<keypoints.size();i++)
-    {
-        sMatrix3 cov=descriptors[i].cov;
-        //cov=cov*descriptors[i].cov;
-
-        int lidx=_isam->addLandmark(keypoints[i]);
-        lanmarks.push_back(lidx);
-        _isam->connectLandmark(keypoints[i],lidx,-1,cov);
-        
-        descrFrame.push_back(make_uint2(frame,i) );
-    }
-    prevPose=_fusion->getPose();
-    */
 
     descr->Resize(DESCR_SIZE,descriptors.size());    
 
@@ -202,28 +181,31 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         for(int i=0;i<corr.size();i++)
         {
             Eigen::Vector2i c=corr[i];
-            cv::DMatch m( c(0),c(1),1 );
+            int idx2=c(0);
+            int idx1=c(1);
+
+            cv::DMatch m( idx2,idx1,1 );
             good_matches.push_back(m);
 
-            FeatDescriptor d1=_descr[c(1)];
-            FeatDescriptor d2=descriptors[c(0)];
-                        
-            float3 p1=keypoints[c(0)];
-            float3 p2=_points[c(1)];
+            FeatDescriptor d1=_descr[idx1];
+            FeatDescriptor d2=descriptors[idx2];
+
+            float3 p1=_points[idx1];
+            float3 p2=keypoints[idx2];
+
 
             sMatrix3 cov1=d1.cov;
             sMatrix3 cov2=d2.cov;
             
-            prev_corr.push_back(c(1));
-            next_corr.push_back(c(0));
+            prev_corr.push_back(idx1);
+            next_corr.push_back(idx2);
             
 //            sMatrix3 cov;
 //            cov=cov*0.0001;
 //            std::cout<<cov2<<std::endl;
-//            int lidx=_isam->addLandmark(p1);
-            
-//            _isam->connectLandmark(p1,lidx,prevFrame,cov1);
-//            _isam->connectLandmark(p2,lidx,-1,cov2);
+            int lidx=_isam->addLandmark(p1);
+            _isam->connectLandmark(p1,lidx,prevFrame,cov1);
+            _isam->connectLandmark(p2,lidx,-1,cov2);
         }
         std::cout<<"Correspondences:"<<good_matches.size()<<std::endl;
 
@@ -239,7 +221,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
                                          tf,
                                          params);
         
-          _isam->addPoseConstrain(prevFrame,-1,tf,cov);
+          //_isam->addPoseConstrain(prevFrame,-1,tf,cov);
     }
 
 
