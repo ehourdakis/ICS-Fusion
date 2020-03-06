@@ -290,7 +290,7 @@ bool CloseLoop::processKeyFrame()
 
     if(_keyMap->isEmpty() )
     {
-        _keyMap->addKeypoints(lastKeyPts,lastDescr,_frame);
+        _keyMap->addKeypoints(lastKeyPts,lastDescr,0);
         return true;
 
     }

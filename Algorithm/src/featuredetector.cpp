@@ -11,10 +11,10 @@ FeatureDetector::FeatureDetector(kparams_t p, IcsFusion *f, PoseGraph *isam)
      _isam(isam)
 {
 
-    int  	nfeatures = 100;
+    int  	nfeatures = 200;
     int  	octaveLayers = 3;
     double  contrastThreshold = 0.01;
-    double  edgeThreshold = 10;
+    double  edgeThreshold = 6;
     double  sigma = 1.6;
 
     focusThr=20;
