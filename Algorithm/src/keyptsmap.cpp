@@ -200,9 +200,9 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
             prev_corr.push_back(idx1);
             next_corr.push_back(idx2);
             
-//            int lidx=_isam->addLandmark(p1);
-//            _isam->connectLandmark(p1,lidx,prevFrame,cov1);
-//            _isam->connectLandmark(p2,lidx,-1,cov2);
+            int lidx=_isam->addLandmark(p1);
+           _isam->connectLandmark(p1,lidx,prevFrame,cov1);
+           _isam->connectLandmark(p2,lidx,-1,cov2);
         }        
 
 //        std::cout<<tf<<std::endl;
@@ -219,7 +219,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 //         cov=cov*0.00001;
         std::cout<<cov<<std::endl;
         
-         _isam->addPoseConstrain(prevFrame,-1,tf,cov);
+//          _isam->addPoseConstrain(prevFrame,-1,tf,cov);
     }
 
 

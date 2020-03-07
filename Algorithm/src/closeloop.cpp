@@ -201,20 +201,18 @@ bool CloseLoop::processKeyFrame()
     }
     else
     {
-        if(_keyMap->matching(lastKeyPts,lastDescr,_frame) )
+        bool b=_keyMap->matching(lastKeyPts,lastDescr,_frame);
+        if(b)
         {
-            std::cout<<"pre optimize"<<std::endl;
-            bool b=optimize();
-            std::cout<<"clear"<<std::endl;
+            b=optimize();
             //clearFirsts(passedFromLastKeyFrame);
-            reInit();
-            std::cout<<"clear2"<<std::endl;
-            
-//             _keyMap->addKeypoints(lastKeyPts,lastDescr,0);
-            prevKeyPoseIdx=0;
-            passedFromLastKeyFrame=0;
-            return b;
+            //_keyMap->addKeypoints(lastKeyPts,lastDescr,0);
+
         }
+        reInit();
+        prevKeyPoseIdx=0;
+        passedFromLastKeyFrame=0;
+        return b;
     }
 
     
