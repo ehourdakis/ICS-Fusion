@@ -16,7 +16,7 @@ keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f,const kparams_t &p)
     descr=new open3d::registration::Feature();
     prevDescr=new open3d::registration::Feature();
 
-   max_correspondence_distance=0.05;
+   max_correspondence_distance=0.1;
 //    max_correspondence_distance=10;
 }
 
@@ -174,7 +174,7 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 
         if(corr.size()==0)
             return false;
-        if(results.fitness_<0.7)
+        if(results.fitness_<0.6)
             return false;
 
         

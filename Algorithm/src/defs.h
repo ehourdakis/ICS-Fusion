@@ -8,7 +8,7 @@
 //#define DISABLE_KEY_FRAMES
 //#define DISABLE_LOOP_CLOSURE
 
-#define LOOP_CLOSURE_RATE 15
+// #define LOOP_CLOSURE_RATE 15
 // #define DISABLE_MAP_FIXES
 #define DRAW_MATCHES
 
