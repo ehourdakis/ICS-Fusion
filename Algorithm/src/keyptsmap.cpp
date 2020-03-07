@@ -16,8 +16,8 @@ keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f,const kparams_t &p)
     descr=new open3d::registration::Feature();
     prevDescr=new open3d::registration::Feature();
 
-   max_correspondence_distance=0.1;
-//    max_correspondence_distance=10;
+    //max_correspondence_distance=0.1;
+    max_correspondence_distance=10;
 }
 
 void keyptsMap::clear()
@@ -47,13 +47,13 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
 
     for(int i=0;i<keypoints.size();i++)
     {
-         Eigen::Vector3d v(keypoints[i].x,
-                           keypoints[i].y,
-                           keypoints[i].z);
+//          Eigen::Vector3d v(keypoints[i].x,
+//                            keypoints[i].y,
+//                            keypoints[i].z);
 
-//        Eigen::Vector3d v(descriptors[i].x,
-//                           descriptors[i].y,
-//                           0);
+        Eigen::Vector3d v(descriptors[i].x,
+                          descriptors[i].y,
+                          0);
 
         eigenPts.push_back(v);
 
@@ -105,14 +105,14 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
     for(int i=0;i<keypoints.size();i++)
     {
 
-        Eigen::Vector3d v(keypoints[i].x,
-                           keypoints[i].y,
-                           keypoints[i].z);
+//         Eigen::Vector3d v(keypoints[i].x,
+//                            keypoints[i].y,
+//                            keypoints[i].z);
 
 
-//       Eigen::Vector3d v(descriptors[i].x,
-//                         descriptors[i].y,
-//                         0);
+       Eigen::Vector3d v(descriptors[i].x,
+                         descriptors[i].y,
+                         0);
 
         eigenPts.push_back(v);
 
@@ -205,21 +205,19 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
            _isam->connectLandmark(p2,lidx,-1,cov2);
         }        
 
-//        std::cout<<tf<<std::endl;
-        
-        
-            sMatrix6 cov=calculatePoint2PointCov(keypoints,
-                                         keypoints.size(),
-                                         _points,
-                                         _points.size(),
-                                         next_corr,
-                                         prev_corr,
-                                         tf,
-                                         params);
-//         cov=cov*0.00001;
+        /*
+        std::cout<<tf<<std::endl;                
+        sMatrix6 cov=calculatePoint2PointCov(keypoints,
+                                        keypoints.size(),
+                                        _points,
+                                        _points.size(),
+                                        next_corr,
+                                        prev_corr,
+                                        tf,
+                                        params);
         std::cout<<cov<<std::endl;
-        
-//          _isam->addPoseConstrain(prevFrame,-1,tf,cov);
+        _isam->addPoseConstrain(prevFrame,-1,tf,cov);
+        */
     }
 
 
