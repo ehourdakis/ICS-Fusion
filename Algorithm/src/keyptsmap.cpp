@@ -16,7 +16,7 @@ keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f,const kparams_t &p)
     descr=new open3d::registration::Feature();
     prevDescr=new open3d::registration::Feature();
 
-   max_correspondence_distance=0.1;
+   max_correspondence_distance=0.05;
 //    max_correspondence_distance=10;
 }
 
@@ -181,8 +181,8 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         for(int i=0;i<corr.size();i++)
         {
             Eigen::Vector2i c=corr[i];
-            int idx2=c(0);
             int idx1=c(1);
+            int idx2=c(0);
 
             cv::DMatch m( idx2,idx1,1 );
             good_matches.push_back(m);
@@ -200,14 +200,10 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
             prev_corr.push_back(idx1);
             next_corr.push_back(idx2);
             
-//            sMatrix3 cov;
-//            cov=cov*0.0001;
-//            std::cout<<cov2<<std::endl;
-            int lidx=_isam->addLandmark(p1);
-            _isam->connectLandmark(p1,lidx,prevFrame,cov1);
-            _isam->connectLandmark(p2,lidx,-1,cov2);
-        }
-        std::cout<<"Correspondences:"<<good_matches.size()<<std::endl;
+//            int lidx=_isam->addLandmark(p1);
+//            _isam->connectLandmark(p1,lidx,prevFrame,cov1);
+//            _isam->connectLandmark(p2,lidx,-1,cov2);
+        }        
 
 //        std::cout<<tf<<std::endl;
         
@@ -220,8 +216,10 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
                                          prev_corr,
                                          tf,
                                          params);
+//         cov=cov*0.00001;
+        std::cout<<cov<<std::endl;
         
-          //_isam->addPoseConstrain(prevFrame,-1,tf,cov);
+         _isam->addPoseConstrain(prevFrame,-1,tf,cov);
     }
 
 

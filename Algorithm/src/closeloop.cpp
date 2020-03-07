@@ -105,6 +105,8 @@ bool CloseLoop::processFrame()
 
         covars.push_back(cov);
         poses.push_back(pose);
+        
+        passedFromLastKeyFrame=0;
     }
     else if(_frame>3 && tracked )
     {
@@ -201,10 +203,15 @@ bool CloseLoop::processKeyFrame()
     {
         if(_keyMap->matching(lastKeyPts,lastDescr,_frame) )
         {
+            std::cout<<"pre optimize"<<std::endl;
             bool b=optimize();
-            clearFirsts(passedFromLastKeyFrame);
-            _keyMap->addKeypoints(lastKeyPts,lastDescr,0);
-            prevKeyPoseIdx=_frame;
+            std::cout<<"clear"<<std::endl;
+            //clearFirsts(passedFromLastKeyFrame);
+            reInit();
+            std::cout<<"clear2"<<std::endl;
+            
+//             _keyMap->addKeypoints(lastKeyPts,lastDescr,0);
+            prevKeyPoseIdx=0;
             passedFromLastKeyFrame=0;
             return b;
         }
@@ -453,7 +460,7 @@ void CloseLoop::reInit()
     covars.push_back(cov);
 
 
-    _keyMap->addKeypoints(lastKeyPts,lastDescr,_frame);
+    _keyMap->addKeypoints(lastKeyPts,lastDescr,0);
 }
 
 void CloseLoop::clear()

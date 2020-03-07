@@ -82,10 +82,11 @@ void Isam::popFront()
     delete factor;
     delete node;
 
-    if(poseConstrainFactor!=0)
+    if(poseConstrainFactor!=nullptr)
     {
+        slam->remove_factor(poseConstrainFactor);
         delete poseConstrainFactor;
-        poseConstrainFactor=0;
+        poseConstrainFactor=nullptr;
     }
 }
 
@@ -196,16 +197,14 @@ void Isam::addPoseConstrain(int p1,int p2,const sMatrix4 &delta, const sMatrix6 
 
 double Isam::optimize(int frame)
 {
-    //std::cout<<"Start isam optimization"<<std::endl;
-    
-    char buf[32];
-    sprintf(buf,"/tmp/f_%d_graph",frame);
-    slam->save(buf);
+//     char buf[32];
+//     sprintf(buf,"/tmp/f_%d_graph",frame);
+//     slam->save(buf);
 
     slam->batch_optimization();
 
-    sprintf(buf,"/tmp/f_%d_graph_opt",frame);
-    slam->save(buf);
+//     sprintf(buf,"/tmp/f_%d_graph_opt",frame);
+//     slam->save(buf);
 
 //    slam->print_stats();
     
