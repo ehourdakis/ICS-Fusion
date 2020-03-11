@@ -27,7 +27,7 @@ typedef struct
 
     std::vector<int> pyramid = {10,5,4};
     float mu = 0.1;
-    float icp_threshold = 1e-5;
+    float icp_threshold = 5.0e-01;
 
     uint2 inputSize;
     uint2 computationSize;
