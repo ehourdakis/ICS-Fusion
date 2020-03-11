@@ -213,7 +213,7 @@ bool CloseLoop::processKeyFrame()
             //_keyMap->addKeypoints(lastKeyPts,lastDescr,0);
 
         }
-        reInit();
+//        reInit();
         prevKeyPoseIdx=0;
         passedFromLastKeyFrame=0;
         return b;

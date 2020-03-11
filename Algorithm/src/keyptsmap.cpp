@@ -181,7 +181,13 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
         if(results.fitness_<0.6)
             return false;
 
-        
+        std::vector<int> newLanmarks;
+        newLanmarks.resize(keypoints.size());
+
+        for(int i=0;i<keypoints.size();i++)
+            newLanmarks[i]=-1;
+
+
         for(int i=0;i<corr.size();i++)
         {
             Eigen::Vector2i c=corr[i];
@@ -191,14 +197,10 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
             cv::DMatch m( idx2,idx1,1 );
             good_matches.push_back(m);
 
-            FeatDescriptor d1=_descr[idx1];
             FeatDescriptor d2=descriptors[idx2];
 
-            float3 p1=_points[idx1];
             float3 p2=keypoints[idx2];
 
-
-            sMatrix3 cov1=d1.cov;
             sMatrix3 cov2=d2.cov;
             
             prev_corr.push_back(idx1);
@@ -207,9 +209,23 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
             //int lidx=_isam->addLandmark(p1);
 
             int lidx=lanmarks[idx1];
-           //_isam->connectLandmark(p1,lidx,prevFrame,cov1);
-           _isam->connectLandmark(p2,lidx,-1,cov2);
+            _isam->connectLandmark(p2,lidx,-1,cov2);
+            newLanmarks[idx2]=lidx;
         }
+
+        for(int i=0;i<newLanmarks.size();i++)
+        {
+            if(newLanmarks[i]==-1)
+            {
+                float3 p=keypoints[i];
+                FeatDescriptor d=descriptors[i];
+
+                sMatrix3 cov=d.cov;
+                newLanmarks[i]=_isam->addLandmark(p);
+                _isam->connectLandmark(p,newLanmarks[i],-1,cov);
+            }
+        }
+        lanmarks=newLanmarks;
 
         /*
         std::cout<<tf<<std::endl;                
