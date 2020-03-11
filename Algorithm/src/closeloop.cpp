@@ -204,7 +204,11 @@ bool CloseLoop::processKeyFrame()
         bool b=_keyMap->matching(lastKeyPts,lastDescr,_frame);
         if(b)
         {
+            std::cout<<"pre optimize"<<std::endl;
             b=optimize();
+
+            std::cout<<"post optimize"<<std::endl;
+
             //clearFirsts(passedFromLastKeyFrame);
             //_keyMap->addKeypoints(lastKeyPts,lastDescr,0);
 

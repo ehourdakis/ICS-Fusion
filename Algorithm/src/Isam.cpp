@@ -130,8 +130,9 @@ int Isam::addLandmark(float3 pos)
 
     Point3d_Node *landmark=new Point3d_Node();
     landmarks.push_back(landmark);
+    landmarksAdded.push_back(false);
+    //slam->add_node(landmark);
 
-    slam->add_node(landmark);
 
     return ret;
 }
@@ -140,11 +141,17 @@ void Isam::connectLandmark(float3 pos,int landIdx,int poseIdx, sMatrix3 &cov)
 {
     if(poseIdx<0)
         poseIdx=poseSize()+poseIdx;
-    
+        
     Point3d point=toIsamPoint(pos);
 
     Eigen::MatrixXd eigenCov=toEigen(cov);
     Noise noise = isam::Covariance(eigenCov);
+
+    if(!landmarksAdded[landIdx])
+    {
+        landmarksAdded[landIdx]=true;
+        slam->add_node(landmarks[landIdx]);
+    }
 
     Pose3d_Point3d_Factor* f=new Pose3d_Point3d_Factor(
                                            pose_nodes[poseIdx],landmarks[landIdx],point,noise);
@@ -286,6 +293,9 @@ void Isam::clear()
     factors.clear();
     landmarkFactors.clear();
     landmarks.clear();
+    landmarksAdded.clear();
+
+    std::cout<<"cleared"<<std::endl;
 }
 
 Point3d Isam::toIsamPoint(const float3 &f)
