@@ -62,7 +62,9 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
             descr->data_(j,i)=descriptors[i].data[j];
         }
 
+        sMatrix3 cov=descriptors[i].cov;
         int lidx=_isam->addLandmark(keypoints[i]);
+        _isam->connectLandmark(keypoints[i],lidx,frame,cov);
         lanmarks.push_back(lidx);
     }
     prevFrame=frame;
@@ -170,7 +172,6 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 
         CorrespondenceSet corr=results.correspondence_set_;
 
-//        _isam->clearLandmarks();
 
         std::cout<<"Ransac fitness:"<<results.fitness_<<std::endl;
         std::cout<<"Ransac rmse:"<<results.inlier_rmse_<<std::endl;
@@ -205,9 +206,8 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
             
             //int lidx=_isam->addLandmark(p1);
 
-            //std::cout<<lanmarks.size()<<" "<<idx1<<" "<<idx2<<std::endl;
             int lidx=lanmarks[idx1];
-           _isam->connectLandmark(p1,lidx,prevFrame,cov1);
+           //_isam->connectLandmark(p1,lidx,prevFrame,cov1);
            _isam->connectLandmark(p2,lidx,-1,cov2);
         }
 
