@@ -33,6 +33,9 @@ class PoseGraph
         {
             return landmarksSize()>0;
         }
-        
+
+        virtual float3 landmarkPos(int lidx)=0;
+
+
 };
 #endif

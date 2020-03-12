@@ -53,6 +53,12 @@ class Isam :public PoseGraph
             return landmarks.size();
         }
 
+        float3 landmarkPos(int lidx);
+        float3 fromIsamPoint(const isam::Point3d &point);
+
+
+
+
         static isam::Pose3d toIsamPose(const sMatrix4 &pose);
         static sMatrix4 fromIsamNode(isam::Pose3d_Node *node);
 

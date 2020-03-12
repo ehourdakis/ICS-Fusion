@@ -336,83 +336,19 @@ sMatrix4 Isam::fromIsamNode(Pose3d_Node *node)
 //     ret=toVisionCord(ret);
     return ret;
 }
-#if 0
-Eigen::MatrixXd Isam::toEigen(sMatrix4 mat)
+
+float3 Isam::landmarkPos(int lidx)
 {
-    Eigen::MatrixXd ret(4,4);
-    for(int i=0;i<4;i++)
-    {
-        for(int j=0;j<4;j++)
-        {
-            ret(i,j)=mat(i,j);
-        }
-    }
-    return ret;
+    Point3d_Node *node=landmarks[lidx];
+
+    Point3d p=node->value();
+    return fromIsamPoint(p);
 }
 
-Eigen::MatrixXd Isam::toEigen(sMatrix3 mat)
+float3 Isam::fromIsamPoint(const Point3d &point)
 {
-    Eigen::MatrixXd ret(3,3);
-    for(int i=0;i<3;i++)
-    {
-        for(int j=0;j<3;j++)
-        {
-            ret(i,j)=mat(i,j);
-        }
-    }
-    return ret;
+    return make_float3(point.x(),
+                       point.y(),
+                       point.z());
 }
 
-Eigen::MatrixXd Isam::toEigen(sMatrix6 mat)
-{
-    Eigen::MatrixXd ret(6,6);
-    for(int i=0;i<6;i++)
-    {
-        for(int j=0;j<6;j++)
-        {
-            ret(i,j)=mat(i,j);
-        }
-    }
-    return ret;
-}
-#endif
-
-/*
-mrpt::poses::CPose3DPDFGaussian Isam::toCPose3DPDF(sMatrix4 pose,sMatrix6 cov)
-{
-    mrpt::poses::CPose3DPDFGaussian A(mrpt::poses::UNINITIALIZED_POSE);
-
-    A.mean=toCPose(pose);
-
-    for(int i=0;i<6;i++)
-        for(int j=0;j<6;j++)
-            A.cov(i,j)=cov(i,j);
-
-    return A;
-}
-
-mrpt::poses::CPose3D Isam::toCPose(sMatrix4 pose)
-{
-//     std::cout<<"EDO"<<std::endl;
-    mrpt::math::CMatrixDouble mat(4,4);
-    
-//     Eigen::Matrix3f rot;
-    for (int i=0;i<4;i++)
-    {
-        for(int j=0;j<4;j++)
-        {
-//             rot(i,j)=pose(i,j);
-            mat(i,j)=pose(i,j);
-        }
-    }
-//     Eigen::Vector3f rotV = rot.eulerAngles(0, 1, 2);
-
-//     mrpt::poses::CPose3D ret(pose(0,3),pose(1,3),pose(2,3),
-//                              rotV[2],rotV[1],rotV[0]);
-// std::cout<<"EDO2"<<std::endl;
-    mrpt::poses::CPose3D ret(mat);
-    
-    return ret;
-
-}
-*/

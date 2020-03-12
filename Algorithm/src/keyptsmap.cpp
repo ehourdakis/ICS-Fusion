@@ -14,10 +14,10 @@ keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f,const kparams_t &p)
       params(p)
 {
     descr=new open3d::registration::Feature();
-    prevDescr=new open3d::registration::Feature();
+//    mapDescr=new open3d::registration::Feature();
 
-    //max_correspondence_distance=0.1;
-    max_correspondence_distance=10;
+    max_correspondence_distance=0.1;
+    //max_correspondence_distance=10;
 }
 
 void keyptsMap::clear()
@@ -37,30 +37,11 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
 {
     _descr.insert(_descr.end(),
                    descriptors.begin(),
-                   descriptors.end());
-     _points.insert(_points.end(),
-                   keypoints.begin(),
-                   keypoints.end());
+                   descriptors.end());     
 
-
-    descr->Resize(DESCR_SIZE,descriptors.size());    
 
     for(int i=0;i<keypoints.size();i++)
     {
-//          Eigen::Vector3d v(keypoints[i].x,
-//                            keypoints[i].y,
-//                            keypoints[i].z);
-
-        Eigen::Vector3d v(descriptors[i].x,
-                          descriptors[i].y,
-                          0);
-
-        eigenPts.push_back(v);
-
-        for(int j=0;j<DESCR_SIZE;j++)
-        {
-            descr->data_(j,i)=descriptors[i].data[j];
-        }
 
         sMatrix3 cov=descriptors[i].cov;
         int lidx=_isam->addLandmark(keypoints[i]);
@@ -68,6 +49,9 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
         lanmarks.push_back(lidx);
     }
     prevFrame=frame;
+
+
+    std::cout<<"Added:"<<descriptors.size()<<" keypts."<<std::endl;
 }
 
 void keyptsMap::getMatches(const std::vector<float3> &keypoints,
@@ -99,157 +83,107 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
     using namespace open3d::registration;
     good_matches.clear();
 
-    std::swap(prevEigenPts,eigenPts);
-    std::swap(prevDescr,descr);
+    if(_descr.size()==0 || descriptors.size()==0)
+        return false;
 
-    eigenPts.clear();
-    eigenPts.reserve(keypoints.size());
+    std::vector<Eigen::Vector3d> map3d;
+    descr->Resize(DESCR_SIZE,_descr.size());
 
-    descr->Resize(DESCR_SIZE,descriptors.size());
+    for(int i=0;i<_isam->landmarksSize();i++)
+    {
+        float3 lpos=_isam->landmarkPos(i);
 
+        Eigen::Vector3d v(lpos.x,
+                          lpos.y,
+                          lpos.z);
+
+        map3d.push_back(v);
+        for(int j=0;j<DESCR_SIZE;j++)
+        {
+            descr->data_(j,i)=_descr[i].data[j];
+        }
+    }
+
+    std::vector<Eigen::Vector3d> newPts;
+    newPts.reserve(descriptors.size());
+    Feature *newDescr=new Feature();
+    newDescr->Resize(DESCR_SIZE,descriptors.size());
     for(int i=0;i<keypoints.size();i++)
     {
 
-//         Eigen::Vector3d v(keypoints[i].x,
-//                            keypoints[i].y,
-//                            keypoints[i].z);
+        Eigen::Vector3d v(keypoints[i].x,
+                          keypoints[i].y,
+                          keypoints[i].z);
 
-
-       Eigen::Vector3d v(descriptors[i].x,
-                         descriptors[i].y,
-                         0);
-
-        eigenPts.push_back(v);
+        newPts.push_back(v);
 
         for(int j=0;j<DESCR_SIZE;j++)
         {
-            descr->data_(j,i)=descriptors[i].data[j];
+            newDescr->data_(j,i)=descriptors[i].data[j];
         }
     }
-    
-    std::vector<int> prev_corr;
-    std::vector<int> next_corr; 
 
-    if(prevEigenPts.size()>0 && eigenPts.size()>0)
+    PointCloud cloud0=PointCloud(map3d);
+    PointCloud cloud1=PointCloud(newPts);
+
+
+    std::vector<std::reference_wrapper<const CorrespondenceChecker>>correspondence_checker;
+    auto correspondence_checker_edge_length =CorrespondenceCheckerBasedOnEdgeLength(0.9);
+    auto correspondence_checker_distance =
+        CorrespondenceCheckerBasedOnDistance(max_correspondence_distance);
+
+    correspondence_checker.push_back(correspondence_checker_edge_length);
+    correspondence_checker.push_back(correspondence_checker_distance);
+
+    const RANSACConvergenceCriteria criteria =RANSACConvergenceCriteria(4000000, 500);
+
+
+
+    RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(
+                 cloud1,cloud0,*descr,*newDescr,max_correspondence_distance,
+                 TransformationEstimationPointToPoint(false),
+                 4,//ransac_n
+                 correspondence_checker,
+                 criteria );
+
+    CorrespondenceSet corr=results.correspondence_set_;
+
+    char *hasCorr=new char[keypoints.size()];
+    memset(hasCorr,0,keypoints.size());
+
+
+    for(int i=0;i<corr.size();i++)
     {
+        Eigen::Vector2i c=corr[i];
+        int idx1=c(1);
+        int idx2=c(0);
 
-
-        PointCloud cloud0=PointCloud(prevEigenPts);
-        PointCloud cloud1=PointCloud(eigenPts);
-
-
-        std::vector<std::reference_wrapper<const CorrespondenceChecker>>
-            correspondence_checker;
-        auto correspondence_checker_edge_length =
-            CorrespondenceCheckerBasedOnEdgeLength(0.9);
-        auto correspondence_checker_distance =
-            CorrespondenceCheckerBasedOnDistance(max_correspondence_distance);
-
-        correspondence_checker.push_back(correspondence_checker_edge_length);
-        correspondence_checker.push_back(correspondence_checker_distance);
-
-        const RANSACConvergenceCriteria criteria =RANSACConvergenceCriteria(4000000, 500);
-
-
-        RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(
-                     cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance,
-                     TransformationEstimationPointToPoint(false),
-                     4,//ransac_n
-                     correspondence_checker,
-                     criteria );
-
-//        RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(
-//                            cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance);
-
-        sMatrix4 tf;
-        for(int i=0;i<4;i++)
-        {
-            for(int j=0;j<4;j++)
-                tf(i,j)=results.transformation_(i,j);
-        }
-
-        //std::cout<<tf<<std::endl;
-
-        CorrespondenceSet corr=results.correspondence_set_;
-
-
-        std::cout<<"Ransac fitness:"<<results.fitness_<<std::endl;
-        std::cout<<"Ransac rmse:"<<results.inlier_rmse_<<std::endl;
-
-        if(corr.size()==0)
-            return false;
-        if(results.fitness_<0.6)
-            return false;
-
-        std::vector<int> newLanmarks;
-        newLanmarks.resize(keypoints.size());
-
-        for(int i=0;i<keypoints.size();i++)
-            newLanmarks[i]=-1;
-
-
-        for(int i=0;i<corr.size();i++)
-        {
-            Eigen::Vector2i c=corr[i];
-            int idx1=c(1);
-            int idx2=c(0);
-
-            cv::DMatch m( idx2,idx1,1 );
-            good_matches.push_back(m);
-
-            FeatDescriptor d2=descriptors[idx2];
-
-            float3 p2=keypoints[idx2];
-
-            sMatrix3 cov2=d2.cov;
-            
-            prev_corr.push_back(idx1);
-            next_corr.push_back(idx2);
-            
-            //int lidx=_isam->addLandmark(p1);
-
-            int lidx=lanmarks[idx1];
-            _isam->connectLandmark(p2,lidx,-1,cov2);
-            newLanmarks[idx2]=lidx;
-        }
-
-        for(int i=0;i<newLanmarks.size();i++)
-        {
-            if(newLanmarks[i]==-1)
-            {
-                float3 p=keypoints[i];
-                FeatDescriptor d=descriptors[i];
-
-                sMatrix3 cov=d.cov;
-                newLanmarks[i]=_isam->addLandmark(p);
-                _isam->connectLandmark(p,newLanmarks[i],-1,cov);
-            }
-        }
-        lanmarks=newLanmarks;
-
-        /*
-        std::cout<<tf<<std::endl;                
-        sMatrix6 cov=calculatePoint2PointCov(keypoints,
-                                        keypoints.size(),
-                                        _points,
-                                        _points.size(),
-                                        next_corr,
-                                        prev_corr,
-                                        tf,
-                                        params);
-        std::cout<<cov<<std::endl;
-        _isam->addPoseConstrain(prevFrame,-1,tf,cov);
-        */
+        FeatDescriptor &d2=descriptors[idx2];
+        float3 p2=keypoints[idx2];
+        sMatrix3 cov2=d2.cov;
+        _isam->connectLandmark(p2,idx1,-1,cov2);
+        hasCorr[idx2]=1;
     }
 
+    for(int i=0;i<keypoints.size();i++)
+    {
+        if(hasCorr[i]==0)
+        {
+            FeatDescriptor &d=descriptors[i];
+            int lid=_isam->addLandmark(keypoints[i]);
+            _isam->connectLandmark(keypoints[i],lid,-1,d.cov);
+            lanmarks.push_back(lid);
 
+            _descr.push_back(d);
+        }
+    }
+
+    delete newDescr;
+    delete hasCorr;
+
+    std::cout<<"Found:"<<keypoints.size()<<" keypts;"<<std::endl;
+    std::cout<<"Found:"<<corr.size()<<" matches;"<<std::endl;
     return true;
-//    geometry::PointCloud cloud1=PointCloud();
-
-//    RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching();
-
-
-
 
 
 

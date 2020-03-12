@@ -29,7 +29,7 @@ class keyptsMap
 
         bool isEmpty()
         {
-            return eigenPts.size()==0;
+            return _descr.size()==0;
         }
 
         void getMatches(const std::vector<float3> &keypoints,

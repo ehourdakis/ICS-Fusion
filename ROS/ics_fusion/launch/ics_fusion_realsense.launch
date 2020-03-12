@@ -17,7 +17,7 @@
         <param name="publish_points_rate" type="int" value="10" />
         
         <param name="cam_info_topic" type="str" value="/camera/aligned_depth_to_color/camera_info" />
-        <param name="depth_topic"    type="str"    value="/camera/aligned_depth_to_color/image_raw" />
+        <param name="depth_topic"    type="str" value="/camera/aligned_depth_to_color/image_raw" />
         <param name="rgb_topic"      type="str" value="/camera/color/image_rect_color" />
         
         <param name="keypt_size"     type="int" value="2000" />
