@@ -58,7 +58,8 @@
 #define SMOOTHNET_SERVER "smoothnet_3d"
 
 #define DEPTH_FRAME "camera_rgb_optical_frame"
-#define VO_FRAME "visual_odom"
+// #define VO_FRAME "visual_odom"
+#define VO_FRAME "odom"
 #define ODOM_FRAME "odom"
 #define BASE_LINK "base_link"
 
@@ -362,7 +363,18 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
   #else
     _isKeyFrame=isKeyFrame();
   #endif
+
+#ifdef KEY_FRAME_2
+    if(frame==KEY_FRAME_1)
+        _isKeyFrame=true;
+    else if(frame==KEY_FRAME_2)
+        _isKeyFrame=true;
+    else
+        _isKeyFrame=false;
 #endif
+
+#endif    
+    
     if(_isKeyFrame)
     {
          doLoopClosure();
@@ -500,6 +512,11 @@ void publishOdom()
 {
     sMatrix4 pose = loopCl->getPose();
 
+    //
+    pose(0,3)-=params.volume_direction.x;
+    pose(1,3)-=params.volume_direction.y;
+    pose(2,3)-=params.volume_direction.z;
+//     pose=inverse(pose);
     pose=fromVisionCord(pose);
     /*
     tf::Vector3 vec[3];
@@ -511,15 +528,15 @@ void publishOdom()
     tf::Matrix3x3 rot_matrix( pose(0,0),pose(0,1),pose(0,2),
                               pose(1,0),pose(1,1),pose(1,2),
                               pose(2,0),pose(2,1),pose(2,2) );
-    
+    //rot_matrix=rot_matrix.inverse ();
     tf::Quaternion q;
     rot_matrix.getRotation(q);
 
     nav_msgs::Odometry odom;
     geometry_msgs::Pose odom_pose;
-    odom_pose.position.x=pose(0,3)-4;
-    odom_pose.position.y=pose(1,3)+4;
-    odom_pose.position.z=pose(2,3)+4;
+    odom_pose.position.x=pose(0,3);
+    odom_pose.position.y=pose(1,3);
+    odom_pose.position.z=pose(2,3);
     odom_pose.orientation.x=q.getX();
     odom_pose.orientation.y=q.getY();
     odom_pose.orientation.z=q.getZ();
@@ -576,17 +593,24 @@ void publishIsamPath()
         geometry_msgs::PoseStamped ps;
         int odomPosesIdx=odomPath.poses.size()+i-vec.size();
         ps.header=odomPath.poses[odomPosesIdx].header;
-        sMatrix4 pose=fromVisionCord(vec[i]);
+        sMatrix4 pose=vec[i];
+        
+        pose(0,3)-=params.volume_direction.x;
+        pose(1,3)-=params.volume_direction.y;
+        pose(2,3)-=params.volume_direction.z;
+//         pose=inverse(pose);
+        pose=fromVisionCord(pose);
         tf::Matrix3x3 rot_matrix( pose(0,0),pose(0,1),pose(0,2),
                               pose(1,0),pose(1,1),pose(1,2),
                               pose(2,0),pose(2,1),pose(2,2) );
         
         tf::Quaternion q;
+        //rot_matrix=rot_matrix.inverse();
         rot_matrix.getRotation(q);
         geometry_msgs::Pose odom_pose;
-        odom_pose.position.x=pose(0,3)-4;
-        odom_pose.position.y=pose(1,3)+4;
-        odom_pose.position.z=pose(2,3)+4;
+        odom_pose.position.x=pose(0,3);
+        odom_pose.position.y=pose(1,3);
+        odom_pose.position.z=pose(2,3);
         odom_pose.orientation.x=q.getX();
         odom_pose.orientation.y=q.getY();
         odom_pose.orientation.z=q.getZ();

@@ -74,6 +74,9 @@ class CloseLoop
         void clearFirsts(int idx);
 
     private:
+        
+        void calcIsamPoses();
+        
         IcsFusion *_fusion;
         PoseGraph *_isam;
         int prevKeyPoseIdx;
@@ -105,6 +108,8 @@ class CloseLoop
         Harris *harris;
         keyptsMap *_keyMap;
         FeatureDetector *_featDet;
+        
+        std::vector<sMatrix4> isamVec;
 
 //         SmoothNet *smoothNet;
 

@@ -337,7 +337,11 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
     }
     else if(frame>=3)
     {
+        
         gtPose=getGtTransformed(frameTimeStamp,slam_settings->getGt());
+        char buf[128];
+        sprintf(buf,"/home/tavu/workspace/slambench2/data/gt/f%d.txt",frame);
+        savePoseMat(buf,gtPose);
 #if 0
 
         gtPoses.push_back(gtPose);
@@ -376,6 +380,9 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         _isKeyFrame=true;
     if( frame>0 && (frame%LOOP_CLOSURE_RATE)==0)
         _isKeyFrame=true;
+    else if( frame==881) 
+        _isKeyFrame=true;
+
 #endif
     if(_isKeyFrame)
     {
@@ -384,42 +391,6 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
 
         loopCl->processKeyFrame();
         loopCl->showKeypts(outputFeat);
-        prevKeyPts=keyPts;
-        keyPts=loopCl->getKeypts();
-
-        if(lastKeyFrame>0)
-        {
-            sMatrix4 delta=inverse(prevGt)*gtPose;
-//            std::cout<<delta<<std::endl;
-                
-            int outlierNum=0;
-            std::vector<cv::DMatch> good_matches=loopCl->getKeyMap()->goodMatches();
-            for(int i=0;i<good_matches.size();i++)
-            {
-                cv::DMatch m=good_matches[i];
-                float3 v1=prevKeyPts[m.trainIdx];
-                float3 v2=keyPts[m.queryIdx];
-
-                v1=prevGt*v1;
-                v2=gtPose*v2;
-                
-
-                
-                //v2=prevGt*v2;
-
-                float3 diff=make_float3(fabs(v1.x-v2.x),
-                                        fabs(v1.y-v2.y),
-                                        fabs(v1.z-v2.z) );
-
-//                std::cout<<prevKeyPts[m.trainIdx]<<std::endl;
-                if(diff.x>outlierTH || diff.y>outlierTH ||diff.z>outlierTH )
-                {
-//                    std::cout<<diff<<std::endl;
-                    outlierNum++;
-                }
-            }
-            std::cout<<"Number of outlier:"<<outlierNum<<std::endl;
-        }
 
 #if 0
         char buf[64];
@@ -442,6 +413,10 @@ bool sb_process_once (SLAMBenchLibraryHelper * slam_settings)
         }
 #endif        
         lastKeyFrame=frame;
+
+        sMatrix4 delta=inverse(prevGt)*gtPose;
+
+        std::cout<<"GT:"<<'\n'<<delta<<std::endl;
         prevGt=gtPose;
 
     }

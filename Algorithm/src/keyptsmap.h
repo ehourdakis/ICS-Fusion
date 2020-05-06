@@ -16,6 +16,8 @@
 //Open3d
 #include<Open3D/Registration/Feature.h>
 
+#include<teaser/registration.h>
+
 class keyptsMap
 {
     public:
@@ -39,6 +41,9 @@ class keyptsMap
         std::vector<cv::DMatch> goodMatches();
         void saveMap(char *descrFile,char *poitsFile,char *frameFile);
     private:
+        void teaser(std::vector<FeatDescriptor> &descriptors);
+        void ransac(std::vector<FeatDescriptor> &descriptors);
+
         int prevFrame;
         const kparams_t &params;
         double max_correspondence_distance;
@@ -68,6 +73,9 @@ class keyptsMap
         void saveKeypoints(std::string fileName,const std::vector<float3> &keypts);
         void saveMatching(std::string fileName, const std::vector< std::pair<int, int> > &matchIdx);
         //void saveDescData(const std::vector<float3> &keypts, const std::vector<FeatDescriptor> &desc, int _frame);
+
+        teaser::PointCloud cloud1;
+        teaser::PointCloud cloud2;
 };
 
 #endif // KEYPTSMAP_H

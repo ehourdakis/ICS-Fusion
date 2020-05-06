@@ -6,7 +6,7 @@ find_package(CUDA)
 #find_package(open3d)
 #find_package(qhull)
 
-add_compile_options(-std=c++11 -fopenmp)
+add_compile_options(-std=c++14 -fopenmp)
 # add_definitions(-DUSE_G2O)
 LIST(APPEND G2O_LIBS
   cxsparse  
@@ -34,6 +34,27 @@ SET(sift_src
     ${CMAKE_CURRENT_LIST_DIR}/src/sift/utils.cpp
 )
 
+SET(teaser_src
+#     ${CMAKE_CURRENT_LIST_DIR}/src/teaser/fpfh.cc
+    ${CMAKE_CURRENT_LIST_DIR}/src/teaser/graph.cc
+    ${CMAKE_CURRENT_LIST_DIR}/src/teaser/matcher.cc
+#     ${CMAKE_CURRENT_LIST_DIR}/src/teaser/ply_io.cc
+    ${CMAKE_CURRENT_LIST_DIR}/src/teaser/registration.cc
+)
+
+SET(pmc_src
+#     ${CMAKE_CURRENT_LIST_DIR}/src/pmc/libpmc_test.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmc_clique_utils.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmc_cores.cpp
+#     ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmc_driver.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmc_graph.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmc_heu.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmc_lib.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmc_maxclique.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmc_utils.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmcx_maxclique_basic.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmcx_maxclique.cpp
+)
 
 set(TOON_INCLUDE_PATHS "$ENV{HOME}/src/TooN")
 # set(TOON_INCLUDE_PATHS "/usr/local/src/TooN")
@@ -44,7 +65,7 @@ set(PCL_INCLUDE_DIRS "/usr/include/pcl-1.7")
 
 find_package( OpenCV REQUIRED )
  
-message(WARING Opencv: ${OpenCV_INCLUDE_DIRS})
+# message(WARING Opencv: ${OpenCV_INCLUDE_DIRS})
 
 include_directories(
     ${CUDA_INCLUDE_DIRS}
@@ -52,7 +73,9 @@ include_directories(
     ${EIGEN_INCLUDE_DIRS}
     ${SUITESPARSE_INCLUDE_DIR}
     ${OpenCV_INCLUDE_DIRS}
-    ${PCL_INCLUDE_DIRS}    
+    ${PCL_INCLUDE_DIRS}  
+    ${CMAKE_CURRENT_LIST_DIR}/src/teaser
+    ${CMAKE_CURRENT_LIST_DIR}/src/pmc
 )
 
 set(cuda_srcs
@@ -60,7 +83,6 @@ set(cuda_srcs
     ${CMAKE_CURRENT_LIST_DIR}/src/icsfusion.cu
     ${CMAKE_CURRENT_LIST_DIR}/src/utils.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/kernelscalls.cu
-
 )
 
 set(cpp_srcs
@@ -90,12 +112,11 @@ cuda_add_library(ics_fusion_cuda_lib   STATIC  ${cuda_srcs}  OPTIONS -std=c++11;
 )
 SET_TARGET_PROPERTIES(ics_fusion_cuda_lib PROPERTIES COMPILE_FLAGS "-fPIC" )
 
-
-
-
 add_library(ics_fusion_lib 
     ${cpp_srcs}
     ${sift_src}
+    ${teaser_src}
+    ${pmc_src}
 )
 
 add_compile_options(-ggdb -fopenmp)

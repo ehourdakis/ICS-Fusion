@@ -15,7 +15,7 @@
 #include"constant_parameters.h"
 #include <unistd.h>
 #include"kernelscalls.h"
-
+#include"saveData.h"
 
 
 CloseLoop::CloseLoop(const kparams_t &p,sMatrix4 initPose)
@@ -73,7 +73,7 @@ bool CloseLoop::preprocess(float *depth,uchar3 *rgb)
 bool CloseLoop::processFrame()
 {
     _frame++;
-    //std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
+    std::cout<<"[FRAME="<<_frame<<"]"<<std::endl;
 
     tracked=_fusion->tracking(_frame);
     bool integrated=_fusion->integration(_frame);
@@ -209,6 +209,7 @@ bool CloseLoop::processKeyFrame()
             //_keyMap->addKeypoints(lastKeyPts,lastDescr,0);
 
         }
+        calcIsamPoses();
         reInit();
         prevKeyPoseIdx=0;
         passedFromLastKeyFrame=0;
@@ -289,7 +290,7 @@ bool CloseLoop::optimize()
     double err=_isam->optimize(_frame);
 
     std::cout<<"Optimization error:"<<err<<std::endl;
-    if(err>params.optim_thr && false)
+    if(err>params.optim_thr)
     {
         std::cout<<"Aborting optimization..."<<std::endl;
         return false;
@@ -367,11 +368,24 @@ void CloseLoop::removeOldNodes(int idx)
 
 void CloseLoop::getIsamPoses(std::vector<sMatrix4> &vec)
 {
+    /*
     vec.clear();
     vec.reserve(_isam->poseSize());
     for(int i=0;i<_isam->poseSize();i++)
     {
         vec.push_back(_isam->getPose(i));
+    }
+    */
+    vec=isamVec;
+}
+
+void CloseLoop::calcIsamPoses()
+{
+    isamVec.clear();
+    isamVec.reserve(_isam->poseSize());
+    for(int i=0;i<_isam->poseSize();i++)
+    {
+        isamVec.push_back(_isam->getPose(i));
     }
 }
 
@@ -426,7 +440,10 @@ void CloseLoop::reInit()
     int size=poses.size()-1;
     auto depthIt=depths.begin();
     auto rgbIt=rgbs.begin();
+    auto poseIt=poses.begin();
 
+    int f=_frame-poses.size()+1;
+    
     for(int i=0;i<depths.size()-1;i++)
     {
         depthIt->release();
@@ -434,6 +451,11 @@ void CloseLoop::reInit()
 
         depthIt++;
         rgbIt++;
+        
+        poseIt++;
+        char buf[256];
+        //sprintf(buf,"data/poses/f%d.txt",f+i);        
+        //savePoseMat(buf,*poseIt);
     }
 
 

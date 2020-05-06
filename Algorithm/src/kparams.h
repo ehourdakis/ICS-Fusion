@@ -12,7 +12,7 @@ typedef struct
     int rendering_rate = 1;
     int tracking_rate=1;
 
-    float optim_thr=10000;
+    float optim_thr=1e7;
     float cov_small=1e-4;
     float cov_big=1e-2;
 
@@ -28,12 +28,14 @@ typedef struct
     std::vector<int> pyramid = {10,5,4};
     float mu = 0.1;
     float icp_threshold = 5.0e-01;
+    //float icp_threshold = 1e-5;
 
     uint2 inputSize;
     uint2 computationSize;
     float4 camera;
 
-
+    float rfitness=0.3;
+    float rerror=1e5;
 
 } kparams_t;
 
