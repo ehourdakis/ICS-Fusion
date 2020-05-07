@@ -19,18 +19,16 @@ find_package( OpenCV REQUIRED )
 
 set(TOON_INCLUDE_PATHS "$ENV{HOME}/src/TooN")
 # set(EIGEN3_INCLUDE_DIR "$ENV{HOME}/src/eigen")
-# set(OPENCV_INCLUDE_DIR "/home/tavu/workspace/slambench2/deps/opencv/include/opencv2/")
+# set(OPENCV_INCLUDE_DIR "/Home/slambench2/deps/opencv/include/opencv2/")
 
 # message(WARNING ${EIGEN3_INCLUDE_DIR} )
 
 # set(MRPT_BASE "/usr/include/mrpt/base/include")
 # set(MRPT_CFG "/usr/include/mrpt/mrpt-config")
-
 # find_package(PCL 1.3 REQUIRED)
 # find_package(mrpt)
 find_package(CUDA)
-find_package(OpenCV)
-
+include_directories     		(${OpenCV_INCLUDE_DIRS})
 LIST(APPEND G2O_LIBS
   cxsparse
   cholmod
@@ -75,7 +73,7 @@ cuda_add_library(ics_fusion_cuda   STATIC  ${cuda_srcs}  OPTIONS -std=c++11 -Xco
     -I${SUITESPARSE_INCLUDE_DIR}
 #    -DUSE_G2O
 #     -I${MRPT_CFG}
-#     -I${OPENCV_INCLUDE_DIR}
+     -I${OpenCV_INCLUDE_DIRS}
 )
 
 # target_include_directories(ics_fusion_cuda PRIVATE ${OPENCV_INCLUDE_DIR})
