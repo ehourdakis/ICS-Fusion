@@ -18,7 +18,7 @@
 
 #include"closeloop.h"
 
-#define SLAMBENCH_CH
+//#define SLAMBENCH_CH
 
 static kparams_t params;
 bool tracked ;
