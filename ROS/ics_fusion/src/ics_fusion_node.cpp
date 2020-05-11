@@ -365,6 +365,7 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
   #endif
 
 #ifdef KEY_FRAME_2
+    _isKeyFrame=false;
     if(frame==KEY_FRAME_1)
         _isKeyFrame=true;
     else if(frame==KEY_FRAME_2)
@@ -378,6 +379,9 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     if(_isKeyFrame)
     {
          doLoopClosure();
+         #ifdef PUBLISH_ISAM_PATH
+            publishIsamPath();
+        #endif
     }
 
     if(publish_key_frame)
@@ -390,9 +394,7 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
 
     publishOdom();
     
-#ifdef PUBLISH_ISAM_PATH
-    publishIsamPath();
-#endif
+
     
     if(publish_volume)
     {
@@ -588,39 +590,39 @@ void publishIsamPath()
     std::vector<sMatrix4> vec;
     loopCl->getIsamPoses(vec);
     isamPath = odomPath;
-    for(int i=0;i<vec.size();i++)
+    if(vec.size()>1)
     {
-        geometry_msgs::PoseStamped ps;
-        int odomPosesIdx=odomPath.poses.size()+i-vec.size();
-        ps.header=odomPath.poses[odomPosesIdx].header;
-        sMatrix4 pose=vec[i];
-        
-        pose(0,3)-=params.volume_direction.x;
-        pose(1,3)-=params.volume_direction.y;
-        pose(2,3)-=params.volume_direction.z;
-//         pose=inverse(pose);
-        pose=fromVisionCord(pose);
-        tf::Matrix3x3 rot_matrix( pose(0,0),pose(0,1),pose(0,2),
-                              pose(1,0),pose(1,1),pose(1,2),
-                              pose(2,0),pose(2,1),pose(2,2) );
-        
-        tf::Quaternion q;
-        //rot_matrix=rot_matrix.inverse();
-        rot_matrix.getRotation(q);
-        geometry_msgs::Pose odom_pose;
-        odom_pose.position.x=pose(0,3);
-        odom_pose.position.y=pose(1,3);
-        odom_pose.position.z=pose(2,3);
-        odom_pose.orientation.x=q.getX();
-        odom_pose.orientation.y=q.getY();
-        odom_pose.orientation.z=q.getZ();
-        odom_pose.orientation.w=q.getW();
-        
-        //GEIA SOU PET
-
-        ps.pose=odom_pose;
-        
-        isamPath.poses[odomPosesIdx]=ps;
+        for(int i=0;i<vec.size()-1;i++)
+        {
+            geometry_msgs::PoseStamped ps;
+            int odomPosesIdx=odomPath.poses.size()+i-vec.size();
+            ps.header=odomPath.poses[odomPosesIdx].header;
+            sMatrix4 pose=vec[i];
+            
+            pose(0,3)-=params.volume_direction.x;
+            pose(1,3)-=params.volume_direction.y;
+            pose(2,3)-=params.volume_direction.z;
+    //         pose=inverse(pose);
+            pose=fromVisionCord(pose);
+            tf::Matrix3x3 rot_matrix( pose(0,0),pose(0,1),pose(0,2),
+                                pose(1,0),pose(1,1),pose(1,2),
+                                pose(2,0),pose(2,1),pose(2,2) );
+            
+            tf::Quaternion q;
+            //rot_matrix=rot_matrix.inverse();
+            rot_matrix.getRotation(q);
+            geometry_msgs::Pose odom_pose;
+            odom_pose.position.x=pose(0,3);
+            odom_pose.position.y=pose(1,3);
+            odom_pose.position.z=pose(2,3);
+            odom_pose.orientation.x=q.getX();
+            odom_pose.orientation.y=q.getY();
+            odom_pose.orientation.z=q.getZ();
+            odom_pose.orientation.w=q.getW();
+            
+            ps.pose=odom_pose;
+            isamPath.poses[odomPosesIdx]=ps;
+        }
     }
             
     isamPath.header.stamp = ros::Time::now();

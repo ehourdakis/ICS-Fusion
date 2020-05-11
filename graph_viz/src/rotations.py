@@ -80,8 +80,10 @@ def poseFromHom(M):
     ret.orientation.w = R[3]
     return ret    
     
-def transform(q1, q2):
+def transform(q1, q2,inverse=True):
     M1 = homogeneous(q1)
+    if inverse:
+        M1 = np.linalg.inv(M1)
     M2 = homogeneous(q2)    
     M = np.dot(M2,M1)
     #print(M)

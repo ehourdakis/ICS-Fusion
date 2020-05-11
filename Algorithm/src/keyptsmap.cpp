@@ -186,9 +186,10 @@ void keyptsMap::ransac(std::vector<FeatDescriptor> &descriptors)
     using namespace open3d::geometry;
     using namespace open3d::registration;
 
+    good_matches.clear();
+    
     PointCloud cloud0=PointCloud(prevEigenPts);
     PointCloud cloud1=PointCloud(eigenPts);
-
 
     std::vector<std::reference_wrapper<const CorrespondenceChecker>>
         correspondence_checker;
@@ -204,7 +205,10 @@ void keyptsMap::ransac(std::vector<FeatDescriptor> &descriptors)
 
 
     RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(
-                 cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance,
+                 cloud1,cloud0,
+                 *descr,*prevDescr,
+                 //*prevDescr,*descr,
+                 max_correspondence_distance,
                  TransformationEstimationPointToPoint(false),
                  4,//ransac_n
                  correspondence_checker,
@@ -220,15 +224,22 @@ void keyptsMap::ransac(std::vector<FeatDescriptor> &descriptors)
             tf(i,j)=results.transformation_(i,j);
     }
 
-    //std::cout<<tf<<std::endl;
+    std::cout<<tf<<std::endl;
 
+    std::cout<<"Fitness:"<<results.fitness_<<std::endl;
+    std::cout<<"RMSE:"<<results.inlier_rmse_<<std::endl;
+
+    if(results.fitness_ <params.rfitness ||
+       results.inlier_rmse_ >params.rerror )
+    {
+        return;
+    }
+    
     CorrespondenceSet corr=results.correspondence_set_;
 
     for(int i=0;i<corr.size();i++)
     {
         Eigen::Vector2i c=corr[i];
-        //int idx1=c(1);
-        //int idx2=c(0);
         int idx1=c(1);
         int idx2=c(0);
 
@@ -283,8 +294,8 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
     {
 
 
-        teaser(descriptors);
-        //ransac(descriptors);
+        //teaser(descriptors);
+        ransac(descriptors);
         for(int i=0;i<good_matches.size();i++)
         {
             //cv::DMatch m( idx2,idx1,1 );
