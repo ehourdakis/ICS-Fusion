@@ -2,12 +2,14 @@
 <launch>    
     <param name="use_sim_time" value="true" /> 
     
+    <arg name="bag_name" default="0" />
+    
     <node pkg="tf" type="static_transform_publisher" name="tf_base_link_to_torso" args="0 0 0   0 0 0 1 base_link torso 100" /> 
     <node pkg="tf" type="static_transform_publisher" name="tf_head_to_cam" args="0 0 0.1  0.0 0.076 0.0 0.997 Head camera_rgb_frame 100" />  
     
     <include file="$(find gem)/launch/gem_ros.launch" />
     
-<!--     <node name="ics_fusion" pkg="ics_fusion" type="ics_fusion_node"  output="screen" launch-prefix="gdb -ex run args" >   -->
+    <!--<node name="ics_fusion" pkg="ics_fusion" type="ics_fusion_node"  output="screen" launch-prefix="gdb -ex run args">-->
     <node name="ics_fusion" pkg="ics_fusion" type="ics_fusion_node"  output="screen" >   
         <rosparam file="$(find ics_fusion)/config/slam_params.yaml" command="load"/> 
         <param name="publish_volume" type="bool" value="true" />
@@ -23,7 +25,8 @@
         <param name="gem_left_prob" type="str" value="/gem/LLegContactProbability" />
         <param name="gem_right_prob" type="str" value="/gem/RLegContactProbability" />
         <param name="publish_key_frame" type="bool" value="true" />
-        <param name="key_frame_thr" type="int" value="10" />  
+        <param name="bag_name" type="str" value="$(arg bag_name)" />
+        <!--<param name="key_frame_thr" type="int" value="10"/>-->
 
     </node>    
     <node pkg = "rviz" type = "rviz" respawn = "false" name = "rviz" output = "screen" args ="-d $(find ics_fusion)/ics_fusion_bag.rviz"> </node>  

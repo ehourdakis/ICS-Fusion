@@ -40,6 +40,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 
+#include <std_srvs/SetBool.h>
 
 #define CAM_INFO_TOPIC "/camera/depth/camera_info"
 #define RGB_TOPIC "/camera/rgb/image_rect_color"
@@ -68,7 +69,7 @@
 #define PUBLISH_POINT_RATE 10
 #define PUBLISH_IMAGE_RATE 1
 
-#define KEY_FRAME_THR 30
+ros::ServiceClient bagClient;
 
 
 typedef unsigned char uchar;
@@ -154,6 +155,8 @@ void publishIsamPath();
 void publishHarris();
 void publishKeyPoints();
 
+void stopBag();
+void contBag();
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans)
 {
@@ -201,10 +204,9 @@ void readIteFusionParams(ros::NodeHandle &n_p)
 
 void doLoopClosure()
 {
+    stopBag();
     passedFromLastKeyFrame=0;
     loopCl->processKeyFrame();
-
-
 
     prevKeyFramePose=keyFramePose;
     keyFramePose=loopCl->getPose();
@@ -217,6 +219,7 @@ void doLoopClosure()
    // std::cout<<inverse(prevKeyFramePose)*keyFramePose<<std::endl;
 
     publishHarris();  
+    contBag();
 }
 
 void publishKeyPoints()
@@ -689,12 +692,27 @@ void publishPoints()
     points_pub.publish(pcloud);
 }
 
+void stopBag()
+{
+    std_srvs::SetBool b;
+    b.request.data=true;
+    bagClient.call(b);
+}
+
+void contBag()
+{
+    std_srvs::SetBool b;
+    b.request.data=false;
+    bagClient.call(b);
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "ics_fusion_node",ros::init_options::AnonymousName);
     ros::NodeHandle n_p("~");
 
     std::string cam_info_topic,depth_topic,rgb_topic,gem_left_topic,gem_right_topic;
+    std::string bag_name;
 
     if(!n_p.getParam("cam_info_topic", cam_info_topic))
     {
@@ -716,6 +734,7 @@ int main(int argc, char **argv)
     {
         gem_right_topic=GEM_RIGHT_TOPIC;
     }
+    n_p.getParam("bag_name", bag_name);
 
     n_p.param("publish_volume",publish_volume,true);
     n_p.param("publish_key_frame",publish_key_frame,true);
@@ -773,7 +792,10 @@ int main(int argc, char **argv)
         }
     }
 
-  
+    std::cout<<"BAG:"<<bag_name<<std::endl;
+
+    bagClient = n_p.serviceClient< std_srvs::SetBool>(bag_name);
+
     ROS_INFO("Waiting depth message");
 
     message_filters::Subscriber<sensor_msgs::Image> rgb_sub(n_p, rgb_topic, 100);
@@ -787,5 +809,6 @@ int main(int argc, char **argv)
 
     sync.registerCallback(boost::bind(&imageAndDepthCallback, _1, _2));
   
+    contBag();
     ros::spin();
 }

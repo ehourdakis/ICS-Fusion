@@ -4,6 +4,7 @@
 #define PUBLISH_ODOM_PATH
 #define PUBLISH_ISAM_PATH
 
+#define KEY_FRAME_THR 100
 //#define DISABLE_SMOOTHNET3D
 //  #define DISABLE_KEY_FRAMES
 //    #define DISABLE_LOOP_CLOSURE
@@ -17,8 +18,8 @@
 // #define KEY_FRAME_2 137
 
 //thebest
-#define KEY_FRAME_1 840
-#define KEY_FRAME_2 1417
+//#define KEY_FRAME_1 840
+//#define KEY_FRAME_2 1417
 //32
 // #define KEY_FRAME_1 100
 // #define KEY_FRAME_2 356
