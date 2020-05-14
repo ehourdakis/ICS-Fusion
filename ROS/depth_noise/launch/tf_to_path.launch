@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>        
+    <node pkg="tf_to_path" name="tf_to_path" type="tf_to_path.py"  output="screen">        
+        <param name="src_frame" value="/world" />
+        <param name="dst_frame" value="/kinect" /> 
+    </node>
+    
+    
+    <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find graph_viz)/config/show_all.rviz"/> -->
+        
+        
+
+</launch>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <node pkg ="depth_rgb_sync" type="depth_rgb_sync_node" name="depth_rgb_sync_node" respawn="false" output="screen">
+        <param name="depth_in_topic"  type="string" value="/camera/depth/image_noise" />
+        <param name="rgb_in_topic"  type="string" value="/camera/rgb/image_raw" />
+        <param name="rate" value="30" /> 
+    </node>
+</launch>
+
+        

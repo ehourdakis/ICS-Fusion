@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>        
+    <node pkg="depth_noise" name="depth_noise" type="depth_noise.py"  output="screen">        
+        <param name="in_topic" value="/camera/depth/image_raw" />
+        <param name="std" value="0.02" /> 
+    </node>
+    
+    <node pkg="depth_noise" name="depth_rgb_sync" type="depth_rgb_sync.py"  output="screen">        
+        <param name="depth_in_topic" value="/camera/depth/image_noise" />
+        <param name="rgb_in_topic" value="/camera/rgb/image_raw" />
+        <param name="rate" value="30" /> 
+    </node>
+    
+    <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find graph_viz)/config/show_all.rviz"/> -->
+        
+        
+
+</launch>

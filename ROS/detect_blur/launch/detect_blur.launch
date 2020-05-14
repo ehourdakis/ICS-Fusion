@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>    
+    <node name="detect_blur" pkg="detect_blur" type="detect_blur.py" output="screen" >     
+    </node>
+</launch> 
+ 

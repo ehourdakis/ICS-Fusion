@@ -1,0 +1,19 @@
+<package format="2">
+  <name>kfusion_gazebo</name>
+  <version>0.0.1</version>
+  <description>The kfusion_gazebo package</description>
+  <maintainer email="tavu@todo.todo">tavu</maintainer>
+  <license>TODO</license>
+
+  
+<!--  <exec_depend>message_runtime</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>rosgraph_msgs</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+
+  <exec_depend>actionlib_msgs</exec_depend>
+  <exec_depend>actionlib</exec_depend>
+  <exec_depend>smoothnet_3d</exec_depend>-->
+      
+</package>

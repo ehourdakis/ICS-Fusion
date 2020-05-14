@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>  
+    <include file="$(find turtlebot_gazebo)/launch/turtlebot_world.launch">
+        <arg name="world_file" value="$(find kfusion_gazebo)/worlds/w2.world"/>
+    </include>
+
+    <include file="$(find depth_noise)/launch/depth_noise.launch" />
+    <include file="$(find depth_rgb_sync)/launch/image_depth_sync.launch" />
+    <!--<include file="$(find kfusion_ros)/launch/kfusion_ros_gazebo.launch"/>-->
+
+    <node pkg = "rviz" type = "rviz" respawn = "false" name = "rviz" output = "screen" args ="-d $(find kfusion_gazebo)/config/kfusion_gazebo.rviz"/>
+
+</launch>
+
