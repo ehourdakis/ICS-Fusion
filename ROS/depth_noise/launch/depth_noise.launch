@@ -5,7 +5,11 @@
         <param name="std" value="0.02" /> 
     </node>
     
-    <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find graph_viz)/config/show_all.rviz"/> -->
+    <node pkg="depth_noise" name="image_converter" type="image_converter.py"  output="screen">        
+        <param name="in_topic" value="/camera/rgb/image_raw"/>
+        <param name="in_type" value="bgr8"/>
+        <param name="out_type" value="rgb8"/>
+    </node>
         
         
 

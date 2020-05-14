@@ -1,7 +1,7 @@
 #include <depth_rgb_sync/depth_rgb_sync_utils.h>
 
 #define DEPTH_IN_TOPIC "/camera/depth/image_noise"
-#define RGB_IN_TOPIC "/camera/rgb/image_raw"
+#define RGB_IN_TOPIC "/camera/rgb/image_converted"
 #define RRATE 30
 
 void depth_rgb_sync_utils::imageCb(const sensor_msgs::ImageConstPtr& msg)

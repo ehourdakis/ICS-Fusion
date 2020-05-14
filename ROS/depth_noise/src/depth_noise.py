@@ -3,10 +3,6 @@
 import rospy
 import std_msgs
 
-#from nav_msgs.msg import Path
-#from nav_msgs.msg import Odometry
-#from geometry_msgs.msg import PoseStamped, Pose
-
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
 import numpy as np

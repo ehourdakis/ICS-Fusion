@@ -96,6 +96,8 @@ int publish_points_rate;
 int key_frame_thr;
 int keypt_size;
 
+bool use_bag;
+
 //ros publishers
 ros::Publisher volume_pub;
 ros::Publisher odom_pub ;
@@ -219,7 +221,7 @@ void doLoopClosure()
    // std::cout<<inverse(prevKeyFramePose)*keyFramePose<<std::endl;
 
     publishHarris();  
-    contBag();
+    //contBag();
 }
 
 void publishKeyPoints()
@@ -321,6 +323,7 @@ bool isKeyFrame()
 void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_msgs::ImageConstPtr &depth)
 {    
     passedFromLastKeyFrame++;
+    std::cout<<rgb->encoding.c_str()<<std::endl;
     if(strcmp(rgb->encoding.c_str(), "rgb8")==0) //rgb8
     {
         memcpy(inputRGB,rgb->data.data(),params.inputSize.y*params.inputSize.x*sizeof(uchar)*3 );        
@@ -367,15 +370,15 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
     _isKeyFrame=isKeyFrame();
   #endif
 
-#ifdef KEY_FRAME_2
-    _isKeyFrame=false;
-    if(frame==KEY_FRAME_1)
-        _isKeyFrame=true;
-    else if(frame==KEY_FRAME_2)
-        _isKeyFrame=true;
-    else
+    #ifdef KEY_FRAME_2
         _isKeyFrame=false;
-#endif
+        if(frame==KEY_FRAME_1)
+            _isKeyFrame=true;
+        else if(frame==KEY_FRAME_2)
+            _isKeyFrame=true;
+        else
+            _isKeyFrame=false;
+    #endif
 
 #endif    
     
@@ -694,6 +697,8 @@ void publishPoints()
 
 void stopBag()
 {
+    if(!use_bag)
+        return;
     std_srvs::SetBool b;
     b.request.data=true;
     bagClient.call(b);
@@ -701,6 +706,8 @@ void stopBag()
 
 void contBag()
 {
+    if(!use_bag)
+        return;
     std_srvs::SetBool b;
     b.request.data=false;
     bagClient.call(b);
@@ -792,9 +799,13 @@ int main(int argc, char **argv)
         }
     }
 
-    std::cout<<"BAG:"<<bag_name<<std::endl;
+    bag_name.erase(bag_name.find_last_not_of(" \n\r\t")+1);
+    use_bag=bag_name.size()>0;
 
-    bagClient = n_p.serviceClient< std_srvs::SetBool>(bag_name);
+    std::cout<<"BAG:"<<(int)use_bag<<" "<<bag_name.size()<<std::endl;
+
+    if(use_bag)
+        bagClient = n_p.serviceClient< std_srvs::SetBool>(bag_name);
 
     ROS_INFO("Waiting depth message");
 
