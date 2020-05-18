@@ -1,8 +1,7 @@
 #For Gazebo
 
 #First set asus xtion and kinect for turtlebot to 30 fps
-Open /opt/ros/kinetic/share/turtlebot_description/urdf/turtlebot_gazebo.urdf.xacro as root and set <update_rate> and <updateRate> to 30.0
-
+copy turtlebot_gazebo.urdf.xacro to /opt/ros/kinetic/share/turtlebot_description/urdf/
 #Then save models for gazebo
 Download models from:
 http://data.nvision2.eecs.yorku.ca/3DGEMS/
@@ -15,3 +14,6 @@ roslaunch kfusion_gazebo kfusion_gazebo.launch
 roslaunch turtlebot_teleop keyboard_teleop.launch
 
 then run ics or kfusion separately
+
+#Record bag with:
+scripts/rec_gazebo.sh <bag_name>

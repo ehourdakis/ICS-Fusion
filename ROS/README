@@ -1,2 +1,2 @@
-#link all directories here to catkin workspace. 
+#link all directories here to src directory inside catkin workspace. 
 
