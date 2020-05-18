@@ -87,7 +87,7 @@ std::vector<cv::DMatch> keyptsMap::goodMatches()
     return good_matches;
 }
 
-void keyptsMap::teaser(std::vector<FeatDescriptor> &descriptors)
+void keyptsMap::teaser(std::vector<FeatDescriptor> &descriptors, sMatrix4 &tf)
 {
     std::vector< std::vector<cv::DMatch> > knn_matches;
     cv::Mat queryDescr=toCvMat(descriptors);
@@ -124,8 +124,6 @@ void keyptsMap::teaser(std::vector<FeatDescriptor> &descriptors)
     // Solve with TEASER++
     teaser::RobustRegistrationSolver solver(tparams);
 
-
-    sMatrix4 tf;
     solver.solve(src, dst);
     auto solution = solver.getSolution();
     std::cout << "Teaser rot:" << std::endl;
@@ -178,10 +176,9 @@ void keyptsMap::teaser(std::vector<FeatDescriptor> &descriptors)
     }
 
 
-//    isam->add
 }
 
-void keyptsMap::ransac(std::vector<FeatDescriptor> &descriptors)
+void keyptsMap::ransac(std::vector<FeatDescriptor> &descriptors,sMatrix4 &tf)
 {
     using namespace open3d::geometry;
     using namespace open3d::registration;
@@ -217,7 +214,6 @@ void keyptsMap::ransac(std::vector<FeatDescriptor> &descriptors)
 //        RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(
 //                            cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance);
 
-    sMatrix4 tf;
     for(int i=0;i<4;i++)
     {
         for(int j=0;j<4;j++)
@@ -225,6 +221,9 @@ void keyptsMap::ransac(std::vector<FeatDescriptor> &descriptors)
     }
 
     std::cout<<tf<<std::endl;
+
+//    tf=inverse(tf);
+     std::cout<<inverse(tf)<<std::endl;
 
     std::cout<<"Fitness:"<<results.fitness_<<std::endl;
     std::cout<<"RMSE:"<<results.inlier_rmse_<<std::endl;
@@ -246,6 +245,8 @@ void keyptsMap::ransac(std::vector<FeatDescriptor> &descriptors)
         cv::DMatch m( idx2,idx1,1 );
         good_matches.push_back(m);
     }
+
+
 }
 
 bool keyptsMap::matching(std::vector<float3> &keypoints,
@@ -294,8 +295,13 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
     {
 
 
-        //teaser(descriptors);
-        ransac(descriptors);
+        sMatrix4 tf;
+        teaser(descriptors,tf);
+        //ransac(descriptors,tf);
+
+        //_isam->addFrame(tf,cov);
+
+
         for(int i=0;i<good_matches.size();i++)
         {
             //cv::DMatch m( idx2,idx1,1 );
@@ -317,13 +323,10 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
             next_corr.push_back(idx2);
             
             int lidx=_isam->addLandmark(p1);
-           _isam->connectLandmark(p1,lidx,prevFrame,cov1);
-           _isam->connectLandmark(p2,lidx,-1,cov2);
+            _isam->connectLandmark(p1,lidx,prevFrame,cov1);
+            _isam->connectLandmark(p2,lidx,-1,cov2);
         }        
-
-
-        /*
-        std::cout<<tf<<std::endl;                
+#if 0
         sMatrix6 cov=calculatePoint2PointCov(keypoints,
                                         keypoints.size(),
                                         _points,
@@ -332,120 +335,19 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
                                         prev_corr,
                                         tf,
                                         params);
-        std::cout<<cov<<std::endl;
+        //std::cout<<cov<<std::endl;
         _isam->addPoseConstrain(prevFrame,-1,tf,cov);
-        */
-    }
-    _descr=descriptors;
-
-    return true;
-//    geometry::PointCloud cloud1=PointCloud();
-
-//    RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching();
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if 0
-    std::vector< std::vector<cv::DMatch> > knn_matches;
-    cv::Mat queryDescr=toCvMat(descriptors);
-    cv::Mat trainDescr=toCvMat(_descr);
-
-    std::cout<<"queryDescr size:"<<queryDescr.size()<<std::endl;
-    std::cout<<"trainDescr size:"<<trainDescr.size()<<std::endl;
-
-    cv::Ptr<cv::FlannBasedMatcher > matcher2=cv::FlannBasedMatcher::create();
-    matcher->knnMatch( queryDescr,trainDescr, knn_matches, 2 );
-
-
-    good_matches.clear();
-
-    std::vector< std::pair<int, int> > matchIdx;
-    std::vector<uint> newDescrIdx;
-
-    std::map<int,int> newLanmarks;
-    sMatrix4 pose=_fusion->getPose();
-
-    for (size_t i = 0; i < knn_matches.size(); i++)
-    {
-        cv::DMatch m=knn_matches[i][0];
-        int tidx=m.trainIdx;
-        int qidx=m.queryIdx;
-        float discDist=m.distance;
-        if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance )
-        {
-
-            float3 p1=prevPose*_points[tidx];
-            float3 p2=pose*keypoints[qidx];;
-
-            float dist3d=dist(p1,p2);
-
-            if(discDist<10000 )
-            {
-                if(dist3d<0.5||true )
-                {
-                    good_matches.push_back(m);
-                    sMatrix3 cov=descriptors[qidx].cov;
-                    
-                    std::pair<int, int> p(tidx, qidx);
-                    matchIdx.push_back(p);
-                    int lidx=lanmarks[tidx];
-                    _isam->connectLandmark(keypoints[qidx],lidx,-1,cov);
-                }
-            }
-        }
-        else if(discDist>150 )
-        {
-            sMatrix3 cov=descriptors[qidx].cov;
-            //cov=cov*1e-7;
-//            std::cout<<cov<<std::endl;
-           int lidx=_isam->addLandmark(keypoints[qidx]);
-           _isam->connectLandmark(keypoints[qidx],lidx,-1,cov);
-           _points.push_back(keypoints[qidx]);
-           _descr.push_back(descriptors[qidx]);
-           lanmarks.push_back(lidx);
-           newDescrIdx.push_back(qidx);
-           
-           descrFrame.push_back(make_uint2(frame,qidx) );
-        }
-    }
-
-    std::cout<<"Feature number "<<keypoints.size()<<std::endl;
-    std::cout<<"Matches size "<<good_matches.size()<<std::endl;
-    std::cout<<"New Feature number "<<newDescrIdx.size()<<std::endl;
-
-    /*Save keypoint map*/
-    char buf[32];
-    sprintf(buf,"f_/f_%d_map_keypts",frame);
-    saveKeypoints(buf,_points);
-    sprintf(buf,"f_/f_%d_map_descr",frame);
-    saveDescriptors(buf,_descr);
-
-
-    /*Save new keypoints*/
-    sprintf(buf,"f_/f_%d_new_keypts",frame);
-    saveKeypoints(buf,keypoints);
-    sprintf(buf,"f_/f_%d_new_descr",frame);
-    saveDescriptors(buf,descriptors);
-
-    /*Save match keypoints*/
-    sprintf(buf,"f_/f_%d_matching",frame);
-    saveMatching(buf,matchIdx);
 #endif
-    //_points=keypoints;
+    }
     _descr=descriptors;
 
-//    prevPose=pose;
+
+
+//    _isam->addPoseConstrain(-1,prevFrame,cov)
+//    isam->add
+
     return true;
+
 }
 
 void keyptsMap::saveKeypoints(std::string fileName,const std::vector<float3> &keypts)

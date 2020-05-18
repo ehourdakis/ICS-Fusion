@@ -120,20 +120,24 @@ bool CloseLoop::processFrame()
         rgbs.push_back(rawRgb);
 
         poses.push_back(pose);
-                
+        sMatrix6 icpCov;
         //calculate covariance before raycast
-        sMatrix6 icpCov =_fusion->calculate_ICP_COV();
-        float icpFitness=_fusion->getFitness();
+        icpCov =_fusion->calculate_ICP_COV();
+        //float icpFitness=_fusion->getFitness();
         //std::cout<<"ICP Fitness:"<<icpFitness<<std::endl;
         //std::cout<<"ICP cov:\n"<<icpCov<<std::endl;
-
         //icpCov=icpCov*1000*(1/icpFitness);
 
-        //icpCov=icpCov*1e4;
+//        if(_frame>120 && _frame<145)
+//        {
+//            icpCov = sMatrix6();
+//            //icpCov=icpCov*100;
+//        }
+
+//        icpCov=icpCov*1e4;
 
         covars.push_back(icpCov);
-        _isam->addFrame(pose,icpCov);
-
+       _isam->addFrame(pose,icpCov);
         passedFromLastKeyFrame++;
     }
 
@@ -394,8 +398,8 @@ void CloseLoop::fixMap()
     std::cout<<"fixMap"<<std::endl;
     auto rdepthIt=depths.rbegin();
     auto rrgbIt=rgbs.rbegin();
-    auto rposeIt=poses.rbegin();
-    
+    auto rposeIt=poses.rbegin();   
+
     while(rposeIt!=poses.rend() )
     {
         _fusion->deIntegration(*rposeIt,*rdepthIt,*rrgbIt);

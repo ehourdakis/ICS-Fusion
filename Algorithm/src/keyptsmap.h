@@ -41,8 +41,8 @@ class keyptsMap
         std::vector<cv::DMatch> goodMatches();
         void saveMap(char *descrFile,char *poitsFile,char *frameFile);
     private:
-        void teaser(std::vector<FeatDescriptor> &descriptors);
-        void ransac(std::vector<FeatDescriptor> &descriptors);
+        void teaser(std::vector<FeatDescriptor> &descriptors, sMatrix4 &tf);
+        void ransac(std::vector<FeatDescriptor> &descriptors, sMatrix4 &tf);
 
         int prevFrame;
         const kparams_t &params;

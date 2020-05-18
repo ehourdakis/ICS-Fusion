@@ -221,7 +221,7 @@ void doLoopClosure()
    // std::cout<<inverse(prevKeyFramePose)*keyFramePose<<std::endl;
 
     publishHarris();  
-    //contBag();
+    contBag();
 }
 
 void publishKeyPoints()
@@ -323,7 +323,6 @@ bool isKeyFrame()
 void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_msgs::ImageConstPtr &depth)
 {    
     passedFromLastKeyFrame++;
-    std::cout<<rgb->encoding.c_str()<<std::endl;
     if(strcmp(rgb->encoding.c_str(), "rgb8")==0) //rgb8
     {
         memcpy(inputRGB,rgb->data.data(),params.inputSize.y*params.inputSize.x*sizeof(uchar)*3 );        
@@ -362,9 +361,9 @@ void imageAndDepthCallback(const sensor_msgs::ImageConstPtr &rgb,const sensor_ms
 #ifndef DISABLE_LOOP_CLOSURE
 
   #ifdef LOOP_CLOSURE_RATE
-    if(frame==4)
+    if(frame==3)
         _isKeyFrame=true;
-    if( frame>0 && (frame%LOOP_CLOSURE_RATE)==0)
+    if( frame>3 && (frame%LOOP_CLOSURE_RATE)==0)
         _isKeyFrame=true;
   #else
     _isKeyFrame=isKeyFrame();
@@ -746,10 +745,15 @@ int main(int argc, char **argv)
     n_p.param("publish_volume",publish_volume,true);
     n_p.param("publish_key_frame",publish_key_frame,true);
     n_p.param("publish_points",publish_points,true);
-    n_p.param("publish_points_rate",publish_points_rate,PUBLISH_POINT_RATE);
-    n_p.param("key_frame_thr",key_frame_thr,KEY_FRAME_THR);
+    n_p.param("publish_points_rate",publish_points_rate,PUBLISH_POINT_RATE);    
     n_p.param("keypt_size",keypt_size,100);
-    
+
+#ifdef LOOP_CLOSURE_RATE
+    key_frame_thr = 0;
+#else
+    n_p.param("key_frame_thr",key_frame_thr,KEY_FRAME_THR);
+#endif
+
     ROS_INFO("Depth Frame:%s",depth_frame.c_str());      
     //TODO read fusion param from yaml
     

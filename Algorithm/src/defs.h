@@ -4,12 +4,12 @@
 #define PUBLISH_ODOM_PATH
 #define PUBLISH_ISAM_PATH
 
-#define KEY_FRAME_THR 100
+#define KEY_FRAME_THR 30
 //#define DISABLE_SMOOTHNET3D
-//  #define DISABLE_KEY_FRAMES
+//#define DISABLE_KEY_FRAMES
 //    #define DISABLE_LOOP_CLOSURE
 
-//#define LOOP_CLOSURE_RATE 40
+#define LOOP_CLOSURE_RATE 1
 // #define DISABLE_MAP_FIXES
 #define DRAW_MATCHES
 
@@ -20,8 +20,15 @@
 //thebest
 //#define KEY_FRAME_1 840
 //#define KEY_FRAME_2 1417
+
 //32
 // #define KEY_FRAME_1 100
 // #define KEY_FRAME_2 356
+
+//#define KEY_FRAME_1 200
+//#define KEY_FRAME_2 545
+
+//#define KEY_FRAME_1 30
+//#define KEY_FRAME_2 500
 
 #endif

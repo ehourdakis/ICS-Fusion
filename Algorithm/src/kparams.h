@@ -34,7 +34,8 @@ typedef struct
     uint2 computationSize;
     float4 camera;
 
-    float rfitness=0.55;
+    //float rfitness=0.55;
+    float rfitness=0.6;
     float rerror=1e5;
 
 } kparams_t;
