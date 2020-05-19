@@ -21,11 +21,10 @@ def callback(data):
     except CvBridgeError as e:
         print(e)
 
-    out_image = np.zeros(cv_image.shape, dtype=cv_image.dtype)    
-    cv2.randn(out_image, 0.0, std) 
-
-    
-    #cv_image = cv_image + out_image
+    if std > 0.0:
+        out_image = np.zeros(cv_image.shape, dtype=cv_image.dtype)    
+        cv2.randn(out_image, 0.0, std) 
+        cv_image = cv_image + out_image
     #cv2.imshow("Image window", cv_image)
     #cv2.waitKey(3)
     #print(data.header.stamp)

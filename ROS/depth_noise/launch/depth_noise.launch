@@ -2,7 +2,8 @@
 <launch>        
     <node pkg="depth_noise" name="depth_noise" type="depth_noise.py"  output="screen">        
         <param name="in_topic" value="/camera/depth/image_raw" />
-        <param name="std" value="0.02" /> 
+        <!--<param name="std" value="0.02" /> -->
+        <param name="std" value="0.0" /> 
     </node>
     
     <node pkg="depth_noise" name="image_converter" type="image_converter.py"  output="screen">        
