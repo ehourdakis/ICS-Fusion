@@ -8,6 +8,10 @@ find_package(CUDA)
 
 add_compile_options(-std=c++14 -fopenmp)
 # add_definitions(-DUSE_G2O)
+
+option(USE_OPEN3D "Use open3d library" OFF)
+set(USE_OPEN3D OFF)
+
 LIST(APPEND G2O_LIBS
   cxsparse  
   g2o_cli g2o_ext_freeglut_minimal g2o_simulator
@@ -35,18 +39,14 @@ SET(sift_src
 )
 
 SET(teaser_src
-#     ${CMAKE_CURRENT_LIST_DIR}/src/teaser/fpfh.cc
     ${CMAKE_CURRENT_LIST_DIR}/src/teaser/graph.cc
     ${CMAKE_CURRENT_LIST_DIR}/src/teaser/matcher.cc
-#     ${CMAKE_CURRENT_LIST_DIR}/src/teaser/ply_io.cc
     ${CMAKE_CURRENT_LIST_DIR}/src/teaser/registration.cc
 )
 
 SET(pmc_src
-#     ${CMAKE_CURRENT_LIST_DIR}/src/pmc/libpmc_test.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmc_clique_utils.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmc_cores.cpp
-#     ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmc_driver.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmc_graph.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmc_heu.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmc_lib.cpp
@@ -57,15 +57,14 @@ SET(pmc_src
 )
 
 set(TOON_INCLUDE_PATHS "$ENV{HOME}/src/TooN")
-# set(TOON_INCLUDE_PATHS "/usr/local/src/TooN")
 set(EIGEN_INCLUDE_DIRS "/usr/local/include/eigen3")
 set(CUDA_INCLUDE_DIRS "/usr/local/cuda/include")
 set(SUITESPARSE_INCLUDE_DIR "/usr/include/suitesparse")
 set(PCL_INCLUDE_DIRS "/usr/include/pcl-1.7")
 
+
 find_package( OpenCV REQUIRED )
  
-# message(WARING Opencv: ${OpenCV_INCLUDE_DIRS})
 
 include_directories(
     ${CUDA_INCLUDE_DIRS}
@@ -90,22 +89,24 @@ set(cpp_srcs
     ${CMAKE_CURRENT_LIST_DIR}/src/closeloop.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/featuredetector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/keyptsmap.cpp
-#     ${CMAKE_CURRENT_LIST_DIR}/src/g2oGraph.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/Isam.cpp     
     ${CMAKE_CURRENT_LIST_DIR}/src/saveData.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/harris.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/SiftCovEstimator.cpp
-#     ${CMAKE_CURRENT_LIST_DIR}/src/smoothnetcore.cpp
-#     ${CMAKE_CURRENT_LIST_DIR}/src/smoothnet.cpp
-
 )
 
+if(${USE_OPEN3D})
+    set(OPEN3D_DEF "USE_OPEN3D")
+else()
+    set(OPEN3D_DEF "NOT_USE_OPEN3D")
+endif()
 
 SET( CUDA_PROPAGATE_HOST_FLAGS OFF )
 
 find_package(CUDA REQUIRED)
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-Xcompiler;-fPIC;" )
-cuda_add_library(ics_fusion_cuda_lib   STATIC  ${cuda_srcs}  OPTIONS -std=c++11; -Xcompiler; -fPIC; -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES
+cuda_add_library(ics_fusion_cuda_lib   STATIC  ${cuda_srcs}  OPTIONS -std=c++11; -Xcompiler; -fPIC; 
+    -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES
     -I${CMAKE_CURRENT_LIST_DIR}/src/
     -I${TOON_INCLUDE_PATHS}
     -I${EIGEN3_INCLUDE_DIR}
@@ -119,24 +120,28 @@ add_library(ics_fusion_lib
     ${pmc_src}
 )
 
-add_compile_options(-ggdb -fopenmp)
-SET_TARGET_PROPERTIES(ics_fusion_lib PROPERTIES COMPILE_FLAGS "-fPIC -fopenmp" )
+message(WARNING ${OPEN3D_DEF})
 
+if(${USE_OPEN3D})
+    SET_TARGET_PROPERTIES(ics_fusion_lib PROPERTIES COMPILE_FLAGS "-fPIC -fopenmp -DUSE_OPEN3D" )
+else()
+    SET_TARGET_PROPERTIES(ics_fusion_lib PROPERTIES COMPILE_FLAGS "-fPIC -fopenmp" )
+endif()
+    
 find_package(OpenMP)
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 
 #Comment ISAM if use G2O
-target_link_libraries(ics_fusion_lib 
-#     ${G2O_LIBS}
+target_link_libraries(ics_fusion_lib
     ${OpenCV_LIBS} 
     ${CUDA_LIBRARIES}    
     ics_fusion_cuda_lib
     isam
     cholmod
-    Open3D.a
-    qhull
-    libqhullcpp.a
-#    OpenMP::OpenMP_CXX
 )
+
+if(${USE_OPEN3D})
+    target_link_libraries(ics_fusion_lib Open3D.a qhull libqhullcpp.a)
+endif()

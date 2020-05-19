@@ -13,10 +13,14 @@
 #include <map>
 #include"kparams.h"
 
-//Open3d
-#include<Open3D/Registration/Feature.h>
+#include <Eigen/Dense>
 
-#include<teaser/registration.h>
+#ifdef USE_OPEN3D
+    #include<Open3D/Registration/Feature.h>
+//#else
+//    #include<teaser/registration.h>
+#endif
+
 
 class keyptsMap
 {
@@ -41,8 +45,11 @@ class keyptsMap
         std::vector<cv::DMatch> goodMatches();
         void saveMap(char *descrFile,char *poitsFile,char *frameFile);
     private:
-        void teaser(std::vector<FeatDescriptor> &descriptors, sMatrix4 &tf);
+#ifdef USE_OPEN3D
         void ransac(std::vector<FeatDescriptor> &descriptors, sMatrix4 &tf);
+#else
+        void teaser(std::vector<FeatDescriptor> &descriptors, sMatrix4 &tf);
+#endif
 
         int prevFrame;
         const kparams_t &params;
@@ -50,10 +57,10 @@ class keyptsMap
 
         std::vector<Eigen::Vector3d> eigenPts;
         std::vector<Eigen::Vector3d> prevEigenPts;
-
+#ifdef USE_OPEN3D
         open3d::registration::Feature *descr;
         open3d::registration::Feature *prevDescr;
-
+#endif
 
         std::vector<int> lanmarks;
         cv::Ptr<cv::FlannBasedMatcher> matcher;
@@ -74,8 +81,8 @@ class keyptsMap
         void saveMatching(std::string fileName, const std::vector< std::pair<int, int> > &matchIdx);
         //void saveDescData(const std::vector<float3> &keypts, const std::vector<FeatDescriptor> &desc, int _frame);
 
-        teaser::PointCloud cloud1;
-        teaser::PointCloud cloud2;
+//        teaser::PointCloud cloud1;
+//        teaser::PointCloud cloud2;
 };
 
 #endif // KEYPTSMAP_H

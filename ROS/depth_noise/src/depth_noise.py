@@ -25,7 +25,7 @@ def callback(data):
     cv2.randn(out_image, 0.0, std) 
 
     
-    cv_image = cv_image + out_image
+    #cv_image = cv_image + out_image
     #cv2.imshow("Image window", cv_image)
     #cv2.waitKey(3)
     #print(data.header.stamp)

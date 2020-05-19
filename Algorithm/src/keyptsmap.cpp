@@ -1,21 +1,25 @@
 #include "keyptsmap.h"
 #include<fstream>
 
-#include<Open3D/Registration/Registration.h>
-#include<Open3D/Geometry/PointCloud.h>
-#include<Open3D/Registration/CorrespondenceChecker.h>
-#include"kernelscalls.h"
-//#define COV 1.0e-5;
+#ifdef USE_OPEN3D
+    #include<Open3D/Registration/Registration.h>
+    #include<Open3D/Geometry/PointCloud.h>
+    #include<Open3D/Registration/CorrespondenceChecker.h>
+#else
+    #include<teaser/registration.h>
+#endif
 
-#include<teaser/registration.h>
+#include"kernelscalls.h"
 
 keyptsMap::keyptsMap(PoseGraph *isam, IcsFusion *f,const kparams_t &p)
     :_isam(isam),
       _fusion(f),
       params(p)
 {
+#ifdef USE_OPEN3D
     descr=new open3d::registration::Feature();
     prevDescr=new open3d::registration::Feature();
+#endif
 
     max_correspondence_distance=0.1;
     //max_correspondence_distance=10;
@@ -43,9 +47,9 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
                    keypoints.begin(),
                    keypoints.end());
 
-
+#ifdef USE_OPEN3D
     descr->Resize(DESCR_SIZE,descriptors.size());    
-
+#endif
     for(int i=0;i<keypoints.size();i++)
     {
 #if 1
@@ -58,11 +62,12 @@ void keyptsMap::addKeypoints(std::vector<float3> &keypoints,
                           0);
 #endif
         eigenPts.push_back(v);
-
+#ifdef USE_OPEN3D
         for(int j=0;j<DESCR_SIZE;j++)
         {
             descr->data_(j,i)=descriptors[i].data[j];
         }
+#endif
     }
     prevFrame=frame;
 }
@@ -87,6 +92,7 @@ std::vector<cv::DMatch> keyptsMap::goodMatches()
     return good_matches;
 }
 
+#ifndef USE_OPEN3D
 void keyptsMap::teaser(std::vector<FeatDescriptor> &descriptors, sMatrix4 &tf)
 {
     std::vector< std::vector<cv::DMatch> > knn_matches;
@@ -174,14 +180,16 @@ void keyptsMap::teaser(std::vector<FeatDescriptor> &descriptors, sMatrix4 &tf)
         cv::DMatch m=knn_matches[inidx][0];
         good_matches.push_back(m);
     }
-
-
 }
+#endif
 
+#ifdef USE_OPEN3D
 void keyptsMap::ransac(std::vector<FeatDescriptor> &descriptors,sMatrix4 &tf)
 {
     using namespace open3d::geometry;
     using namespace open3d::registration;
+
+    std::swap(prevDescr,descr);
 
     good_matches.clear();
     
@@ -204,15 +212,16 @@ void keyptsMap::ransac(std::vector<FeatDescriptor> &descriptors,sMatrix4 &tf)
     RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(
                  cloud1,cloud0,
                  *descr,*prevDescr,
-                 //*prevDescr,*descr,
                  max_correspondence_distance,
                  TransformationEstimationPointToPoint(false),
                  4,//ransac_n
                  correspondence_checker,
                  criteria );
 
-//        RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(
-//                            cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance);
+    /*
+    RegistrationResult results=RegistrationRANSACBasedOnFeatureMatching(
+                cloud1,cloud0,*descr,*prevDescr,max_correspondence_distance);
+    */
 
     for(int i=0;i<4;i++)
     {
@@ -221,9 +230,6 @@ void keyptsMap::ransac(std::vector<FeatDescriptor> &descriptors,sMatrix4 &tf)
     }
 
     std::cout<<tf<<std::endl;
-
-//    tf=inverse(tf);
-     std::cout<<inverse(tf)<<std::endl;
 
     std::cout<<"Fitness:"<<results.fitness_<<std::endl;
     std::cout<<"RMSE:"<<results.inlier_rmse_<<std::endl;
@@ -246,8 +252,8 @@ void keyptsMap::ransac(std::vector<FeatDescriptor> &descriptors,sMatrix4 &tf)
         good_matches.push_back(m);
     }
 
-
 }
+#endif
 
 bool keyptsMap::matching(std::vector<float3> &keypoints,
                          std::vector<FeatDescriptor> &descriptors,
@@ -255,15 +261,17 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 {
     good_matches.clear();
 
-    std::swap(prevEigenPts,eigenPts);
-    std::swap(prevDescr,descr);
+    std::swap(prevEigenPts,eigenPts);    
 
 //    std::swap(cloud1,cloud2);
 
     eigenPts.clear();
     eigenPts.reserve(keypoints.size());
 
+#ifdef USE_OPEN3D
     descr->Resize(DESCR_SIZE,descriptors.size());
+#endif
+
 
     for(int i=0;i<keypoints.size();i++)
     {
@@ -277,15 +285,16 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
                          0);
 #endif
         eigenPts.push_back(v);
-
+#ifdef USE_OPEN3D
         for(int j=0;j<DESCR_SIZE;j++)
         {
             descr->data_(j,i)=descriptors[i].data[j];
         }
-
-        cloud2.push_back({keypoints[i].x,
-                          keypoints[i].y,
-                          keypoints[i].z,});
+#endif
+//        cloud2.push_back({keypoints[i].x,
+//                          keypoints[i].y,
+//                          keypoints[i].z,});
+//#endif
     }
     
     std::vector<int> prev_corr;
@@ -296,15 +305,16 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 
 
         sMatrix4 tf;
+#ifdef USE_OPEN3D
+        ransac(descriptors,tf);
+#else
         teaser(descriptors,tf);
-        //ransac(descriptors,tf);
-
+#endif
         //_isam->addFrame(tf,cov);
 
 
         for(int i=0;i<good_matches.size();i++)
         {
-            //cv::DMatch m( idx2,idx1,1 );
             cv::DMatch m=good_matches[i];
             int idx1=m.trainIdx;
             int idx2=m.queryIdx;
@@ -340,11 +350,6 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
 #endif
     }
     _descr=descriptors;
-
-
-
-//    _isam->addPoseConstrain(-1,prevFrame,cov)
-//    isam->add
 
     return true;
 
