@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<launch>
+    
+    <arg name="bag_name" default="" />
+    
+    <node name="ics_fusion" pkg="ics_fusion" type="ics_fusion_node"  output="screen" >   
+        <rosparam file="$(find ics_fusion)/config/slam_params.yaml" command="load"/> 
+        <param name="publish_volume" type="bool" value="true" />
+        <param name="publish_points" type="bool" value="false" />
+        <param name="publish_points_rate" type="int" value="10" />
+                
+        <param name="depth_topic" type="string" value="/depth0/image_raw" />
+        <param name="cam_info_topic" type="str" value="/camera/depth/camera_info" />
+        <param name="rgb_topic"      type="str" value="/cam0/image_raw" />
+        
+        <param name="keypt_size"     type="int" value="100" />
+        
+        <param name="gem_left_prob" type="str" value="/gem/LLegContactProbability" />
+        <param name="gem_right_prob" type="str" value="/gem/RLegContactProbability" />
+        <param name="publish_key_frame" type="bool" value="true" />
+        <param name="bag_name" type="str" value="$(arg bag_name)" />
+        <!--<param name="key_frame_thr" type="int" value="10"/>-->
+
+    </node>    
+    <node pkg = "rviz" type = "rviz" respawn = "false" name = "rviz" output = "screen" args ="-d $(find ics_fusion)/config/ics_fusion_gazebo.rviz"> </node>  
+
+</launch>

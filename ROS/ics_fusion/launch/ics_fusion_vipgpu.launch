@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<launch>    
+<!--     <param name="use_sim_time" value="true" />  -->
+    <node pkg="tf" type="static_transform_publisher" name="visual_odom_to_odom" args="0 0 0   0 0 0 1 visual_odom odom 100" /> 
+
+<!--     <node pkg="tf" type="static_transform_publisher" name="tf_base_link_to_torso" args="0 0 0   0 0 0 1 base_link torso 100" />  -->
+    <node pkg="tf" type="static_transform_publisher" name="tf_head_to_cam" args="0 0 0.1  0.0 0.076 0.0 0.997 Head camera_rgb_frame 100" />  
+    
+    <include file="$(find gem)/launch/gem_ros.launch" />
+    
+    <node name="ics_fusion" pkg="ics_fusion" type="ics_fusion_node"  output="screen" >   
+<!-- -     <node name="ics_fusion" pkg="ics_fusion" type="ics_fusion_node"  output="screen" launch-prefix="gdb -ex run args" >   -->
+        <rosparam file="$(find ics_fusion)/config/slam_params.yaml" command="load"/> 
+        <param name="publish_volume" type="bool" value="true" />
+        <param name="publish_points" type="bool" value="false" />
+        <param name="publish_points_rate" type="int" value="10" />
+        
+        <param name="cam_info_topic" type="str" value="/camera/depth_registered/sw_registered/camera_info" />
+        <param name="depth_topic"    type="str"    value="/camera/depth_registered/sw_registered/image_rect" />
+        <param name="rgb_topic"      type="str" value="/camera/rgb/image_rect_color" />
+        
+        <param name="keypt_size"     type="int" value="2000" />
+        
+        <param name="gem_left_prob" type="str" value="/gem/LLegContactProbability" />
+        <param name="gem_right_prob" type="str" value="/gem/RLegContactProbability" />
+        <param name="publish_key_frame" type="bool" value="true" />
+        <param name="key_frame_thr" type="int" value="10" />  
+        
+    </node>
+  
+     <node pkg = "rviz" type = "rviz" respawn = "false" name = "rviz" output = "screen" args ="-d $(find ics_fusion)/ics_fusion.rviz"/>
+        
+
+</launch>
