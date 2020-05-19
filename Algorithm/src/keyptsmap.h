@@ -44,6 +44,12 @@ class keyptsMap
 
         std::vector<cv::DMatch> goodMatches();
         void saveMap(char *descrFile,char *poitsFile,char *frameFile);
+
+        sMatrix4 getLastTf() const
+        {
+            return lastTf;
+        }
+
     private:
 #ifdef USE_OPEN3D
         void ransac(std::vector<FeatDescriptor> &descriptors, sMatrix4 &tf);
@@ -75,6 +81,8 @@ class keyptsMap
 
         std::vector<cv::DMatch> good_matches;
         std::vector<uint2> descrFrame;
+
+        sMatrix4 lastTf;
 
         void saveDescriptors(std::string fileName, const std::vector<FeatDescriptor> &desc);
         void saveKeypoints(std::string fileName,const std::vector<float3> &keypts);

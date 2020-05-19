@@ -3,6 +3,7 @@
 
 #define PUBLISH_ODOM_PATH
 #define PUBLISH_ISAM_PATH
+#define PUBLISH_SIFT_PATH
 
 #define KEY_FRAME_THR 30
 //#define DISABLE_SMOOTHNET3D
@@ -10,7 +11,7 @@
 //    #define DISABLE_LOOP_CLOSURE
 
 #define LOOP_CLOSURE_RATE 1
-// #define DISABLE_MAP_FIXES
+ #define DISABLE_MAP_FIXES
 #define DRAW_MATCHES
 
 // #define KEY_FRAME_1 50

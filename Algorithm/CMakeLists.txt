@@ -123,7 +123,7 @@ add_library(ics_fusion_lib
 message(WARNING ${OPEN3D_DEF})
 
 if(${USE_OPEN3D})
-    SET_TARGET_PROPERTIES(ics_fusion_lib PROPERTIES COMPILE_FLAGS "-fPIC -fopenmp -DUSE_OPEN3D" )
+    SET_TARGET_PROPERTIES(ics_fusion_lib PROPERTIES COMPILE_FLAGS "-fPIC -fopenmp -DUSE_OPEN3D -ggdb" )
 else()
     SET_TARGET_PROPERTIES(ics_fusion_lib PROPERTIES COMPILE_FLAGS "-fPIC -fopenmp" )
 endif()

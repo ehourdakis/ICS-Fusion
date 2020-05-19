@@ -73,6 +73,8 @@ class CloseLoop
 
         void clearFirsts(int idx);
 
+        sMatrix4 getSiftPose() const;
+
     private:
         
         void calcIsamPoses();

@@ -146,6 +146,18 @@ void publishOdomPath(geometry_msgs::Pose &p);
 
 #endif
 
+#ifdef PUBLISH_SIFT_PATH
+
+#define PUB_SIFT_PATH_TOPIC "/ics_fusion/sift_path"
+nav_msgs::Path siftPath;
+ros::Publisher sift_path_pub ;
+void publishSiftPath();
+sMatrix4 prevSiftPose;
+
+#endif
+
+
+
 #ifdef PUBLISH_ISAM_PATH
 
 #define PUB_ISAM_PATH_TOPIC "/ics_fusion/isam_path"
@@ -159,6 +171,32 @@ void publishKeyPoints();
 
 void stopBag();
 void contBag();
+
+geometry_msgs::Pose rosPoseFromHomo(sMatrix4 &pose)
+{
+    geometry_msgs::Pose ret;
+
+    pose(0,3)-=params.volume_direction.x;
+    pose(1,3)-=params.volume_direction.y;
+    pose(2,3)-=params.volume_direction.z;
+    pose=fromVisionCord(pose);
+
+    tf::Matrix3x3 rot_matrix( pose(0,0),pose(0,1),pose(0,2),
+                              pose(1,0),pose(1,1),pose(1,2),
+                              pose(2,0),pose(2,1),pose(2,2) );
+    //rot_matrix=rot_matrix.inverse ();
+    tf::Quaternion q;
+    rot_matrix.getRotation(q);
+
+    ret.position.x=pose(0,3);
+    ret.position.y=pose(1,3);
+    ret.position.z=pose(2,3);
+    ret.orientation.x=q.getX();
+    ret.orientation.y=q.getY();
+    ret.orientation.z=q.getZ();
+    ret.orientation.w=q.getW();
+    return ret;
+}
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans)
 {
@@ -221,6 +259,18 @@ void doLoopClosure()
    // std::cout<<inverse(prevKeyFramePose)*keyFramePose<<std::endl;
 
     publishHarris();  
+
+#ifdef PUBLISH_SIFT_PATH
+    if(frame==3)
+    {
+        prevSiftPose=keyFramePose;
+    }
+    else
+    {
+        publishSiftPath();
+    }
+#endif
+
     contBag();
 }
 
@@ -515,23 +565,38 @@ void publishHarris()
     harris_pub.publish(image);
 }
 
+#ifdef PUBLISH_SIFT_PATH
+void publishSiftPath()
+{
+    sMatrix4 delta = loopCl->getSiftPose();
+    sMatrix4 pose = prevSiftPose*delta;
+    prevSiftPose = pose;
+
+
+
+    geometry_msgs::PoseStamped ps;
+    ps.header.stamp = ros::Time::now();
+    ps.header.frame_id = VO_FRAME;
+    ps.pose=rosPoseFromHomo(pose);
+    siftPath.poses.push_back(ps);
+
+    nav_msgs::Path newPath=siftPath;
+    newPath.header.stamp = ros::Time::now();
+    newPath.header.frame_id = VO_FRAME;
+
+    sift_path_pub.publish(newPath);
+}
+#endif
+
 void publishOdom()
 {
     sMatrix4 pose = loopCl->getPose();
 
-    //
     pose(0,3)-=params.volume_direction.x;
     pose(1,3)-=params.volume_direction.y;
     pose(2,3)-=params.volume_direction.z;
-//     pose=inverse(pose);
     pose=fromVisionCord(pose);
-    /*
-    tf::Vector3 vec[3];
-    for(int i=0;i<3;i++)
-    {
-        vec[i]=tf::Vector3(pose.data[i].x,pose.data[i].y,pose.data[i].z);
-    }    
-    */
+
     tf::Matrix3x3 rot_matrix( pose(0,0),pose(0,1),pose(0,2),
                               pose(1,0),pose(1,1),pose(1,2),
                               pose(2,0),pose(2,1),pose(2,2) );
@@ -780,6 +845,10 @@ int main(int argc, char **argv)
 
 #ifdef PUBLISH_ODOM_PATH
     odom_path_pub = n_p.advertise<nav_msgs::Path>(PUB_ODOM_PATH_TOPIC, 50);
+#endif
+
+#ifdef PUBLISH_SIFT_PATH
+    sift_path_pub = n_p.advertise<nav_msgs::Path>(PUB_SIFT_PATH_TOPIC, 50);
 #endif
     
 #ifdef PUBLISH_ISAM_PATH

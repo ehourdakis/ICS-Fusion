@@ -189,7 +189,7 @@ void keyptsMap::ransac(std::vector<FeatDescriptor> &descriptors,sMatrix4 &tf)
     using namespace open3d::geometry;
     using namespace open3d::registration;
 
-    std::swap(prevDescr,descr);
+
 
     good_matches.clear();
     
@@ -229,6 +229,7 @@ void keyptsMap::ransac(std::vector<FeatDescriptor> &descriptors,sMatrix4 &tf)
             tf(i,j)=results.transformation_(i,j);
     }
 
+    //tf=inverse(tf);
     std::cout<<tf<<std::endl;
 
     std::cout<<"Fitness:"<<results.fitness_<<std::endl;
@@ -269,7 +270,8 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
     eigenPts.reserve(keypoints.size());
 
 #ifdef USE_OPEN3D
-    descr->Resize(DESCR_SIZE,descriptors.size());
+    std::swap(prevDescr,descr);
+    descr->Resize(DESCR_SIZE,keypoints.size());
 #endif
 
 
@@ -303,12 +305,10 @@ bool keyptsMap::matching(std::vector<float3> &keypoints,
     if(prevEigenPts.size()>0 && eigenPts.size()>0)
     {
 
-
-        sMatrix4 tf;
 #ifdef USE_OPEN3D
-        ransac(descriptors,tf);
+        ransac(descriptors,lastTf);
 #else
-        teaser(descriptors,tf);
+        teaser(descriptors,lastTf);
 #endif
         //_isam->addFrame(tf,cov);
 

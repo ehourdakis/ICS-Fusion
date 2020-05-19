@@ -52,6 +52,11 @@ bool CloseLoop::addFrameWithPose(uint16_t *depth,uchar3 *rgb,sMatrix4 gt)
   return true;
 }
 
+sMatrix4 CloseLoop::getSiftPose() const
+{
+    return _keyMap->getLastTf();
+}
+
 int CloseLoop::getPoseGraphIdx() const
 {
     return _isam->poseSize()-1;
