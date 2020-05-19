@@ -1,8 +1,6 @@
 #For Gazebo
 
-#First set asus xtion and kinect for turtlebot to 30 fps
-copy turtlebot_gazebo.urdf.xacro to /opt/ros/kinetic/share/turtlebot_description/urdf/
-#Then save models for gazebo
+#First add some models to gazebo
 Download models from:
 http://data.nvision2.eecs.yorku.ca/3DGEMS/
 and save then into ~/.gazebo/models
