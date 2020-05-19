@@ -20,7 +20,7 @@
   
   <!-- Gazebo model spawner -->
     <node name="spawn_turtlebot_model" pkg="gazebo_ros" type="spawn_model" 
-          args="-x -0.113402 -y 2.595663 -Y 2.595663 -unpause -urdf -param robot_description -model mobile_base"/>
+          args="-x -0.11 -y 2.6 -Y 1.23 -unpause -urdf -param robot_description -model mobile_base"/>
   
     <!-- Velocity muxer -->
     <node pkg="nodelet" type="nodelet" name="mobile_base_nodelet_manager" args="manager"/>
