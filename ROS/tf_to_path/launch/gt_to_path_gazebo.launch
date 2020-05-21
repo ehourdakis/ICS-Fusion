@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>        
+    <node pkg="tf_to_path" name="gt_to_path" type="gt_to_path.py"  output="screen">        
+        <param name="src_frame" value="/base_footprint" />
+        <param name="dst_frame" value="/camera_rgb_frame" /> 
+        <param name="gt_topic" value="/ground_truth/base" /> 
+    </node>
+    
+    
+    <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find graph_viz)/config/show_all.rviz"/> -->
+        
+        
+
+</launch>

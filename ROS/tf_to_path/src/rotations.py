@@ -68,7 +68,7 @@ def homogeneous(pose):
     M = tf.transformations.concatenate_matrices(T, R)
     return M
 
-def poseFromHom(M):
+def poseFromHomo(M):
     ret = Pose()
     R = tf.transformations.quaternion_from_matrix(M)
     ret.position.x = M[0][3]
@@ -97,6 +97,7 @@ def transform(q1, q2):
     ret.orientation.w = R[3]
     return ret
     
+
 
 
 def quaternion_to_rotation(pose, transform):
