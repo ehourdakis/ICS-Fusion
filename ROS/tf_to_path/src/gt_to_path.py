@@ -37,17 +37,13 @@ def gtCallback(gtOdom):
     
     if initialPoseMat is None:
         initialPoseMat = rotations.homogeneous(pose)
-        M = np.dot(initialPoseMat,baseToCamMat)
-        #M = np.dot(baseToCamMat,initialPoseMat)
-        
-        initialPoseMat = np.linalg.inv(M) 
-        
-    print(initialPoseMat)
+        initialPoseMat = np.dot(baseToCamMat,initialPoseMat)
+        initialPoseMat = np.linalg.inv(initialPoseMat) 
+            
     
-    poseMat = rotations.homogeneous(pose)
-    M = np.dot(initialPoseMat,poseMat)
-    #M = np.dot(poseMat,initialPoseMat)
-    
+    baseLinkMat = rotations.homogeneous(pose)
+    camMat = np.dot(baseToCamMat,baseLinkMat)
+    M = np.dot(initialPoseMat,camMat)    
     
     pose = rotations.poseFromHomo(M)
     publishPath(pose, gtOdom.header.stamp)
@@ -88,40 +84,8 @@ while not rospy.is_shutdown():
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
         continue
     baseToCamPose = getPose(baseToCamTrans,baseToCamRot)  
-    baseToCamMat = rotations.homogeneous(baseToCamPose)
-    baseToCamMat =  np.linalg.inv(baseToCamMat) 
+    baseToCamMat = rotations.homogeneous(baseToCamPose)    
     break
 
 rospy.Subscriber(gt_topic, Odometry, gtCallback)
 rospy.spin()
-
-
-#while not rospy.is_shutdown():
-    
-    #try:
-        #(trans,rot) = listener.lookupTransform(src_frame, dst_frame, rospy.Time(0))
-    #except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-        #continue
-    #time =  rospy.Time.now()
-    ##print(trans)
-    
-    
-    #path.header=std_msgs.msg.Header()
-    #path.header.frame_id='odom'
-    #path.header.stamp= time
-    
-    #pose = PoseStamped()
-    #pose.header=std_msgs.msg.Header()
-    #pose.header.frame_id='odom'
-    #pose.header.stamp= time
-
-    #pose_tmp=getPose(trans,rot)
-    #pose_tmp.position.x=pose_tmp.position.x-initial_trans[0]
-    #pose_tmp.position.y=pose_tmp.position.y-initial_trans[1]
-    #pose_tmp.position.z=pose_tmp.position.z-initial_trans[2]
-    ##initial_pose
-    ##pose.pose=rotations.transform(initial_pose,pose_tmp)
-    #pose.pose=pose_tmp
-    
-    #path.poses.append(pose)    
-    #path_pub.publish(path)

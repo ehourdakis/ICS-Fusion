@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>        
     <node pkg="tf_to_path" name="gt_to_path" type="gt_to_path.py"  output="screen">        
-        <param name="src_frame" value="/base_footprint" />
+        <param name="src_frame" value="/base_link" />
         <param name="dst_frame" value="/camera_rgb_frame" /> 
         <param name="gt_topic" value="/ground_truth/base" /> 
     </node>
