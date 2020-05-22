@@ -16,8 +16,8 @@ make slambench APPS=icsFusion
 
 ## For ROS usage
 
-go to catkin source directory and link ROS directory there
-
+Run:
+> ./build.sh <catkin_workspace_pat>
 
 ```console
 cd ${catkin_ws}/src

@@ -5,6 +5,15 @@ SCRIPT=$(readlink -f $0)
 SCRIPT_PATH=`dirname $SCRIPT`
 OLD_PATH=`pwd`
 
+if [ -z "$CATKIN_WS" ]
+then
+      echo "Please specify the catking workspace path."
+      echo "Usage:"
+      echo "./build.sh <catking_workspace_path>"
+      exit -1
+fi
+
+
 #==============Install depentencies through apt===============
 sudo apt-get install -y subversion libsuitesparse-dev 
 #=============================================================
@@ -36,13 +45,16 @@ cd $SCRIPT_PATH/dependencies/TooN
 ./configure && make
 #=======================================================
 
+if [ -e "$CATKIN_WS/src/ics_fusion" ]; then
+  echo "[WARNING] Directory 'ics_fusion' alredy exist into $CATKIN_WS/src"
+else
+    ln -s $SCRIPT_PATH/ROS/ics_fusion $CATKIN_WS/src/
+fi
 
-
-ln -s $SCRIPT_PATH/ROS/ics_fusion $CATKIN_WS/src/ics_fusion
 
 source $CATKIN_WS/devel/setup.bash
 
 
 cd $CATKIN_WS
 catkin_make
-
+rospack profile
