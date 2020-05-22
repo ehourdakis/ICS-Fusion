@@ -1,8 +1,7 @@
 import tf
 from geometry_msgs.msg import PoseWithCovarianceStamped ,PoseStamped, Pose2D, Pose
-#from std_msgs.msg import Header
 import numpy as np
-import copy
+
 T_B_P = np.array([ [0,-1,  0 ,0],
            [0, 0, -1, 0],
            [1, 0,  0, 0],
@@ -12,22 +11,11 @@ invT_B_P = np.linalg.inv(T_B_P)
 def fromVisionCordinates(M):
     tmp = np.dot(invT_B_P,M)
     return np.dot(tmp,T_B_P)
-    #ret = copy.deepcopy(M)
-    #ret[0,3] = M[2,3]
-    #ret[1,3] = -M[0,3]
-    #ret[2,3] = -M[1,3]
-    #return ret
     
 
 def toVisionCordinates(M):
     tmp = np.dot(T_B_P,M)
-    
-    #ret = copy.deepcopy(M)
-    #ret[0,3] = -M[1,3]
-    #ret[1,3] = -M[2,3]
-    #ret[2,3] = M[0,3]
-    tmp = np.dot(tmp,invT_B_P)
-    
+    tmp = np.dot(tmp,invT_B_P)    
     return tmp
     
 def pose_to_pose2D(pose):
@@ -84,21 +72,7 @@ def transform(q1, q2):
     M1 = homogeneous(q1)
     M2 = homogeneous(q2)    
     M = np.dot(M2,M1)
-    #print(M)
-    #T = tf.transformations.translation_from_matrix(M)
-    R = tf.transformations.quaternion_from_matrix(M)
-    ret = Pose()
-    ret.position.x = M[0][3]
-    ret.position.y = M[1][3]
-    ret.position.z = M[2][3]
-    ret.orientation.x = R[0]
-    ret.orientation.y = R[1]
-    ret.orientation.z = R[2]
-    ret.orientation.w = R[3]
-    return ret
-    
-
-
+    return poseFromHomo(M)
 
 def quaternion_to_rotation(pose, transform):
     q=[0,0,0,0]
@@ -109,20 +83,7 @@ def quaternion_to_rotation(pose, transform):
     a = tf.transformations.quaternion_matrix(q)
     T = tf.transformations.translation_matrix( [ transform.position.x, transform.position.y, transform.position.z ] )
     M = tf.transformations.concatenate_matrices(T, a)
-    #print(M)
     q2 = [ pose.position.x, pose.position.y, pose.position.z, 1]
-    
     b = np.dot(M, q2)
-    #print(b)
-
     return b
-    #np.matrix(([
-        #[3, 1, 7],
-       #[2, 8, 3],
-       #[8, 5, 3]
-       #]
-    #)
-    
-#1 - 2*qy2 - 2*qz2   2*qx*qy - 2*qz*qw   2*qx*qz + 2*qy*qw
-#2*qx*qy + 2*qz*qw   1 - 2*qx2 - 2*qz2   2*qy*qz - 2*qx*qw
-#2*X*qz - 2*qy*qw    2*qy*qz + 2*qx*qw   1 - 2*qx2 - 2*qy2
+

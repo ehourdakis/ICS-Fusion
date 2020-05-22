@@ -8,10 +8,10 @@
 #define KEY_FRAME_THR 30
 //#define DISABLE_SMOOTHNET3D
 //#define DISABLE_KEY_FRAMES
-//    #define DISABLE_LOOP_CLOSURE
+//#define DISABLE_LOOP_CLOSURE
 
-#define LOOP_CLOSURE_RATE 1
- #define DISABLE_MAP_FIXES
+#define LOOP_CLOSURE_RATE 10
+#define DISABLE_MAP_FIXES
 #define DRAW_MATCHES
 
 // #define KEY_FRAME_1 50
@@ -29,7 +29,10 @@
 //#define KEY_FRAME_1 200
 //#define KEY_FRAME_2 545
 
-//#define KEY_FRAME_1 30
-//#define KEY_FRAME_2 500
+//traj5 gazebo
+//#define KEY_FRAME_1 220
+//#define KEY_FRAME_2 690
 
 #endif
+
+

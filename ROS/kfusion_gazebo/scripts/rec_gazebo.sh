@@ -11,5 +11,6 @@ rosbag record -O "$1" \
     /tf \
     /tf_static \
     /odom \
-    /cmd_vel_mux/input/teleop
-    
+    /cmd_vel_mux/input/teleop \
+    /clock \
+    /ground_truth/base

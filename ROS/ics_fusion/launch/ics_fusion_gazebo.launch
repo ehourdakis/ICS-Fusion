@@ -24,4 +24,9 @@
     </node>    
     <node pkg = "rviz" type = "rviz" respawn = "false" name = "rviz" output = "screen" args ="-d $(find ics_fusion)/config/ics_fusion_gazebo.rviz"> </node>  
 
+    <node name="image_proc" pkg="image_proc" type="image_proc">
+        <remap from="image_raw" to="/cam0/image_raw"/>
+        <remap from="camera_info" to="/camera/rgb/camera_info"/>
+    </node>
+    
 </launch>

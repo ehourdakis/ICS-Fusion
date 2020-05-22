@@ -128,6 +128,9 @@ bool CloseLoop::processFrame()
         sMatrix6 icpCov;
         //calculate covariance before raycast
         icpCov =_fusion->calculate_ICP_COV();
+
+//        icpCov=icpCov*100;
+
         //float icpFitness=_fusion->getFitness();
         //std::cout<<"ICP Fitness:"<<icpFitness<<std::endl;
         //std::cout<<"ICP cov:\n"<<icpCov<<std::endl;

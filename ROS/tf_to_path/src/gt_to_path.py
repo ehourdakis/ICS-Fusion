@@ -33,17 +33,15 @@ def publishPath(pose, stamp):
 def gtCallback(gtOdom):
     global initialPoseMat
     pose = gtOdom.pose.pose
-    print(pose)
     
     if initialPoseMat is None:
         initialPoseMat = rotations.homogeneous(pose)
         initialPoseMat = np.dot(baseToCamMat,initialPoseMat)
-        initialPoseMat = np.linalg.inv(initialPoseMat) 
-            
+        initialPoseMat = np.linalg.inv(initialPoseMat)
     
     baseLinkMat = rotations.homogeneous(pose)
     camMat = np.dot(baseToCamMat,baseLinkMat)
-    M = np.dot(initialPoseMat,camMat)    
+    M = np.dot(initialPoseMat,camMat)
     
     pose = rotations.poseFromHomo(M)
     publishPath(pose, gtOdom.header.stamp)
@@ -73,7 +71,6 @@ except Exception as  e:
     exit(1)    
 
 path_pub = rospy.Publisher('/gtpath', Path, queue_size=1000)
-rate = rospy.Rate(200.0)
 listener = tf.TransformListener()
 
 
