@@ -1,0 +1,12 @@
+diff --git a/isamlib/CMakeLists.txt b/isamlib/CMakeLists.txt
+index fe86590..88e44d2 100644
+--- a/isamlib/CMakeLists.txt
++++ b/isamlib/CMakeLists.txt
+@@ -1,5 +1,7 @@
+ cmake_minimum_required(VERSION 2.6)
+ 
++add_compile_options(-fPIC)
++
+ # find all source and header files
+ file(GLOB SRCS RELATIVE "${PROJECT_SOURCE_DIR}/isamlib" "*.cpp")
+ 
