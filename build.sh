@@ -26,6 +26,7 @@ git apply $SCRIPT_PATH/isam_pic.patch
 mkdir -p build 
 cd build
 cmake ..
+make
 #=======================================================
 
 #=========================TOON==========================

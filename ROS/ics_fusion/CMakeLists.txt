@@ -13,7 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
     image_transport
     tf2
     tf2_ros
-    smoothnet_3d
     cv_bridge
 )
 

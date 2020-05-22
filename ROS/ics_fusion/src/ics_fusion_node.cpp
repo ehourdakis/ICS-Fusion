@@ -26,7 +26,6 @@
 #include <message_filters/sync_policies/approximate_time.h>
 
 #include <actionlib/client/simple_action_client.h>
-#include <smoothnet_3d/SmoothNet3dAction.h>
 
 #include<closeloop.h>
 #include<kparams.h>
@@ -55,8 +54,6 @@
 #define PUB_IMAGE_TOPIC "/ics_fusion/volume_rgb"
 #define PUB_KEY_FRAME_TOPIC "/ics_fusion/key_frame"
 #define PUB_HARRIS_FRAME_TOPIC "/ics_fusion/harris"
-
-#define SMOOTHNET_SERVER "smoothnet_3d"
 
 #define DEPTH_FRAME "camera_rgb_optical_frame"
 // #define VO_FRAME "visual_odom"
@@ -130,10 +127,6 @@ sMatrix4 prevKeyFramePose;
 
 //visualization data
 uchar3 *featImage;
-
-smoothnet_3d::SmoothNet3dResult snResult;
-
-actionlib::SimpleActionClient<smoothnet_3d::SmoothNet3dAction> *smoothnetServer=0;
 
 geometry_msgs::Pose transform2pose(const geometry_msgs::Transform &trans);
 
@@ -329,15 +322,6 @@ void publishKeyPoints()
 
     pcl_pub1.publish(pcl_msg1);
     pcl_pub0.publish(pcl_msg0);
-}
-
-void smoothnetResultCb(const actionlib::SimpleClientGoalState &state,
-            const smoothnet_3d::SmoothNet3dResultConstPtr& results)
-{
-    ROS_INFO("Finished in state [%s]", state.toString().c_str());
-    keyFrameProcessing=false;
-    snResult=*results;
-    return;
 }
 
 bool hasStableContact()
@@ -857,9 +841,6 @@ int main(int argc, char **argv)
     //subscribe to GEM
     ros::Subscriber gem_left_sub = n_p.subscribe(gem_left_topic, 1, gemLeftCallback);
     ros::Subscriber gem_right_sub = n_p.subscribe(gem_right_topic,1, gemRightCallback);
-
-    //smoothnetServer=new actionlib::SimpleActionClient<smoothnet_3d::SmoothNet3dAction>(SMOOTHNET_SERVER,true);
-    //smoothnetServer->waitForServer();
     
     ROS_INFO("Waiting camera info");
     while(ros::ok())

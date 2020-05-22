@@ -8,6 +8,7 @@ find_package(CUDA)
 
 add_compile_options(-std=c++14 -fopenmp)
 # add_definitions(-DUSE_G2O)
+link_directories("${CMAKE_CURRENT_LIST_DIR}/dependencies/isam/lib/")
 
 option(USE_OPEN3D "Use open3d library" OFF)
 set(USE_OPEN3D OFF)
@@ -40,7 +41,7 @@ SET(sift_src
 
 SET(teaser_src
     ${CMAKE_CURRENT_LIST_DIR}/src/teaser/graph.cc
-    ${CMAKE_CURRENT_LIST_DIR}/src/teaser/matcher.cc
+#     ${CMAKE_CURRENT_LIST_DIR}/src/teaser/matcher.cc
     ${CMAKE_CURRENT_LIST_DIR}/src/teaser/registration.cc
 )
 
@@ -59,7 +60,10 @@ SET(pmc_src
 
 set(TOON_INCLUDE_PATHS "${CMAKE_CURRENT_LIST_DIR}/dependencies/TooN")
 set(EIGEN_INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}/dependencies/eigen")
+set(ISAM_INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}/dependencies/isam/include")
 set(CUDA_INCLUDE_DIRS "/usr/local/cuda/include")
+
+
 #set(SUITESPARSE_INCLUDE_DIR "/usr/include/suitesparse")
 #set(PCL_INCLUDE_DIRS "/usr/include/pcl-1.7")
 
@@ -75,6 +79,7 @@ include_directories(
     ${PCL_INCLUDE_DIRS}  
     ${CMAKE_CURRENT_LIST_DIR}/src/teaser
     ${CMAKE_CURRENT_LIST_DIR}/src/pmc
+    ${ISAM_INCLUDE_DIRS}
 )
 
 set(cuda_srcs
@@ -136,7 +141,7 @@ set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS
 #Comment ISAM if use G2O
 target_link_libraries(ics_fusion_lib
     ${OpenCV_LIBS} 
-#    ${CUDA_LIBRARIES}    
+    ${CUDA_LIBRARIES}    
     ics_fusion_cuda_lib
     isam
     cholmod
