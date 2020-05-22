@@ -56,15 +56,15 @@ SET(pmc_src
     ${CMAKE_CURRENT_LIST_DIR}/src/pmc/pmcx_maxclique.cpp
 )
 
-set(TOON_INCLUDE_PATHS "$ENV{HOME}/src/TooN")
-set(EIGEN_INCLUDE_DIRS "/usr/local/include/eigen3")
+
+set(TOON_INCLUDE_PATHS "${CMAKE_CURRENT_LIST_DIR}/dependencies/TooN")
+set(EIGEN_INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}/dependencies/eigen")
 set(CUDA_INCLUDE_DIRS "/usr/local/cuda/include")
-set(SUITESPARSE_INCLUDE_DIR "/usr/include/suitesparse")
-set(PCL_INCLUDE_DIRS "/usr/include/pcl-1.7")
+#set(SUITESPARSE_INCLUDE_DIR "/usr/include/suitesparse")
+#set(PCL_INCLUDE_DIRS "/usr/include/pcl-1.7")
 
-
+set(eigen3_INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS} )
 find_package( OpenCV REQUIRED )
- 
 
 include_directories(
     ${CUDA_INCLUDE_DIRS}
@@ -136,7 +136,7 @@ set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS
 #Comment ISAM if use G2O
 target_link_libraries(ics_fusion_lib
     ${OpenCV_LIBS} 
-    ${CUDA_LIBRARIES}    
+#    ${CUDA_LIBRARIES}    
     ics_fusion_cuda_lib
     isam
     cholmod

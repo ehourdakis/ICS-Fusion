@@ -6,11 +6,17 @@ SCRIPT_PATH=`dirname $SCRIPT`
 OLD_PATH=`pwd`
 
 #==============Install depentencies through apt===============
-sudo apt-get install -y subversion libsuitesparse-dev
+sudo apt-get install -y subversion libsuitesparse-dev 
 #=============================================================
 echo $SCRIPT_PATH $CATKIN_WS
 mkdir -p $SCRIPT_PATH/dependencies 
 cd $SCRIPT_PATH/dependencies
+
+
+#=========================EIGEN3==========================
+cd $SCRIPT_PATH/dependencies
+git clone https://gitlab.com/libeigen/eigen.git
+#=======================================================
 
 
 #=========================ISAM==========================
@@ -30,7 +36,8 @@ cd $SCRIPT_PATH/dependencies/TooN
 #=======================================================
 
 
-ln -s $SCRIPT_PATH/ROS $CATKIN_WS/src/ics_fusion
+
+ln -s $SCRIPT_PATH/ROS/ics_fusion $CATKIN_WS/src/ics_fusion
 
 source $CATKIN_WS/devel/setup.bash
 

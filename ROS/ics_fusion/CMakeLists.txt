@@ -4,7 +4,7 @@ project(ics_fusion)
 find_package(CUDA)
 add_compile_options(-std=c++11)
 
-find_package(Eigen3 REQUIRED)
+#find_package(Eigen3 REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS 
     roscpp 
@@ -20,8 +20,8 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(CATKIN_DEPENDS 
     message_runtime 
     roscpp rospy std_msgs    
-    DEPENDS
-    eigen3
+#    DEPENDS
+#    eigen3
 )
 
 include( ${CMAKE_CURRENT_LIST_DIR}/Algorithm/CMakeLists.txt)
