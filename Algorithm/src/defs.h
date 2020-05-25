@@ -10,8 +10,8 @@
 //#define DISABLE_KEY_FRAMES
 //#define DISABLE_LOOP_CLOSURE
 
-#define LOOP_CLOSURE_RATE 10
-#define DISABLE_MAP_FIXES
+//#define LOOP_CLOSURE_RATE 10
+//#define DISABLE_MAP_FIXES
 #define DRAW_MATCHES
 
 // #define KEY_FRAME_1 50
@@ -33,6 +33,13 @@
 //#define KEY_FRAME_1 220
 //#define KEY_FRAME_2 690
 
+//problem.bag gazebo
+//#define KEY_FRAME_1 220
+//#define KEY_FRAME_2 690
+
+//works.bag
+#define KEY_FRAME_1 40
+#define KEY_FRAME_2 270
 #endif
 
 

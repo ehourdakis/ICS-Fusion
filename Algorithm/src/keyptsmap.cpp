@@ -163,15 +163,15 @@ void keyptsMap::teaser(std::vector<FeatDescriptor> &descriptors, sMatrix4 &tf)
     float fitness=(float)inliners.size()/(float)knn_matches.size();
     std::cout << "Fitness:"<<fitness << std::endl;
     std::cout << "Inliners size:"<< inliners.size()<<std::endl;
-    if(fitness<0.1)
-    {
-        return;
-    }
-    if( inliners.size()<10)
-    {
-        std::cout<<"Too few inliners."<<std::endl;
-        return;
-    }
+//    if(fitness<0.1)
+//    {
+//        return;
+//    }
+//    if( inliners.size()<10)
+//    {
+//        std::cout<<"Too few inliners."<<std::endl;
+//        return;
+//    }
 
 
     for(int i=0;i<inliners.size();i++)
